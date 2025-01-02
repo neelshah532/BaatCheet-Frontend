@@ -31,6 +31,7 @@ pnpm-debug.log*
 lerna-debug.log*
 *-lock.json
 
+package-lock.json
 # Editor directories and files
  !.vscode/extensions.json
 .idea
