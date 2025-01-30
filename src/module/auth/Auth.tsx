@@ -7,8 +7,10 @@ import { useNavigate } from 'react-router-dom'
 import axios, { AxiosError } from 'axios'
 
 import '../../styles/Login.css'
+import { useAuthStore } from '../../store/store'
 
 const Auth = () => {
+  const { setUserInfo } = useAuthStore()
   const tabRef = useRef<HTMLDivElement | null>(null)
   const [tabWidth, setTabWidth] = useState(0)
   const [activeTab, setActiveTab] = useState(0)
@@ -86,10 +88,14 @@ const Auth = () => {
       const response = await http.post(endpoint, payload, { withCredentials: true })
       toast.success(response.data?.message || 'Success')
       if (activeTab === 1 && response.status === 201) {
+        setUserInfo(response.data?.user)
+        console.log(response.data.user)
         navigate('/profile')
         // console.log('its a signup ')
       }
       if (activeTab === 0 && response.data?.user?.id) {
+        setUserInfo(response.data?.user)
+        console.log(response.data.user)
         if (response.data?.user?.profileSetup) navigate('/chat')
         else navigate('/profile')
       }

@@ -9,6 +9,9 @@ import { LOGIN_STRINGS, LOGIN_TABS } from '../constants/constant'
 import http from '../services/http'
 
 const Login = () => {
+  const navigate = useNavigate()
+
+  //   useState here
   const tabRef = useRef<HTMLDivElement | null>(null)
   const [tabWidth, setTabWidth] = useState(0)
   const [activeTab, setActiveTab] = useState(0)
@@ -18,7 +21,6 @@ const Login = () => {
   const [password, setPassword] = useState<string>('')
   const [confirmPassword, setConfirmPassword] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
-  const navigate = useNavigate()
 
   // Calculate tab width dynamically
   const calculateTabWidth = () => {

@@ -9,3 +9,13 @@ export interface FormFields {
   confirmPassword?: string
   fullName?: string
 }
+
+export interface UserInfo {
+  id: string
+  email?: string
+  profileSetup?: boolean
+}
+export interface AuthState {
+  userInfo?: UserInfo
+  setUserInfo: (userInfo: UserInfo) => void
+}
