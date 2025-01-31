@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 import axios, { AxiosError } from 'axios'
 
-import '../../styles/Login.css'
+import '../styles/Login.css'
 import { LOGIN_STRINGS, LOGIN_TABS } from '../constants/constant'
 import http from '../services/http'
 

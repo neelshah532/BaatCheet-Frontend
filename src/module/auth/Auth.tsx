@@ -4,13 +4,13 @@ import { LOGIN_STRINGS, LOGIN_TABS } from '../../constants/constant'
 import http from '../../services/http'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
-import axios, { AxiosError } from 'axios'
 
 import '../../styles/Login.css'
-import { useAuthStore } from '../../store/store'
+import { useAppStore } from '../../store/store'
+import { handleError } from '../../common/HandleError'
 
 const Auth = () => {
-  const { setUserInfo } = useAuthStore()
+  const { setUserInfo } = useAppStore()
   const tabRef = useRef<HTMLDivElement | null>(null)
   const [tabWidth, setTabWidth] = useState(0)
   const [activeTab, setActiveTab] = useState(0)
@@ -59,24 +59,7 @@ const Auth = () => {
     }
     return true
   }
-  const handleError = (error: Error) => {
-    if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError<{
-        status: number
-        message: string
-      }>
-      if (axiosError.response) {
-        console.log('Response Error', axiosError.response)
-        // toast.error(axiosError.response.data.message)
-        toast.error(error.response?.data?.message)
-      } else if (axiosError.request) {
-        console.log('Request Error', axiosError.request)
-      } else {
-        console.log('Error', axiosError.message)
-      }
-    }
-    // toast.error(error.response?.data?.message || 'Something went wrong')
-  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!handleValidation() || isLoading) return

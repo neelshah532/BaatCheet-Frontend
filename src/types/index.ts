@@ -16,6 +16,15 @@ export interface UserInfo {
   profileSetup?: boolean
 }
 export interface AuthState {
-  userInfo?: UserInfo
-  setUserInfo: (userInfo: UserInfo) => void
+  userInfo?: UserInfo | undefined
+  setUserInfo: (userInfo: UserInfo | undefined) => void
+}
+
+export interface UserProfile {
+  id: string
+  email: string
+  profileSetup: boolean
+  firstName: string
+  lastName: string
+  color: number
 }
