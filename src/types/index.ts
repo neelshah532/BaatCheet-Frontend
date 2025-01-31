@@ -14,17 +14,12 @@ export interface UserInfo {
   id: string
   email?: string
   profileSetup?: boolean
+  firstName?: string
+  lastName?: string
+  color?: number | string
+  userImage?: string
 }
 export interface AuthState {
   userInfo?: UserInfo | undefined
   setUserInfo: (userInfo: UserInfo | undefined) => void
-}
-
-export interface UserProfile {
-  id: string
-  email: string
-  profileSetup: boolean
-  firstName: string
-  lastName: string
-  color: number
 }

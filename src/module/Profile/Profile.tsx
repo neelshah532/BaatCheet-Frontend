@@ -1,71 +1,25 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import http from '../../services/http'
 import { toast } from 'sonner'
 import { useAppStore } from '../../store/store'
-import { UserProfile } from '../../types'
 import { handleError } from '../../common/HandleError'
 import { colors } from '../../constants/color'
 import { FiUpload, FiX } from 'react-icons/fi'
+import { PROFILE_STRINGS } from '../../constants/constant'
 
 const Profile = () => {
   const navigate = useNavigate()
   const { userInfo, setUserInfo } = useAppStore()
   const [isLoading, setIsLoading] = useState(false)
-  const [userData, setUserData] = useState<UserProfile | null>(null)
+  //   const [userData, setUserData] = useState<UserInfo | null>(null)
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [selectedColorIndex, setSelectedColorIndex] = useState(0)
+  const [selectedColorIndex, setSelectedColorIndex] = useState<number>(0)
 
   const [profileImage, setProfileImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const fetchUserData = useCallback(async () => {
-    try {
-      const response = await http.get('/api/auth/userInfo', { withCredentials: true })
-      setUserData(response.data)
-      if (response?.data?.profileSetup) {
-        setFirstName(response?.data?.firstName)
-        setLastName(response?.data?.lastName)
-        setSelectedColorIndex(response?.data?.color)
-        setImagePreview(response?.data?.profileImageUrl)
-        //   console.log('Image:', response?.data)
-        //   setImagePreview(`${import.meta.env.VITE_LOCAL_HOST}/${response.data.userImage}`)
-      }
-      if (response?.data?.userImage) {
-        setImagePreview(`${import.meta.env.VITE_LOCAL_HOST}/${response.data.userImage}`)
-      }
-    } catch (error) {
-      handleError(error)
-    }
-  }, [setUserData])
-
-  useEffect(() => {
-    void fetchUserData()
-  }, [fetchUserData])
-
-  //   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //     const file = e.target.files?.[0]
-  //     if (file) {
-  //       if (file.size > 5 * 1024 * 1024) {
-  //         toast.error('Image size should be less than 5MB')
-  //         return
-  //       }
-
-  //       if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-  //         toast.error('Please upload a valid image file (JPEG, PNG, or WebP)')
-  //         return
-  //       }
-
-  //       setProfileImage(file)
-  //       const reader = new FileReader()
-  //       reader.onloadend = () => {
-  //         setImagePreview(reader.result as string)
-  //       }
-  //       reader.readAsDataURL(file)
-  //     }
-  //   }
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -106,12 +60,7 @@ const Profile = () => {
   }
 
   // Remove selected image
-  const handleRemoveImage = async () => {
-    // setProfileImage(null)
-    // setImagePreview('')
-    // if (fileInputRef.current) {
-    //   fileInputRef.current.value = ''
-    // }
+  const handleRemoveImage = useCallback(async () => {
     try {
       const response = await http.delete('/api/auth/deleteProfileImage', { withCredentials: true })
       if (response.status === 200) {
@@ -125,7 +74,7 @@ const Profile = () => {
     } catch (error) {
       handleError(error)
     }
-  }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -133,20 +82,6 @@ const Profile = () => {
 
     setIsLoading(true)
     try {
-      //   const formData = new FormData()
-      //   if (firstName.trim()) {
-      //     formData.append('firstName', firstName.trim())
-      //   }
-      //   if (lastName.trim()) {
-      //     formData.append('lastName', lastName.trim())
-      //   }
-      //   formData.append('color', selectedColorIndex.toString())
-
-      //   if (profileImage) {
-      //     formData.append('profileImage', profileImage)
-      //   }
-      //   //   console.log('Form Data:', Object.fromEntries(formData.entries()))
-
       const response = await http.post(
         '/api/auth/update-profile',
         {
@@ -170,8 +105,8 @@ const Profile = () => {
       setIsLoading(false)
     }
   }
+  //   profile validation
 
-  // Enhance validation
   const validateProfile = () => {
     if (!firstName.trim()) {
       toast.error('First name is required')
@@ -187,17 +122,21 @@ const Profile = () => {
     }
     return true
   }
-  const renderProfilePreview = () => {
+
+  // Memoize the profile preview component
+  const renderProfilePreview = useMemo(() => {
     if (imagePreview) {
       return (
         <div className="relative w-24 h-24">
-          <img src={imagePreview} alt="Profile Preview" className="w-24 h-24 rounded-full object-cover" />
+          <div className="w-28 h-28 rounded-full flex items-center justify-center text-2xl font-bold text-white" style={{ backgroundColor: colors[selectedColorIndex] }}>
+            <img src={imagePreview} alt="Profile Preview" className="w-24 h-24 rounded-full object-cover" />
+          </div>
           <button
             type="button"
             onClick={handleRemoveImage}
             className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full 
-              flex items-center justify-center text-white hover:bg-red-600 
-              transition-colors duration-200"
+            flex items-center justify-center text-white hover:bg-red-600 
+            transition-colors duration-200"
           >
             <FiX size={16} />
           </button>
@@ -210,10 +149,10 @@ const Profile = () => {
         {firstName && lastName ? `${firstName[0]}${lastName[0]}`.toUpperCase() : '?'}
       </div>
     )
-  }
+  }, [imagePreview, selectedColorIndex, firstName, lastName, handleRemoveImage])
 
   // Add this inside your form, after the avatar preview
-  const imageUploadSection = (
+  const ImageUploadSection = React.memo(() => (
     <div className="flex flex-col items-center space-y-4">
       {/* Upload Button */}
       <div className="relative">
@@ -221,13 +160,13 @@ const Profile = () => {
         <label
           htmlFor="profileImage"
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#15151F]/50 
-        border border-white/[0.05] text-gray-300 hover:text-white 
-        hover:border-indigo-500/30 cursor-pointer transition-all duration-300"
+          border border-white/[0.05] text-gray-300 hover:text-white 
+          hover:border-indigo-500/30 cursor-pointer transition-all duration-300"
         >
           <FiUpload size={18} />
-          <span className="text-sm">Upload Profile Picture</span>
+          <span className="text-sm">{PROFILE_STRINGS.PROFILE_IMAGE_DESCRIPTION}</span>
         </label>
-        <p className="mt-2 text-xs text-gray-400 text-center">Max size: 5MB (JPEG, PNG, WebP)</p>
+        <p className="mt-2 text-xs text-gray-400 text-center">{PROFILE_STRINGS.MAX_SIZE}</p>
       </div>
 
       {/* Save Button */}
@@ -235,14 +174,25 @@ const Profile = () => {
         onClick={uploadProfileImage}
         disabled={isLoading}
         hidden={!imagePreview}
-        // disabled={isLoading}
         className="w-full px-6 py-2 rounded-lg bg-indigo-500 text-white font-semibold 
-      hover:bg-indigo-600 transition-all duration-300 disabled:opacity-50 mt-2"
+        hover:bg-indigo-600 transition-all duration-300 disabled:opacity-50 mt-2"
       >
-        {isLoading ? 'Saving...' : 'Save'}
+        {isLoading ? `${PROFILE_STRINGS.LOADING_SAVE}` : `${PROFILE_STRINGS.SAVE}`}
       </button>
     </div>
-  )
+  ))
+
+  // useEffect to set the user data
+
+  useEffect(() => {
+    if (userInfo?.profileSetup) {
+      setFirstName(userInfo?.firstName || '')
+      setLastName(userInfo?.lastName || '')
+      setSelectedColorIndex((userInfo?.color as number) || 0)
+      setImagePreview(userInfo?.userImage ? `${import.meta.env.VITE_LOCAL_HOST}/${userInfo.userImage}` : '')
+      //   console.log('Image:', userInfo)
+    }
+  }, [userInfo])
 
   return (
     <div className="max-h-screen bg-[#0A0A0F] flex flex-col h-full overflow-hidden ">
@@ -263,7 +213,7 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Content */}
+      {/* main card start frome here */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-[440px]">
           {/* Profile Card */}
@@ -272,8 +222,8 @@ const Profile = () => {
             <div className="relative bg-[#0C0C14]/95 backdrop-blur-xl rounded-2xl border border-white/[0.05] p-7">
               {/* User Avatar Preview */}
               <div className="mb-6 flex justify-center items-center gap-8">
-                {renderProfilePreview()}
-                {imageUploadSection}
+                {renderProfilePreview}
+                <ImageUploadSection />
                 {/* <div className="w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold text-white" style={{ backgroundColor: colors[selectedColorIndex] }}>
                   {firstName && lastName ? `${firstName[0]}${lastName[0]}`.toUpperCase() : '?'}
                 </div> */}
@@ -282,7 +232,7 @@ const Profile = () => {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Email Field */}
                 <div>
-                  <label className="block text-gray-300 text-sm font-medium mb-2">Email</label>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">{PROFILE_STRINGS.EMAIL}</label>
                   <input
                     type="email"
                     value={userInfo?.email || ''}
@@ -296,7 +246,7 @@ const Profile = () => {
                 {/* Name Fields */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-gray-300 text-sm font-medium mb-2">First Name</label>
+                    <label className="block text-gray-300 text-sm font-medium mb-2">{PROFILE_STRINGS.FIRST_NAME}</label>
                     <input
                       type="text"
                       value={firstName}
@@ -309,7 +259,7 @@ const Profile = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-gray-300 text-sm font-medium mb-2">Last Name</label>
+                    <label className="block text-gray-300 text-sm font-medium mb-2">{PROFILE_STRINGS.LAST_NAME}</label>
                     <input
                       type="text"
                       value={lastName}
@@ -325,7 +275,7 @@ const Profile = () => {
 
                 {/* Color Selection */}
                 <div>
-                  <label className="block text-gray-300 text-sm font-medium mb-3">Choose Your Color</label>
+                  <label className="block text-gray-300 text-sm font-medium mb-3">{PROFILE_STRINGS.CHOOSE}</label>
                   <div className="grid grid-cols-5 gap-3">
                     {colors.map((color, index) => (
                       <button
@@ -348,7 +298,9 @@ const Profile = () => {
                   />
                   <div className="relative px-6 py-4 flex items-center justify-center gap-3">
                     {isLoading && <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                    <span className="text-[15px] text-white font-semibold tracking-wide">{userData?.profileSetup ? 'Update Profile' : 'Complete Profile'}</span>
+                    <span className="text-[15px] text-white font-semibold tracking-wide">
+                      {userInfo?.profileSetup ? `${PROFILE_STRINGS.UPDATE_PROFILE}` : `${PROFILE_STRINGS.COMPLETED_PROFILE}`}
+                    </span>
                   </div>
                 </button>
               </form>
