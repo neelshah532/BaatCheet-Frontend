@@ -58,6 +58,7 @@
 
 import React from 'react'
 import victory from '../../assets/Victoryicon.svg'
+import ProfileInfo from './components/ProfileInfo'
 
 const Title = ({ text }: { text: string }) => {
   return <h6 className="uppercase tracking-widest text-neutral-400 pl-10 font-light text-opacity-90 text-sm">{text}</h6>
@@ -79,6 +80,7 @@ const ContactContainer = () => {
           <Title text="Channels" />
         </div>
       </div>
+      <ProfileInfo />
     </div>
   )
 }

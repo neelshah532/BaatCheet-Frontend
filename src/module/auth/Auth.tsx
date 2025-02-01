@@ -92,7 +92,7 @@ const Auth = () => {
   }
 
   return (
-    <div className="max-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="max-h-screen flex items-center justify-center p-4 relative overflow-hidden w-full max-w-screen">
       <div className="fixed inset-0">
         <div className="absolute inset-0 bg-[#080810]">
           <div className="absolute w-full h-full bg-[radial-gradient(ellipse_at_top,_#141420_0%,_#080810_100%)]" />
