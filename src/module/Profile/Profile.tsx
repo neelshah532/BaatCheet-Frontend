@@ -50,6 +50,7 @@ const Profile = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       setIsLoading(false)
+      setUserInfo({ ...response.data.imageUrl })
       return response.data.imageUrl
     } catch (error) {
       handleError(error)
@@ -96,6 +97,7 @@ const Profile = () => {
 
       if (response.status === 200 && response.data) {
         setUserInfo({ ...response.data })
+
         toast.success('Profile updated successfully')
         navigate('/chat')
       }

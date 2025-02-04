@@ -25,7 +25,7 @@ const ToolTip: React.FC<ToolTipProps> = ({ content, direction = 'top', delay = 4
   }
 
   return (
-    <div className="relative inline-block" onMouseEnter={showTip} onMouseLeave={hideTip}>
+    <div className="relative inline-block w-full" onMouseEnter={showTip} onMouseLeave={hideTip}>
       {children}
       {active && (
         <div

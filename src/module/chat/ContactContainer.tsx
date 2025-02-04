@@ -56,8 +56,8 @@
 
 // export default ContactContainer
 
-import React from 'react'
 import victory from '../../assets/Victoryicon.svg'
+import DirectMessage from './components/DirectMessage'
 import ProfileInfo from './components/ProfileInfo'
 
 const Title = ({ text }: { text: string }) => {
@@ -66,20 +66,51 @@ const Title = ({ text }: { text: string }) => {
 
 const ContactContainer = () => {
   return (
-    <div className="relative md:w-[35vw] lg:w-[30vw] xl:w-[20vw] bg-[#1b1c24] border-r-2 border-[#2f303b] w-full">
-      <div className="pt-3">
+    <div
+      className="relative md:w-[35vw] lg:w-[30vw] xl:w-[20vw] 
+   border-r border-white/[0.05] 
+  shadow-lg shadow-black/10 w-full"
+    >
+      {/* <div className="pt-3">
         <img src={victory} alt="" width={78} height={32} />
       </div>
       <div className="my-5">
         <div className="flex items-center justify-between pr-10">
           <Title text="Direct Message" />
         </div>
-      </div>
-      <div className="my-5">
-        <div className="flex items-center justify-between pr-10">
-          <Title text="Channels" />
+      </div> */}
+      <div className="h-16 px-6 flex items-center justify-between border-b border-white/[0.05]">
+        <div className="flex items-center gap-3">
+          <img src={victory} alt="logo" className="h-8 w-8" />
+          <h1 className="text-lg font-semibold text-white">ChatApp</h1>
         </div>
       </div>
+
+      {/* Sections */}
+      <div className="px-4 py-6 space-y-6 ">
+        {/* Direct Messages */}
+        <div>
+          <div className="flex items-center justify-between px-2 mb-4 custom-scrollbar ">
+            <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider ">
+              <Title text="Direct Message" />
+            </h2>
+            <DirectMessage />
+          </div>
+          {/* Contact list would go here */}
+        </div>
+
+        {/* Channels */}
+        <div>
+          <div className="flex items-center justify-between px-2 mb-4 custom-scrollbar">
+            <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+              <Title text="Channels" />
+            </h2>
+          </div>
+          {/* Channel list would go here */}
+        </div>
+      </div>
+
+      {/* Profile Section */}
       <ProfileInfo />
     </div>
   )

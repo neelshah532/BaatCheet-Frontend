@@ -1,7 +1,6 @@
-import { StateCreator } from 'zustand'
 import { AuthState, UserInfo } from '../../types'
 
-export const createAuthSlice: StateCreator<AuthState> = (set) => ({
+export const createAuthSlice = (set: (state: Partial<AuthState>) => void) => ({
   userInfo: undefined,
   setUserInfo: (userInfo: UserInfo | undefined) => set({ userInfo }),
 })

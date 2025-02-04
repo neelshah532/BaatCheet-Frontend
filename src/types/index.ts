@@ -18,8 +18,34 @@ export interface UserInfo {
   lastName?: string
   color?: number | string
   userImage?: string
+  token?: string
 }
 export interface AuthState {
   userInfo?: UserInfo | undefined
   setUserInfo: (userInfo: UserInfo | undefined) => void
+}
+
+export interface Contact {
+  _id: string
+  firstName?: string
+  lastName?: string
+  email?: string
+  image?: string
+  color?: number
+}
+
+export interface ChatState {
+  selectedChatType: string | undefined
+
+  selectedChatData: string | Contact | undefined
+
+  selectedChatMessages: string[]
+
+  setSelectedChatType: (type: string | undefined) => void
+
+  setSelectedChatData: (data: string | Contact | undefined) => void
+
+  setSelectedChatMessages: (messages: string[] | undefined) => void
+
+  closeChat: () => void
 }
