@@ -9,6 +9,7 @@ import { useAppStore } from '../../../store/store'
 import { Contact } from '../../../types'
 import { IoClose } from 'react-icons/io5'
 import '../../../styles/CustomScroll.css'
+import { handleError } from '../../../common/HandleError'
 
 const DirectMessage: React.FC = () => {
   const { setSelectedChatType, setSelectedChatData } = useAppStore()
@@ -33,18 +34,18 @@ const DirectMessage: React.FC = () => {
       }
 
       const response = await http.post('/api/contacts/search', { search }, { withCredentials: true })
-      console.log('Response:', response)
+      // console.log('Response:', response)
       if (response?.data?.contacts) {
         setContacts(response?.data?.contacts)
       } else {
         setContacts([])
       }
     } catch (error) {
-      console.error('Search error:', error)
+      handleError(error)
       setContacts([])
     }
   }
-  console.log('Contacts:', contacts)
+  // console.log('Contacts:', contacts)
 
   // Debounce input to prevent multiple API calls on every keystroke
   useEffect(() => {
@@ -61,7 +62,7 @@ const DirectMessage: React.FC = () => {
     setSelectedChatType('contact')
     setSelectedChatData(contact)
     setContacts([])
-    console.log('Selected contact:', contact)
+    // console.log('Selected contact:', contact)
   }
 
   return (

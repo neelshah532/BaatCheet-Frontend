@@ -1,14 +1,29 @@
 import { StateCreator } from 'zustand'
-import { ChatState, Contact } from '../../types'
+import { ChatState } from '../../types'
 
-export const createChatSlice: StateCreator<ChatState> = (set) => ({
+export const createChatSlice: StateCreator<ChatState> = (set, get) => ({
   selectedChatType: undefined,
   selectedChatData: undefined,
   selectedChatMessages: [],
-  setSelectedChatType: (type: string | undefined) => set({ selectedChatType: type }),
-  setSelectedChatData: (data: string | undefined | Contact) => set({ selectedChatData: data }),
-  setSelectedChatMessages: (messages: string[] | undefined) => set({ selectedChatMessages: messages }),
+  setSelectedChatType: (type) => set({ selectedChatType: type }),
+  setSelectedChatData: (data) => set({ selectedChatData: data }),
+  setSelectedChatMessages: (messages) => set({ selectedChatMessages: messages }),
   closeChat: () => {
     set({ selectedChatType: undefined, selectedChatData: undefined, selectedChatMessages: [] })
+  },
+  addMessage: (message) => {
+    // const { selectedChatMessages, selectedChatType } = get()
+    const selectedChatType = get().selectedChatType
+    const selectedChatMessages = get().selectedChatMessages
+    set({
+      selectedChatMessages: [
+        ...selectedChatMessages,
+        {
+          ...message,
+          recipient: selectedChatType === 'channel' ? message.recipient : message.recipient._id,
+          sender: selectedChatType === 'channel' ? message.sender : message.sender._id,
+        },
+      ],
+    })
   },
 })

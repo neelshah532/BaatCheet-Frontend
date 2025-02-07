@@ -34,18 +34,25 @@ export interface Contact {
   color?: number
 }
 
+export interface Message {
+  recipient: string | { _id: string }
+  sender: string | { _id: string }
+  content: string
+  createdAt: string
+  updatedAt: string
+  _id?: string
+  type?: 'text' | 'image' | 'file'
+  timestamp?: Date | string
+  messageType?: 'text' | 'image' | 'file'
+}
+
 export interface ChatState {
   selectedChatType: string | undefined
-
   selectedChatData: string | Contact | undefined
-
-  selectedChatMessages: string[]
-
+  selectedChatMessages: Message[]
   setSelectedChatType: (type: string | undefined) => void
-
   setSelectedChatData: (data: string | Contact | undefined) => void
-
-  setSelectedChatMessages: (messages: string[] | undefined) => void
-
+  setSelectedChatMessages: (messages: Message[]) => void
   closeChat: () => void
+  addMessage: (message: Message) => void
 }

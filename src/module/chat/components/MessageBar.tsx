@@ -3,19 +3,33 @@ import { useEffect, useRef, useState } from 'react'
 import { GrAttachment } from 'react-icons/gr'
 import { IoSend } from 'react-icons/io5'
 import { RiEmojiStickerLine } from 'react-icons/ri'
+import { useAppStore } from '../../../store/store'
+import { useSocket } from '../../../hook/socketContext'
 
 const MessageBar = () => {
   const emojiRef = useRef<HTMLDivElement>(null)
+  const { selectedChatType, selectedChatData, userInfo } = useAppStore()
+  const socket = useSocket()
   const [message, setMessage] = useState('')
   const [showEmoji, setShowEmoji] = useState(false)
 
   const handleEmoji = (emoji: { emoji: string }) => {
     setMessage((msg) => msg + emoji.emoji)
   }
+  // console.log('message', message)
 
   const handleSendMessage = async () => {
-    console.log(message)
+    // console.log(message)
     // setMessage('')
+    if (selectedChatType === 'contact') {
+      socket?.emit('sendMessage', {
+        sender: userInfo?.id,
+        recipient: typeof selectedChatData === 'string' ? selectedChatData : selectedChatData?._id,
+        content: message,
+        messageType: 'text',
+        fileUrl: undefined,
+      })
+    }
   }
 
   useEffect(() => {
