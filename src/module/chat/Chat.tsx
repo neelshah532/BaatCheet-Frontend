@@ -18,7 +18,7 @@ const Chat = () => {
   }, [userInfo, navigate])
 
   return (
-    <div className="container-fluid h-[100vh] bg-[#0A0A0F] overflow-hidden ">
+    <div className="container-fluid h-[100vh] bg-[#0A0A0F] overflow-hidden flex flex-1 ">
       <div className="relative h-full w-full max-w-full">
         {/* Background gradient effect */}
         <div className="fixed inset-0 ">
@@ -38,9 +38,9 @@ const Chat = () => {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 h-full flex">
+        <div className="relative z-10 h-[100vh] flex overflow-hidden text-white">
           <ContactContainer />
-          <div className="flex-1">{selectedChatType === undefined ? <EmptyChatContainer /> : <ChatContainer />}</div>
+          {selectedChatType === undefined ? <EmptyChatContainer /> : <ChatContainer />}
         </div>
       </div>
     </div>

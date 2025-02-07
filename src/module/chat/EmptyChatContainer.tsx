@@ -38,7 +38,7 @@ import { motion } from 'framer-motion'
 
 const EmptyChatContainer = () => {
   return (
-    <div className="h-full bg-[#080810] backdrop-blur-xl md:flex items-center justify-center p-8 hidden">
+    <div className="h-full bg-[#080810] backdrop-blur-xl md:flex flex-1 items-center justify-center p-8 hidden duration-1000 transition-all">
       <div className="fixed inset-0 ">
         <div className="absolute inset-0 bg-[#080810]">
           <div className="absolute w-full h-full bg-[radial-gradient(ellipse_at_top,_#141420_0%,_#080810_100%)]" />

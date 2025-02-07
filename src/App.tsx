@@ -3,6 +3,8 @@ import './App.css'
 import Approutes from './routes/routes'
 import { useAppStore } from './store/store'
 import http from './services/http'
+import MainLoader from './common/MainLoader'
+import { handleError } from './common/HandleError'
 
 function App() {
   const { userInfo, setUserInfo } = useAppStore()
@@ -19,8 +21,8 @@ function App() {
           setUserInfo(undefined)
         }
       } catch (error) {
+        handleError(error)
         setUserInfo(undefined)
-        console.log(error)
       } finally {
         setLoading(false)
       }
@@ -34,12 +36,12 @@ function App() {
   }, [userInfo, setUserInfo, loading])
 
   if (loading) {
-    return <div>Loading...</div>
+    return <MainLoader />
   }
 
   return (
     <>
-      <Suspense fallback={null}>
+      <Suspense fallback={<MainLoader />}>
         <Approutes />
       </Suspense>
     </>

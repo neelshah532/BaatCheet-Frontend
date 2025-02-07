@@ -1,10 +1,13 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '../../../store/store'
 import moment from 'moment'
 import { Message } from '../../../types'
+import '../../../styles/CustomScroll.css'
+import CustomLoader from '../../../common/CustomLoader'
 
 const MessageContainer = () => {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
   const { selectedChatType, selectedChatData, selectedChatMessages } = useAppStore()
 
   const renderMessages = () => {
@@ -25,14 +28,30 @@ const MessageContainer = () => {
     <div className={`${message.sender === (typeof selectedChatData === 'object' && selectedChatData?._id) ? 'text-left' : 'text-right'}`}>
       {message.messageType === 'text' && (
         <div
-          className={`${message.sender !== (typeof selectedChatData === 'object' && selectedChatData?._id) ? 'bg[#8417ff]/5 text-[#8417ff]/90 border-[#8147ff]/50 ' : 'bg[#2a2b33]/5 text-white/80 border-[#ffffff]/20 '} border inline-block p-4 rounded my-1 max-w-[50%] break-words `}
+          className={`${
+            message.sender !== (typeof selectedChatData === 'object' && selectedChatData?._id)
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
+              : 'bg-[#1C1C24] text-gray-100 border border-white/[0.05] '
+          } border inline-block p-4 rounded my-1 max-w-[50%] break-words `}
         >
           {message.content}
         </div>
       )}
-      <div className="text-xs text-gray-600">{moment(message.timestamp).format('LT')}</div>
+      <div className={`text-xs mt-1 ${message.sender !== (typeof selectedChatData === 'object' && selectedChatData?._id) ? 'text-white/70' : 'text-gray-400'}`}>
+        {moment(message.timestamp).format('LT')}
+      </div>
     </div>
   )
+
+  useEffect(() => {
+    // Simulate initial loading
+    setIsLoading(true)
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [selectedChatData])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -40,10 +59,52 @@ const MessageContainer = () => {
     }
   }, [selectedChatMessages])
 
+  // useEffect(() => {
+  //   // Show loading when new messages are being added
+  //   if (selectedChatMessages.length > 0) {
+  //     // setLoadingNewMessages(true)
+  //     const timer = setTimeout(() => {
+  //       // setLoadingNewMessages(false)
+  //       scrollToBottom()
+  //     }, 300)
+
+  //     return () => clearTimeout(timer)
+  //   }
+  // }, [selectedChatMessages.length])
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <CustomLoader type="default" message="Loading conversation..." />
+      </div>
+    )
+  }
+
+  if (selectedChatMessages.length === 0) {
+    return <div className="flex-1 flex items-center justify-center text-gray-400">No messages yet. Start a conversation!</div>
+  }
+
   return (
-    <div className="flex-1 overflow-y-auto scrollbar-hidden p-4 px-8 md:w-[65vw] lg:w-[70vw] xl:w-[80vw] w-full">
-      {renderMessages()}
-      <div ref={scrollRef} />
+    <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="h-full p-6 space-y-6">
+        {/* Date Separator */}
+        {selectedChatMessages.map((message, index) => {
+          const messageDate = moment(message.timestamp).format('LL')
+          const showDate = index === 0 || messageDate !== moment(selectedChatMessages[index - 1].timestamp).format('LL')
+
+          return (
+            <div key={index} className="space-y-4">
+              {showDate && (
+                <div className="flex items-center justify-center">
+                  <div className="px-4 py-2 rounded-full bg-[#1C1C24] text-gray-400 text-xs">{messageDate}</div>
+                </div>
+              )}
+              {renderMessages()}
+            </div>
+          )
+        })}
+        <div ref={scrollRef} />
+      </div>
     </div>
   )
 }
