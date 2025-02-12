@@ -20,7 +20,7 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       })
 
       const handleReceiveMessage = (message: Message) => {
-        const { selectedChatData, selectedChatType, addMessage } = useAppStore.getState()
+        const { selectedChatData, selectedChatType, addMessage, addContactInContactList } = useAppStore.getState()
         if (
           selectedChatType !== undefined ||
           (typeof selectedChatData !== 'string' &&
@@ -29,9 +29,23 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
           console.log('Received Message:', message)
           addMessage(message)
         }
+        addContactInContactList(message)
+      }
+
+      const handleReceiveChannelMessage = (message: Message) => {
+        const { selectedChatData, selectedChatType, addMessage, addChannelinChannelList } = useAppStore.getState()
+
+        if (typeof selectedChatData !== 'string' && selectedChatType !== undefined && selectedChatData?._id === message.channelId) {
+          console.log('Received Channel Message:', message)
+          addMessage(message)
+        }
+        if (message._id && message.channelId) {
+          addChannelinChannelList({ _id: message._id, channelId: message.channelId })
+        }
       }
 
       socket.current?.on('recieveMessage', handleReceiveMessage)
+      socket.current?.on('recieveChannelMessage', handleReceiveChannelMessage)
 
       return () => {
         socket.current?.disconnect()

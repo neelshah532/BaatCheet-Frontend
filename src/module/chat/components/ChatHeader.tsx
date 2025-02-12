@@ -21,18 +21,29 @@ const ChatHeader = () => {
         <div className="flex items-center gap-4">
           {/* Profile Image/Avatar */}
           <div className="relative">
-            <div className="relative w-12 h-12 rounded-full overflow-hidden ">
-              {typeof selectedChatData !== 'string' && selectedChatData?.image ? (
-                <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold text-white" style={{ backgroundColor: colors[colorIndex] }}>
-                  <img src={`${import.meta.env.VITE_LOCAL_HOST}/${selectedChatData.image}`} alt="Profile Preview" className="w-10 h-10 rounded-full object-cover" />
-                </div>
+            <div className="w-12 h-12 rounded-full overflow-hidden ">
+              {selectedChatType === 'contact' ? (
+                <>
+                  {typeof selectedChatData !== 'string' && selectedChatData?.image ? (
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold text-white" style={{ backgroundColor: colors[colorIndex] }}>
+                      <img src={`${import.meta.env.VITE_LOCAL_HOST}/${selectedChatData.image}`} alt="Profile Preview" className="w-10 h-10 rounded-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-lg font-bold text-white" style={{ backgroundColor: colors[colorIndex] }}>
+                      {typeof selectedChatData !== 'string' && selectedChatData?.firstName && selectedChatData?.lastName
+                        ? `${selectedChatData.firstName[0]}${selectedChatData.lastName[0]}`.toUpperCase()
+                        : '?'}
+                    </div>
+                  )}
+                </>
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-lg font-bold text-white" style={{ backgroundColor: colors[colorIndex] }}>
-                  {typeof selectedChatData !== 'string' && selectedChatData?.firstName && selectedChatData?.lastName
-                    ? `${selectedChatData.firstName[0]}${selectedChatData.lastName[0]}`.toUpperCase()
-                    : '?'}
-                </div>
+                <>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold text-white" style={{ backgroundColor: colors[colorIndex] }}>
+                    #
+                  </div>
+                </>
               )}
+
               {/* Online status indicator */}
               <div className="absolute bottom-1 right-0 w-3 h-3 bg-green-500 rounded-full border-[1.5px] border-[#13131A]" />
             </div>
@@ -41,6 +52,7 @@ const ChatHeader = () => {
           {/* User Info */}
           <div>
             <h2 className="text-white font-semibold">
+              {selectedChatType === 'channel' && typeof selectedChatData !== 'string' && selectedChatData?.name}
               {selectedChatType === 'contact' && typeof selectedChatData !== 'string' && selectedChatData?.firstName
                 ? `${selectedChatData?.firstName} ${selectedChatData?.lastName}`
                 : typeof selectedChatData !== 'string' && selectedChatData?.email}

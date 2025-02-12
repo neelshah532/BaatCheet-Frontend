@@ -56,37 +56,80 @@
 
 // export default ContactContainer
 
+import { useCallback, useEffect, useState } from 'react'
 import victory from '../../assets/Victoryicon.svg'
 import DirectMessage from './components/DirectMessage'
 import ProfileInfo from './components/ProfileInfo'
+import http from '../../services/http'
+import { useAppStore } from '../../store/store'
+import '../../styles/CustomScroll.css'
+import ContactList from '../../common/ContactList'
+import CreateChannel from './components/CreateChannel'
+import { handleError } from '../../common/HandleError'
+import CustomLoader from '../../common/CustomLoader'
 
 const Title = ({ text }: { text: string }) => {
   return <h6 className="uppercase tracking-widest text-neutral-400 pl-10 font-light text-opacity-90 text-sm">{text}</h6>
 }
 
 const ContactContainer = () => {
+  const { directContactMessages, setDirectContactMessages, channels, setChannels } = useAppStore()
+  const [isLoading, setIsLoading] = useState(false)
+
+  const getContacts = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const response = await http.get('/api/contacts/get-contact-for-dm', { withCredentials: true })
+      if (response?.data?.contacts) {
+        setDirectContactMessages(response?.data?.contacts)
+      }
+    } catch (error) {
+      handleError(error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [setDirectContactMessages])
+
+  const getChannels = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const response = await http.get('/api/channel/get-channels', { withCredentials: true })
+      if (response?.data?.channels) {
+        console.log('channel data', response?.data?.channels)
+        setChannels(response?.data?.channels)
+      }
+    } catch (error) {
+      handleError(error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [setChannels])
+
+  useEffect(() => {
+    getChannels()
+    getContacts()
+  }, [getContacts, getChannels])
+
+  if (isLoading === true && !directContactMessages && !channels) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <CustomLoader type="default" message="Loading conversation..." />
+      </div>
+    )
+  }
+
   return (
     <div
       className="relative md:w-[35vw] lg:w-[30vw] xl:w-[20vw] 
    border-r border-white/[0.05] 
   shadow-lg shadow-black/10 w-full"
     >
-      {/* <div className="pt-3">
-        <img src={victory} alt="" width={78} height={32} />
-      </div>
-      <div className="my-5">
-        <div className="flex items-center justify-between pr-10">
-          <Title text="Direct Message" />
-        </div>
-      </div> */}
       <div className="h-16 px-6 flex items-center justify-between border-b border-white/[0.05]">
         <div className="flex items-center gap-3">
           <img src={victory} alt="logo" className="h-8 w-8" />
           <h1 className="text-lg font-semibold text-white">ChatApp</h1>
         </div>
       </div>
-
-      {/* Sections */}
       <div className="px-4 py-6 space-y-6 ">
         {/* Direct Messages */}
         <div>
@@ -96,17 +139,26 @@ const ContactContainer = () => {
             </h2>
             <DirectMessage />
           </div>
-          {/* Contact list would go here */}
+          <div className=" max-h-[38vh] overflow-auto custom-scrollbar">
+            {isLoading === true && <CustomLoader type="search" message="Searching contacts..." />}
+            {directContactMessages.length === 0 && <div className="flex flex-col justify-center items-center mt-5 text-white text-opacity-80 text-center"> no contacts found</div>}
+            <ContactList contacts={directContactMessages} />
+          </div>
         </div>
 
         {/* Channels */}
         <div>
-          <div className="flex items-center justify-between px-2 mb-4 custom-scrollbar">
-            <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
-              <Title text="Channels" />
+          <div className="flex items-center justify-between px-2 mb-4 custom-scrollbar ">
+            <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider ">
+              <Title text="Create Channel" />
             </h2>
+            <CreateChannel />
           </div>
-          {/* Channel list would go here */}
+          <div className=" max-h-[38vh] overflow-auto custom-scrollbar">
+            {isLoading && <CustomLoader type="search" message="Searching Channel..." />}
+            <ContactList contacts={channels} isChannel={true} />
+          </div>
+          {/* Contact list would go here */}
         </div>
       </div>
 

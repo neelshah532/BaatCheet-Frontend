@@ -89,12 +89,12 @@ const DirectMessage: React.FC = () => {
     if (contacts.length > 0) {
       return (
         <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-6">
             {contacts.map((contact) => (
               <div
                 key={contact._id}
                 className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/[0.05] 
-                cursor-pointer transition-colors duration-200 text-white"
+                        cursor-pointer transition-colors duration-200 text-white"
                 onClick={() => selectNewContact(contact)}
               >
                 <div className="relative w-12 h-12">
@@ -108,7 +108,7 @@ const DirectMessage: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <div className="flex flex-col">
+                <div className="flex flex-col text-center">
                   <span>{contact.firstName && contact.lastName ? `${contact.firstName}${' '}${contact.lastName}`.toUpperCase() : '?'}</span>
                   <span className="text-xs text-white">{contact.email}</span>
                 </div>
@@ -159,8 +159,8 @@ const DirectMessage: React.FC = () => {
           <div className="bg-[#0C0C14] border border-white/[0.05] rounded-2xl border-none p-5 max-h-[80vh] flex flex-col w-[400px] h-[400px]">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-white text-lg font-semibold">Please Select New Contact</h2>
-              <button className="p-2 rounded-lg bg-[#1C1C24] hover:bg-[#2C2C3A] hover:bg-white/[0.05] transition-colors duration-200" onClick={() => setOpenNewContactModal(false)}>
-                <IoClose className="text-gray-400 hover:text-white transition-colors duration-200 font-bold text-lg" />
+              <button className="p-2 rounded-lg bg-[#1C1C24] group hover:bg-[#2C2C3A]/70 transition-colors duration-200" onClick={() => setOpenNewContactModal(false)}>
+                <IoClose className="text-gray-400 group-hover:text-white transition-colors duration-200 font-bold text-lg" />
               </button>
             </div>
             <input

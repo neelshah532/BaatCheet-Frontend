@@ -1,9 +1,9 @@
 import { Suspense, useEffect, useState } from 'react'
 import './App.css'
 import Approutes from './routes/routes'
+import MainLoader from './common/MainLoader'
 import { useAppStore } from './store/store'
 import http from './services/http'
-import MainLoader from './common/MainLoader'
 import { handleError } from './common/HandleError'
 
 function App() {
@@ -33,11 +33,9 @@ function App() {
     } else {
       setLoading(false)
     }
-  }, [userInfo, setUserInfo, loading])
+  }, [userInfo, setUserInfo])
 
-  if (loading) {
-    return <MainLoader />
-  }
+  if (loading) return <MainLoader />
 
   return (
     <>
