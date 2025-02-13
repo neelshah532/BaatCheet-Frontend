@@ -72,7 +72,7 @@ const Login = () => {
         // console.log('its a signup ')
       }
       if (activeTab === 0 && response.data?.user?.id) {
-        if (response.data?.user?.profileSetup) navigate('/chat')
+        if (response.data?.user?.profileSetup) navigate('/')
         else navigate('/profile')
       }
       // navigate('/chat')

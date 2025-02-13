@@ -1,9 +1,10 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 import Auth from '../module/auth/Auth'
 import Chat from '../module/chat/Chat'
 import Profile from '../module/Profile/Profile'
 import PublicRoutes from './PublicRoutes'
 import PrivateRoutes from './PrivateRoutes'
+import { NotFound } from '../module/error/NotFound'
 
 const Approutes = () => {
   return (
@@ -14,9 +15,9 @@ const Approutes = () => {
       </Route>
       <Route element={<PrivateRoutes />}>
         <Route path="/profile" element={<Profile />} />
-        <Route path="/chat" element={<Chat />} />
+        <Route path="/" element={<Chat />} />
       </Route>
-      <Route path="*" element={<Navigate to="/login" />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   )
 }

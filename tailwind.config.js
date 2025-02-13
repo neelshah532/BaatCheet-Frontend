@@ -24,6 +24,7 @@ export default {
                 'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
                 'tab-slide': 'tab-slide 0.3s ease-out forwards',
                 'blob': 'blob 10s infinite cubic-bezier(0.4, 0, 0.2, 1)',
+                'slide-up': 'slideUp 0.3s ease-out forwards',
             },
             keyframes: {
                 'pulse-glow': {
@@ -33,6 +34,10 @@ export default {
                 'tab-slide': {
                     from: { transform: 'scaleX(0)' },
                     to: { transform: 'scaleX(1)' },
+                },
+                slideUp: {
+                    '0%': { transform: 'translateY(100%)', opacity: '0' },
+                    '100%': { transform: 'translateY(0)', opacity: '1' },
                 },
                 'blob': {
                     '0%': { transform: 'translate(0px, 0px) scale(1)' },
