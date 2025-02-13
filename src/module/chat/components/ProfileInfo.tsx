@@ -20,7 +20,7 @@ const ProfileInfo = () => {
   const handleLogout = async () => {
     try {
       const response = await http.post('/api/auth/logout', {}, { withCredentials: true })
-      console.log(response)
+      // console.log(response)
       toast.success(response.data.message)
       navigate('/login')
       setUserInfo(undefined)
@@ -37,8 +37,8 @@ const ProfileInfo = () => {
     }
   }, [userInfo])
 
-  console.log('Image:', imagePreview)
-  console.log('User:', userInfo)
+  // console.log('Image:', imagePreview)
+  // console.log('User:', userInfo)
 
   return (
     <div className="absolute bottom-0 h-16 flex  items-center justify-between px-8 w-full border-t border-white/[0.05] bg-[#0C0C14]">

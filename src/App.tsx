@@ -1,8 +1,10 @@
 import { Suspense, useEffect, useState } from 'react'
 import './App.css'
 import Approutes from './routes/routes'
+import MainLoader from './common/MainLoader'
 import { useAppStore } from './store/store'
 import http from './services/http'
+import { handleError } from './common/HandleError'
 
 function App() {
   const { userInfo, setUserInfo } = useAppStore()
@@ -19,8 +21,8 @@ function App() {
           setUserInfo(undefined)
         }
       } catch (error) {
+        handleError(error)
         setUserInfo(undefined)
-        console.log(error)
       } finally {
         setLoading(false)
       }
@@ -31,15 +33,13 @@ function App() {
     } else {
       setLoading(false)
     }
-  }, [userInfo, setUserInfo, loading])
+  }, [userInfo, setUserInfo])
 
-  if (loading) {
-    return <div>Loading...</div>
-  }
+  if (loading) return <MainLoader />
 
   return (
     <>
-      <Suspense fallback={null}>
+      <Suspense fallback={<MainLoader />}>
         <Approutes />
       </Suspense>
     </>

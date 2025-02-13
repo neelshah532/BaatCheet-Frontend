@@ -2,11 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 // import victory from '../../assets/Victoryicon.svg'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
-import axios, { AxiosError } from 'axios'
-
 import '../styles/Login.css'
 import { LOGIN_STRINGS, LOGIN_TABS } from '../constants/constant'
 import http from '../services/http'
+import { handleError } from '../common/HandleError'
 
 const Login = () => {
   const navigate = useNavigate()
@@ -57,24 +56,6 @@ const Login = () => {
       }
     }
     return true
-  }
-  const handleError = (error: Error) => {
-    if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError<{
-        status: number
-        message: string
-      }>
-      if (axiosError.response) {
-        console.log('Response Error', axiosError.response)
-        // toast.error(axiosError.response.data.message)
-        toast.error(error.response?.data?.message)
-      } else if (axiosError.request) {
-        console.log('Request Error', axiosError.request)
-      } else {
-        console.log('Error', axiosError.message)
-      }
-    }
-    // toast.error(error.response?.data?.message || 'Something went wrong')
   }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

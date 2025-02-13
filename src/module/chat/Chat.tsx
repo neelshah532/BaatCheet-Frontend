@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { useAppStore } from '../../store/store'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -7,7 +7,7 @@ import EmptyChatContainer from './EmptyChatContainer'
 import ChatContainer from './ChatContainer'
 
 const Chat = () => {
-  const { userInfo, selectedChatType } = useAppStore()
+  const { isUploading, isDownloading, fileUploadProgress, fileDownloadProgress, userInfo, selectedChatType } = useAppStore()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -18,7 +18,7 @@ const Chat = () => {
   }, [userInfo, navigate])
 
   return (
-    <div className="container-fluid h-[100vh] bg-[#0A0A0F] overflow-hidden ">
+    <div className="container-fluid h-[100vh] bg-[#0A0A0F] overflow-hidden flex flex-1 ">
       <div className="relative h-full w-full max-w-full">
         {/* Background gradient effect */}
         <div className="fixed inset-0 ">
@@ -38,9 +38,21 @@ const Chat = () => {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 h-full flex">
+        <div className="relative z-10 h-[100vh] flex overflow-hidden text-white">
+          {isUploading && (
+            <div className="h-[100vh] w-[100vw] fixed top-20 z-20 left-0 bg-black/80 flex items-center justify-center flex-col gap-5 backdrop-blur-lg">
+              <h5 className="text-5xl animate-pulse"> uploading file</h5>
+              {fileUploadProgress}%
+            </div>
+          )}
+          {isDownloading && (
+            <div className="h-[100vh] w-[100vw] fixed top-0 z-20 left-0 bg-black/80 flex items-center justify-center flex-col gap-5 backdrop-blur-lg">
+              <h5 className="text-5xl animate-pulse"> Downloading file</h5>
+              {fileDownloadProgress}%
+            </div>
+          )}
           <ContactContainer />
-          <div className="flex-1">{selectedChatType === undefined ? <EmptyChatContainer /> : <ChatContainer />}</div>
+          {selectedChatType === undefined ? <EmptyChatContainer /> : <ChatContainer />}
         </div>
       </div>
     </div>
