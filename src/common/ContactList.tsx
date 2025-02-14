@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAppStore } from '../store/store'
 import { colors } from '../constants/color'
 import { Contact } from '../types'
@@ -10,15 +10,17 @@ const ContactList = ({ contacts, isChannel = false }: { contacts: Contact[] | st
   const { selectedChatData, setSelectedChatData, setSelectedChatType, setSelectedChatMessages } = useAppStore()
   const [colorIndex, setColorIndex] = useState<number>(0)
 
-  const handleClick = (contact: Contact) => {
-    if (isChannel) setSelectedChatType('channel')
-    else setSelectedChatType('contact')
-    setSelectedChatData(contact)
-    if (selectedChatData && typeof selectedChatData === 'object' && selectedChatData?._id !== contact._id) {
-      setSelectedChatMessages([])
-    }
-  }
-  console.log('contacts', contacts)
+  const handleClick = useCallback(
+    (contact: Contact) => {
+      if (isChannel) setSelectedChatType('channel')
+      else setSelectedChatType('contact')
+      setSelectedChatData(contact)
+      if (selectedChatData && typeof selectedChatData === 'object' && selectedChatData?._id !== contact._id) {
+        setSelectedChatMessages([])
+      }
+    },
+    [isChannel, selectedChatData, setSelectedChatData, setSelectedChatMessages, setSelectedChatType]
+  )
   useEffect(() => {
     if (typeof selectedChatData !== 'string' && selectedChatData?.color) {
       setColorIndex(typeof selectedChatData.color === 'number' ? selectedChatData.color : 0)

@@ -8,7 +8,7 @@ import { MdFolder } from 'react-icons/md'
 import { IoMdArrowRoundDown } from 'react-icons/io'
 import { IoCloseCircleSharp } from 'react-icons/io5'
 import { colors } from '../../../constants/color'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { handleError } from '../../../common/HandleError'
 import CustomLoader from '../../../common/CustomLoader'
 
@@ -17,7 +17,6 @@ const MessageContainer = () => {
   const { selectedChatType, selectedChatData, selectedChatMessages, userInfo, isDownloading, setIsDownloading, setFileDownloadProgress, setSelectedChatMessages } = useAppStore()
   const [showImage, setShowImage] = useState(false)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [downloadProgress, setDownloadProgress] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [isLoadingNewMessages, setIsLoadingNewMessages] = useState<boolean>(false)
 
@@ -120,35 +119,11 @@ const MessageContainer = () => {
     return imageRegex.test(filePath)
   }
 
-  const DownloadProgress = ({ progress, fileName }: { progress: number; fileName: string }) => (
-    <AnimatePresence>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="fixed bottom-4 right-4 z-50 w-[90vw] max-w-md">
-        <div className="bg-gray-900/95 backdrop-blur-lg border border-white/10 rounded-xl p-4 shadow-2xl">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="animate-pulse">
-                <div className="w-2 h-2 bg-blue-500 rounded-full" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-white/90 text-sm font-medium">Downloading {fileName.split('/').pop()}</span>
-                <span className="text-white/60 text-xs">{progress}% completed</span>
-              </div>
-            </div>
-          </div>
-          <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
-            <motion.div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500" initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
-          </div>
-        </div>
-      </motion.div>
-    </AnimatePresence>
-  )
-
   const downloadFile = async (url: string) => {
     if (isDownloading) return
 
     try {
       setIsDownloading(true)
-      setDownloadProgress(0)
       setFileDownloadProgress(0)
 
       const response = await http.get(`${import.meta.env.VITE_LOCAL_HOST}/${url}`, {
@@ -156,7 +131,6 @@ const MessageContainer = () => {
         onDownloadProgress: (progressEvent) => {
           const { loaded, total } = progressEvent
           const progress = Math.round((loaded * 100) / (total ?? 0))
-          setDownloadProgress(progress)
           setFileDownloadProgress(progress)
         },
       })
@@ -174,10 +148,8 @@ const MessageContainer = () => {
 
       window.URL.revokeObjectURL(downloadUrl)
 
-      // Show 100% completion briefly before resetting
       setTimeout(() => {
         setIsDownloading(false)
-        setDownloadProgress(0)
         setFileDownloadProgress(0)
       }, 500)
     } catch (error) {
@@ -200,9 +172,7 @@ const MessageContainer = () => {
           </div>
         )}
         {message.messageType === 'file' && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+          <div
             className={`${
               message.sender !== (typeof selectedChatData === 'object' && selectedChatData?._id)
                 ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
@@ -227,11 +197,7 @@ const MessageContainer = () => {
                 />
               </motion.div>
             ) : (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="group flex flex-col items-center gap-4 p-3 rounded-xl  transition-all duration-300"
-              >
+              <div className="group flex flex-col items-center gap-4 p-3 rounded-xl ">
                 <div className="flex items-center gap-3 flex-1 min-w-0 max-lg:flex-col  ">
                   <span className="text-white/80 text-2xl bg-black/20 rounded-full p-3">
                     <MdFolder />
@@ -250,9 +216,9 @@ const MessageContainer = () => {
                   <IoMdArrowRoundDown className="text-lg" />
                   <span className="text-sm font-medium">Download</span>
                 </motion.button>
-              </motion.div>
+              </div>
             )}
-          </motion.div>
+          </div>
         )}
         <div className={`text-xs mt-1 ${message.sender !== (typeof selectedChatData === 'object' && selectedChatData?._id) ? 'text-white/70' : 'text-gray-400'}`}>
           {moment(message.timestamp).format('LT')}
@@ -329,7 +295,7 @@ const MessageContainer = () => {
     return <div className="flex-1 flex items-center justify-center text-gray-400">No messages yet. Start a conversation!</div>
   }
   const ImageViewer = ({ imageUrl, onClose, onDownload }: { imageUrl: string; onClose: () => void; onDownload: () => void }) => (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-30 bg-black/90 backdrop-blur-lg">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-2 z-20 bg-black/90 backdrop-blur-lg">
       <div className="absolute top-4 right-4 flex gap-2">
         <motion.button
           whileHover={{ scale: 1.05 }}
@@ -359,7 +325,6 @@ const MessageContainer = () => {
       <div className="h-full p-6 space-y-6">
         {showImage && imageUrl && (
           <div>
-            {isDownloading && <DownloadProgress progress={downloadProgress} fileName={imageUrl} />}
             <ImageViewer
               imageUrl={imageUrl}
               onClose={() => {
