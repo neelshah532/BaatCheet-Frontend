@@ -68,23 +68,17 @@ const Auth = () => {
     try {
       const endpoint = activeTab === 0 ? '/api/auth/login' : '/api/auth/signup'
       const payload = { email, password }
-      // console.log(`${import.meta.env.VITE_LOCAL_HOST}`, payload)
       const response = await http.post(endpoint, payload, { withCredentials: true })
       toast.success(response.data?.message || 'Success')
       if (activeTab === 1 && response.status === 201) {
         setUserInfo(response.data?.user)
-        // console.log(response.data.user)
         navigate('/profile')
-        // console.log('its a signup ')
       }
       if (activeTab === 0 && response.data?.user?.id) {
         setUserInfo(response.data?.user)
-        // console.log(response.data.user)
-        if (response.data?.user?.profileSetup) navigate('/chat')
+        if (response.data?.user?.profileSetup) navigate('/')
         else navigate('/profile')
       }
-      // navigate('/chat')
-      // console.log(response.data)
     } catch (error) {
       handleError(error as Error)
     } finally {
