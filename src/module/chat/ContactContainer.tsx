@@ -106,8 +106,8 @@ const ContactContainer = () => {
   }, [setChannels])
 
   useEffect(() => {
-    getChannels()
-    getContacts()
+    void getChannels()
+    void getContacts()
   }, [getContacts, getChannels])
 
   if (isLoading === true && !directContactMessages && !channels) {

@@ -99,7 +99,7 @@ const Profile = () => {
         setUserInfo({ ...response.data })
 
         toast.success('Profile updated successfully')
-        navigate('/chat')
+        navigate('/')
       }
     } catch (error) {
       handleError(error)

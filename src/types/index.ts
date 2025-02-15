@@ -65,15 +65,15 @@ export interface ChatState {
   selectedChatMessages: Message[]
   directContactMessages: Contact[]
   isUploading: boolean
-  // isDownloading: boolean
+  isDownloading: boolean
   fileUploadProgress: number
-  // fileDownloadProgress: number
+  fileDownloadProgress: number
   channels: Contact[]
   setChannels: (channels: Contact[]) => void
   setIsUploading: (isUploading: boolean) => void
-  // setIsDownloading: (isDownloading: boolean) => void
+  setIsDownloading: (isDownloading: boolean) => void
   setFileUploadProgress: (fileUploadProgress: number) => void
-  // setFileDownloadProgress: (fileDownloadProgress: number) => void
+  setFileDownloadProgress: (fileDownloadProgress: number) => void
   setSelectedChatType: (type?: string) => void
   setSelectedChatData: (data?: string | Contact) => void
   setSelectedChatMessages: (messages: Message[]) => void

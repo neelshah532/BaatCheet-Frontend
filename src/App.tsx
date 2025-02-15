@@ -5,35 +5,43 @@ import MainLoader from './common/MainLoader'
 import { useAppStore } from './store/store'
 import http from './services/http'
 import { handleError } from './common/HandleError'
+import { useNavigate } from 'react-router-dom'
 
 function App() {
   const { userInfo, setUserInfo } = useAppStore()
   const [loading, setLoading] = useState(true)
-
+  const navigate = useNavigate()
   useEffect(() => {
     const getUserData = async () => {
       try {
         const response = await http.get('/api/auth/userInfo', { withCredentials: true })
-        // console.log(response.data)
         if (response.status === 200 && response.data.id) {
           setUserInfo(response.data)
         } else {
           setUserInfo(undefined)
+          navigate('/login')
         }
       } catch (error) {
         handleError(error)
         setUserInfo(undefined)
+        navigate('/login')
       } finally {
         setLoading(false)
       }
     }
 
-    if (!userInfo) {
+    // Check if there's a token in cookies/localStorage to determine if user was previously logged in
+    const token = document.cookie.includes('jwt')
+
+    if (token && !userInfo) {
       getUserData()
     } else {
       setLoading(false)
+      if (!token) {
+        navigate('/login')
+      }
     }
-  }, [userInfo, setUserInfo])
+  }, [userInfo, setUserInfo, navigate])
 
   if (loading) return <MainLoader />
 
