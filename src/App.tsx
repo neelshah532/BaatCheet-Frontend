@@ -33,11 +33,11 @@ function App() {
     // Check if there's a token in cookies/localStorage to determine if user was previously logged in
     const token = document.cookie.includes('jwt')
 
-    if (token && !userInfo) {
+    if (token) {
       getUserData()
     } else {
       setLoading(false)
-      if (!token) {
+      if (!token && !userInfo) {
         navigate('/login')
       }
     }
