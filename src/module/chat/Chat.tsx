@@ -8,10 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { FiUploadCloud, FiDownloadCloud, FiX } from 'react-icons/fi'
 
 const Chat = () => {
-  const { 
-    isUploading, isDownloading, fileUploadProgress, fileDownloadProgress, 
-    userInfo, selectedChatType, setIsUploading, setIsDownloading 
-  } = useAppStore()
+  const { isUploading, isDownloading, fileUploadProgress, fileDownloadProgress, userInfo, selectedChatType, setIsUploading, setIsDownloading } = useAppStore()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -22,7 +19,7 @@ const Chat = () => {
 
   const ProgressIndicator = ({ type, progress, onCancel }: { type: 'upload' | 'download'; progress: number; onCancel: () => void }) => (
     <AnimatePresence>
-      <motion.div 
+      <motion.div
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 50, opacity: 0 }}
@@ -35,17 +32,11 @@ const Chat = () => {
                 {type === 'upload' ? <FiUploadCloud className="w-5 h-5 animate-bounce" /> : <FiDownloadCloud className="w-5 h-5 animate-bounce" />}
               </div>
               <div className="flex flex-col">
-                <span className="text-white/90 text-sm font-semibold tracking-wide">
-                  {type === 'upload' ? 'Uploading File...' : 'Downloading File...'}
-                </span>
+                <span className="text-white/90 text-sm font-semibold tracking-wide">{type === 'upload' ? 'Uploading File...' : 'Downloading File...'}</span>
                 <span className="text-white/50 text-xs font-mono">{progress}% completed</span>
               </div>
             </div>
-            <button 
-              onClick={onCancel} 
-              className="p-1.5 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-              aria-label="Cancel progress"
-            >
+            <button onClick={onCancel} className="p-1.5 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors" aria-label="Cancel progress">
               <FiX className="w-4 h-4" />
             </button>
           </div>
@@ -69,7 +60,7 @@ const Chat = () => {
       <div className="relative z-10 h-full w-full flex flex-1 overflow-hidden text-white">
         {isUploading && <ProgressIndicator type="upload" progress={fileUploadProgress} onCancel={() => setIsUploading(false)} />}
         {isDownloading && <ProgressIndicator type="download" progress={fileDownloadProgress} onCancel={() => setIsDownloading(false)} />}
-        
+
         <ContactContainer />
         {selectedChatType === undefined ? <EmptyChatContainer /> : <ChatContainer />}
       </div>

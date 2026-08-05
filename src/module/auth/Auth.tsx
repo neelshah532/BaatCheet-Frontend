@@ -77,7 +77,7 @@ const Auth = () => {
       const endpoint = activeTab === 0 ? '/api/auth/login' : '/api/auth/signup'
       const payload = { email, password }
       const response = await http.post(endpoint, payload, { withCredentials: true })
-      
+
       if (activeTab === 1 && response.status === 201) {
         toast.success(response.data?.message || 'Account created successfully! Please set up your profile.')
         setUserInfo(response.data?.user)
@@ -100,7 +100,7 @@ const Auth = () => {
       {/* Background Depth Effect */}
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_#1A1C24_0%,_#0B0C10_70%)] opacity-80" />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
@@ -110,13 +110,9 @@ const Auth = () => {
         <div className="mb-8 text-center flex flex-col items-center">
           <div className="inline-flex items-center gap-3 mb-3 px-4 py-2 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 shadow-xl">
             <img src={victory} alt="Logo" className="h-8 w-8" />
-            <h1 className="text-2xl font-bold text-white tracking-wide bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text">
-              {LOGIN_STRINGS.BAATCHEET}
-            </h1>
+            <h1 className="text-2xl font-bold text-white tracking-wide bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text">{LOGIN_STRINGS.BAATCHEET}</h1>
           </div>
-          <p className="text-white/50 text-sm font-light leading-relaxed max-w-xs">
-            {LOGIN_STRINGS.BAATCHEET_DESCRIPTION}
-          </p>
+          <p className="text-white/50 text-sm font-light leading-relaxed max-w-xs">{LOGIN_STRINGS.BAATCHEET_DESCRIPTION}</p>
         </div>
 
         {/* Card */}
@@ -137,7 +133,7 @@ const Auth = () => {
                     <motion.div
                       layoutId="activeTabBg"
                       className="absolute inset-0 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-xl shadow-lg -z-10"
-                      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                     />
                   )}
                 </button>
@@ -174,11 +170,7 @@ const Auth = () => {
                   placeholder="••••••••"
                   className="w-full pl-11 pr-11 py-3 bg-white/[0.04] rounded-xl border border-white/10 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-sans"
                 />
-                <button 
-                  type="button" 
-                  onClick={() => setIsVisible(!isVisible)} 
-                  className="absolute right-4 text-white/40 hover:text-white transition-colors"
-                >
+                <button type="button" onClick={() => setIsVisible(!isVisible)} className="absolute right-4 text-white/40 hover:text-white transition-colors">
                   {isVisible ? <FiEyeOff className="text-base" /> : <FiEye className="text-base" />}
                 </button>
               </div>
@@ -187,12 +179,7 @@ const Auth = () => {
             {/* Confirm Password Field (Signup) */}
             <AnimatePresence>
               {activeTab === 1 && (
-                <motion.div 
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="space-y-1.5 overflow-hidden"
-                >
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="space-y-1.5 overflow-hidden">
                   <label className="text-xs font-medium text-white/60 pl-1">Confirm Password</label>
                   <div className="relative flex items-center">
                     <FiLock className="absolute left-4 text-white/40 text-base" />
@@ -203,11 +190,7 @@ const Auth = () => {
                       placeholder="••••••••"
                       className="w-full pl-11 pr-11 py-3 bg-white/[0.04] rounded-xl border border-white/10 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-sans"
                     />
-                    <button 
-                      type="button" 
-                      onClick={() => setConfirmIsVisible(!isConfirmVisible)} 
-                      className="absolute right-4 text-white/40 hover:text-white transition-colors"
-                    >
+                    <button type="button" onClick={() => setConfirmIsVisible(!isConfirmVisible)} className="absolute right-4 text-white/40 hover:text-white transition-colors">
                       {isConfirmVisible ? <FiEyeOff className="text-base" /> : <FiEye className="text-base" />}
                     </button>
                   </div>
@@ -216,11 +199,11 @@ const Auth = () => {
             </AnimatePresence>
 
             {/* Submit Button */}
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              type="submit" 
-              disabled={isLoading} 
+              type="submit"
+              disabled={isLoading}
               className="w-full mt-4 py-3.5 px-6 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 text-white font-semibold text-sm shadow-xl hover:shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
             >
               {isLoading ? (
@@ -236,20 +219,14 @@ const Auth = () => {
             {activeTab === 0 ? (
               <>
                 {LOGIN_STRINGS.NEW_TO_CHATAPP}{' '}
-                <button
-                  onClick={() => setActiveTab(1)}
-                  className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors ml-1"
-                >
+                <button onClick={() => setActiveTab(1)} className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors ml-1">
                   {LOGIN_STRINGS.CREATE_ACCOUNT}
                 </button>
               </>
             ) : (
               <>
                 {LOGIN_STRINGS.ALLREADY_HAVE_ACCOUNT}{' '}
-                <button
-                  onClick={() => setActiveTab(0)}
-                  className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors ml-1"
-                >
+                <button onClick={() => setActiveTab(0)} className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors ml-1">
                   {LOGIN_STRINGS.SIGNIN}
                 </button>
               </>
