@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useAppStore } from '../../store/store'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'sonner'
 import ContactContainer from './ContactContainer'
 import EmptyChatContainer from './EmptyChatContainer'
 import ChatContainer from './ChatContainer'
@@ -9,19 +8,21 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { FiUploadCloud, FiDownloadCloud, FiX } from 'react-icons/fi'
 
 const Chat = () => {
-  const { isUploading, isDownloading, fileUploadProgress, fileDownloadProgress, userInfo, selectedChatType, setIsUploading, setIsDownloading } = useAppStore()
+  const { 
+    isUploading, isDownloading, fileUploadProgress, fileDownloadProgress, 
+    userInfo, selectedChatType, setIsUploading, setIsDownloading 
+  } = useAppStore()
   const navigate = useNavigate()
 
   useEffect(() => {
     if (!userInfo?.profileSetup) {
-      toast.error('Please complete your profile setup')
       navigate('/profile')
     }
   }, [userInfo, navigate])
 
   const ProgressIndicator = ({ type, progress, onCancel }: { type: 'upload' | 'download'; progress: number; onCancel: () => void }) => (
     <AnimatePresence>
-      <motion.div
+      <motion.div 
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 50, opacity: 0 }}
@@ -34,11 +35,17 @@ const Chat = () => {
                 {type === 'upload' ? <FiUploadCloud className="w-5 h-5 animate-bounce" /> : <FiDownloadCloud className="w-5 h-5 animate-bounce" />}
               </div>
               <div className="flex flex-col">
-                <span className="text-white/90 text-sm font-semibold tracking-wide">{type === 'upload' ? 'Uploading File...' : 'Downloading File...'}</span>
+                <span className="text-white/90 text-sm font-semibold tracking-wide">
+                  {type === 'upload' ? 'Uploading File...' : 'Downloading File...'}
+                </span>
                 <span className="text-white/50 text-xs font-mono">{progress}% completed</span>
               </div>
             </div>
-            <button onClick={onCancel} className="p-1.5 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors" aria-label="Cancel progress">
+            <button 
+              onClick={onCancel} 
+              className="p-1.5 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              aria-label="Cancel progress"
+            >
               <FiX className="w-4 h-4" />
             </button>
           </div>
@@ -56,13 +63,13 @@ const Chat = () => {
 
   return (
     <div className="h-screen w-screen bg-[#0B0C10] overflow-hidden flex flex-1 font-sans selection:bg-indigo-500/30 selection:text-white">
-      {/* Subtle Noise / Depth background */}
+      {/* Subtle Depth Background */}
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,_#1A1C24_0%,_#0B0C10_60%)] opacity-80" />
 
       <div className="relative z-10 h-full w-full flex flex-1 overflow-hidden text-white">
         {isUploading && <ProgressIndicator type="upload" progress={fileUploadProgress} onCancel={() => setIsUploading(false)} />}
         {isDownloading && <ProgressIndicator type="download" progress={fileDownloadProgress} onCancel={() => setIsDownloading(false)} />}
-
+        
         <ContactContainer />
         {selectedChatType === undefined ? <EmptyChatContainer /> : <ChatContainer />}
       </div>
