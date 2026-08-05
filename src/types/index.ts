@@ -89,3 +89,50 @@ export interface ContactOption {
   label: string
   value: string
 }
+
+// WebRTC Call Types
+export interface CallUser {
+  id: string
+  firstName?: string
+  lastName?: string
+  email?: string
+  image?: string
+  color?: number
+  stream?: MediaStream
+  audio: boolean
+  video: boolean
+}
+
+export interface CallState {
+  isInCall: boolean
+  isCallInitiator: boolean
+  callType: 'video' | 'audio' | null
+  callUsers: CallUser[]
+  localStream: MediaStream | null
+  activeCallId: string | null
+  incomingCall: {
+    callId: string | null
+    caller: CallUser | null
+    callType: 'video' | 'audio' | null
+  }
+  isCallRinging: boolean
+
+  // Actions
+  startCall: (recipients: string[], callType: 'video' | 'audio') => Promise<boolean>
+  joinCall: (callId: string) => Promise<boolean>
+  endCall: () => void
+  rejectCall: (callId: string) => void
+  toggleAudio: (isEnabled: boolean) => void
+  toggleVideo: (isEnabled: boolean) => void
+  handleIncomingCall: (callData: { callId: string; caller: CallUser; callType: 'video' | 'audio' }) => void
+  resetCallState: () => void
+  addCallUser: (user: CallUser) => void
+  removeCallUser: (userId: string) => void
+  updateCallUser: (userId: string, updates: Partial<CallUser>) => void
+  setLocalStream: (stream: MediaStream | null) => void
+  setActiveCallId: (callId: string | null) => void
+  setIsCallRinging: (isRinging: boolean) => void
+}
+
+// Update AppStore type to include CallState
+export type AppStore = AuthState & ChatState & CallState

@@ -4,10 +4,10 @@ import { LOGIN_STRINGS, LOGIN_TABS } from '../../constants/constant'
 import http from '../../services/http'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
-
-import '../../styles/Login.css'
 import { useAppStore } from '../../store/store'
 import { handleError } from '../../common/HandleError'
+import { motion, AnimatePresence } from 'framer-motion'
+import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi'
 
 const Auth = () => {
   const { setUserInfo } = useAppStore()
@@ -19,11 +19,9 @@ const Auth = () => {
   const [email, setEmail] = useState<string>('')
   const [password, setPassword] = useState<string>('')
   const [confirmPassword, setConfirmPassword] = useState<string>('')
-  const [focusedInput, setFocusedInput] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
 
-  // Calculate tab width dynamically
   const calculateTabWidth = () => {
     if (tabRef.current) {
       const parentWidth = tabRef.current.getBoundingClientRect().width
@@ -31,7 +29,6 @@ const Auth = () => {
     }
   }
 
-  // Resize observer for tabs
   useEffect(() => {
     calculateTabWidth()
     window.addEventListener('resize', calculateTabWidth)
@@ -87,166 +84,144 @@ const Auth = () => {
   }
 
   return (
-    <div className="max-h-screen flex items-center justify-center p-4 relative overflow-hidden w-full max-w-screen">
-      <div className="fixed inset-0">
-        <div className="absolute inset-0 bg-[#080810]">
-          <div className="absolute w-full h-full bg-[radial-gradient(ellipse_at_top,_#141420_0%,_#080810_100%)]" />
-        </div>
-        <div className="absolute inset-0 overflow-hidden">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className={`absolute w-[600px] h-[600px] rounded-full 
-                ${i === 0 ? 'top-[-300px] left-[-200px] bg-blue-500/10' : i === 1 ? 'top-[-200px] right-[-250px] bg-purple-500/10' : 'bottom-[-300px] left-[20%] bg-indigo-500/10'} 
-                blur-[120px] animate-blob animation-delay-${i * 2000}`}
-            />
-          ))}
-        </div>
-      </div>
+    <div className="min-h-screen w-screen bg-[#0B0C10] flex items-center justify-center p-4 relative overflow-hidden font-sans select-none selection:bg-indigo-500/30 selection:text-white">
+      {/* Background Depth Effect */}
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_#1A1C24_0%,_#0B0C10_70%)] opacity-80" />
 
-      <div className="w-full max-w-[440px] relative z-10">
-        {/* Enhanced logo section with better visibility */}
-        <div className="mb-12 text-center">
-          <div className="inline-flex items-center gap-4 mb-5 p-3 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.05]">
-            <img src={victory} alt="Logo" className="h-12 w-12 animate-pulse-glow" />
-            <h1 className="text-4xl font-bold text-white tracking-tight">{LOGIN_STRINGS.BAATCHEET}</h1>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-[420px] relative z-10"
+      >
+        {/* Brand Header */}
+        <div className="mb-8 text-center flex flex-col items-center">
+          <div className="inline-flex items-center gap-3 mb-3 px-4 py-2 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 shadow-xl">
+            <img src={victory} alt="Logo" className="h-8 w-8" />
+            <h1 className="text-2xl font-bold text-white tracking-wide bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text">{LOGIN_STRINGS.BAATCHEET}</h1>
           </div>
-          <p className="text-gray-300 text-wrap text-base tracking-wide font-medium">{LOGIN_STRINGS.BAATCHEET_DESCRIPTION}</p>
+          <p className="text-white/50 text-sm font-light leading-relaxed max-w-xs">{LOGIN_STRINGS.BAATCHEET_DESCRIPTION}</p>
         </div>
 
-        <div className="relative group">
-          <div className="absolute -inset-[1px] bg-gradient-to-r from-blue-500/50 to-indigo-500/50 rounded-2xl blur-md opacity-40 group-hover:opacity-60 transition duration-500" />
-          <div className="relative bg-[#0C0C14]/95 backdrop-blur-xl rounded-2xl border border-white/[0.05]">
-            {/* Login tabs component is here */}
-            <div className="p-2 mx-5 mt-5 bg-[#15151F]/80 rounded-xl backdrop-blur-sm" ref={tabRef}>
-              <div className="relative flex">
-                {LOGIN_TABS.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    style={{ width: tabWidth }}
-                    className={`relative flex-1 py-3 text-[15px] font-semibold rounded-lg transition-all duration-300
-                      ${activeTab === tab.id ? 'text-white' : 'text-gray-500 hover:text-gray-400'}`}
-                  >
-                    {tab.name}
-                    {activeTab === tab.id && (
-                      <div
-                        style={{
-                          width: tabWidth - 8,
-                          transform: `translateX(${activeTab * tabWidth}px)`,
-                        }}
-                        className="absolute inset-0 bg-gradient-to-r from-blue-400/80 to-indigo-500/80 -z-10 rounded-lg 
-                        shadow-lg shadow-indigo-500/20 transition-all duration-300 animate-tab-slide"
-                      />
-                    )}
-                  </button>
-                ))}
-              </div>
+        {/* Card */}
+        <div className="bg-white/[0.02] backdrop-blur-2xl rounded-3xl border border-white/10 p-6 sm:p-8 shadow-2xl relative">
+          {/* Tab Switcher */}
+          <div className="p-1.5 bg-black/40 rounded-2xl border border-white/5 mb-6" ref={tabRef}>
+            <div className="relative flex">
+              {LOGIN_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{ width: tabWidth }}
+                  className={`relative flex-1 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 z-10
+                    ${activeTab === tab.id ? 'text-white font-semibold' : 'text-white/40 hover:text-white/70'}`}
+                >
+                  {tab.name}
+                  {activeTab === tab.id && (
+                    <motion.div
+                      layoutId="activeTabBg"
+                      className="absolute inset-0 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-xl shadow-lg -z-10"
+                      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                    />
+                  )}
+                </button>
+              ))}
             </div>
+          </div>
 
-            {/* form starting from here */}
-            <form onSubmit={handleSubmit} className="p-7 space-y-5">
-              <div className="space-y-4">
-                {[
-                  {
-                    type: 'email',
-                    value: email,
-                    onChange: setEmail,
-                    placeholder: 'Enter your email',
-                    icon: '📧',
-                  },
-                  {
-                    type: isVisible ? 'text' : 'password',
-                    value: password,
-                    onChange: setPassword,
-                    placeholder: 'Enter your password',
-                    icon: '🔒',
-                    toggleVisibility: () => setIsVisible(!isVisible),
-                  },
-                  ...(activeTab === 1
-                    ? [
-                        {
-                          type: isConfirmVisible ? 'text' : 'password',
-                          value: confirmPassword,
-                          onChange: setConfirmPassword,
-                          placeholder: 'Confirm your password',
-                          icon: '🔒',
-                          toggleVisibility: () => setConfirmIsVisible(!isConfirmVisible),
-                        },
-                      ]
-                    : []),
-                ].map((field, index) => (
-                  <div key={index} className="relative group/input">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-lg blur opacity-0 group-hover/input:opacity-100 transition-opacity duration-300" />
-                    <div className="relative flex items-center">
-                      <span className="absolute left-4 text-lg text-white/70">{field.icon}</span>
-                      <input
-                        type={field.type}
-                        value={field.value}
-                        onChange={(e) => field.onChange(e.target.value)}
-                        placeholder={field.placeholder}
-                        onFocus={() => setFocusedInput(index.toString())}
-                        onBlur={() => setFocusedInput(null)}
-                        className={`w-full pl-12 pr-${field.toggleVisibility ? '12' : '4'} py-4 
-                          bg-[#15151F]/50 rounded-lg border border-white/[0.05]
-                          text-[15px] text-white placeholder-gray-400 font-medium
-                          focus:outline-none focus:border-indigo-500/30 focus:ring-1 focus:ring-indigo-500/50
-                          transition-all duration-300 ${focusedInput === index.toString() ? 'scale-[1.02]' : ''}`}
-                      />
-                      {field.toggleVisibility && (
-                        <button type="button" onClick={field.toggleVisibility} className="absolute right-4 text-lg text-white/70 hover:text-white transition-colors duration-200">
-                          {field.type === 'text' ? '👁️' : '👁️‍🗨️'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Enhanced submit button */}
-              <button type="submit" disabled={isLoading} className="w-full relative group/button overflow-hidden rounded-lg mt-6">
-                <div
-                  className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-90 
-                  group-hover/button:opacity-100 transition-opacity duration-300"
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email Field */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-white/60 pl-1">Email Address</label>
+              <div className="relative flex items-center">
+                <FiMail className="absolute left-4 text-white/40 text-base" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full pl-11 pr-4 py-3 bg-white/[0.04] rounded-xl border border-white/10 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all"
                 />
-                <div className="relative px-6 py-4 flex items-center justify-center gap-3">
-                  {isLoading && <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                  <span className="text-[15px] text-white font-semibold tracking-wide">{activeTab === 0 ? 'Sign In' : 'Create Account'}</span>
-                </div>
-              </button>
-            </form>
-
-            {/* after the form direct access to creat new user */}
-            <div className="px-7 pb-7 text-center">
-              <p className="text-[15px] text-gray-300">
-                {activeTab === 0 ? (
-                  <>
-                    {LOGIN_STRINGS.NEW_TO_CHATAPP}{' '}
-                    <button
-                      onClick={() => setActiveTab(1)}
-                      className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors duration-200 
-                        hover:underline decoration-2 underline-offset-2"
-                    >
-                      {LOGIN_STRINGS.CREATE_ACCOUNT}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    {LOGIN_STRINGS.ALLREADY_HAVE_ACCOUNT}{' '}
-                    <button
-                      onClick={() => setActiveTab(0)}
-                      className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors duration-200 
-                        hover:underline decoration-2 underline-offset-2"
-                    >
-                      {LOGIN_STRINGS.SIGNIN}
-                    </button>
-                  </>
-                )}
-              </p>
+              </div>
             </div>
+
+            {/* Password Field */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-white/60 pl-1">Password</label>
+              <div className="relative flex items-center">
+                <FiLock className="absolute left-4 text-white/40 text-base" />
+                <input
+                  type={isVisible ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-11 pr-11 py-3 bg-white/[0.04] rounded-xl border border-white/10 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                />
+                <button type="button" onClick={() => setIsVisible(!isVisible)} className="absolute right-4 text-white/40 hover:text-white transition-colors">
+                  {isVisible ? <FiEyeOff className="text-base" /> : <FiEye className="text-base" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm Password Field (Signup) */}
+            <AnimatePresence>
+              {activeTab === 1 && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="space-y-1.5 overflow-hidden">
+                  <label className="text-xs font-medium text-white/60 pl-1">Confirm Password</label>
+                  <div className="relative flex items-center">
+                    <FiLock className="absolute left-4 text-white/40 text-base" />
+                    <input
+                      type={isConfirmVisible ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-11 pr-11 py-3 bg-white/[0.04] rounded-xl border border-white/10 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                    />
+                    <button type="button" onClick={() => setConfirmIsVisible(!isConfirmVisible)} className="absolute right-4 text-white/40 hover:text-white transition-colors">
+                      {isConfirmVisible ? <FiEyeOff className="text-base" /> : <FiEye className="text-base" />}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Submit Button */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              disabled={isLoading}
+              className="w-full mt-4 py-3.5 px-6 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 text-white font-semibold text-sm shadow-xl hover:shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <span>{activeTab === 0 ? 'Sign In' : 'Create Account'}</span>
+              )}
+            </motion.button>
+          </form>
+
+          {/* Footer toggle */}
+          <div className="mt-6 text-center text-xs text-white/50">
+            {activeTab === 0 ? (
+              <>
+                {LOGIN_STRINGS.NEW_TO_CHATAPP}{' '}
+                <button onClick={() => setActiveTab(1)} className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors ml-1">
+                  {LOGIN_STRINGS.CREATE_ACCOUNT}
+                </button>
+              </>
+            ) : (
+              <>
+                {LOGIN_STRINGS.ALLREADY_HAVE_ACCOUNT}{' '}
+                <button onClick={() => setActiveTab(0)} className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors ml-1">
+                  {LOGIN_STRINGS.SIGNIN}
+                </button>
+              </>
+            )}
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }

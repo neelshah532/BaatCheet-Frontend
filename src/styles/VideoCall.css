@@ -1,0 +1,41 @@
+/* Video call styles */
+.mirror {
+  transform: scaleX(-1);
+}
+
+/* Animation for the connecting spinner */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive grid for different numbers of participants */
+@media (min-width: 640px) {
+  .video-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .video-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .video-grid-4,
+  .video-grid-5,
+  .video-grid-6 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 639px) {
+  .video-grid-2,
+  .video-grid-3,
+  .video-grid-4,
+  .video-grid-5,
+  .video-grid-6 {
+    grid-template-columns: repeat(1, 1fr);
+  }
+}

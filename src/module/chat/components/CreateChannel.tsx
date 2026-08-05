@@ -10,6 +10,7 @@ import { IoClose } from 'react-icons/io5'
 import '../../../styles/CustomScroll.css'
 import CustomLoader from '../../../common/CustomLoader'
 import MultipleSelector from '../../../common/MultipleSelector'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const CreateChannel = () => {
   const { addChannels, userInfo } = useAppStore()
@@ -20,7 +21,6 @@ const CreateChannel = () => {
     selecting: false,
   })
 
-  // const [searchContact, setSearchContact] = useState<Contact[]>([])
   const [allContacts, setAllContacts] = useState<ContactOption[]>([])
   const [selectedContacts, setSelectedContacts] = useState<ContactOption[]>([])
   const [channelName, setChannelName] = useState<string>('')
@@ -34,10 +34,8 @@ const CreateChannel = () => {
   useEffect(() => {
     const getData = async () => {
       const response = await http.get('/api/contacts/get-all-contacts', { withCredentials: true })
-      console.log(response)
       setAllContacts(response?.data?.contacts ?? [])
     }
-
     getData()
   }, [])
 
@@ -46,27 +44,28 @@ const CreateChannel = () => {
     try {
       if (channelName.length > 0 && selectedContacts.length > 0) {
         const response = await http.post('/api/channel/create-channel', { name: channelName, members: selectedContacts.map((contact) => contact.value) }, { withCredentials: true })
-        console.log(response)
         if (response.status === 200) {
           setChannelName('')
           setSelectedContacts([])
           addChannels(response?.data?.channel)
           setNewChannelModal(false)
         }
-        setLoadingStates((prev) => ({ ...prev, selecting: false }))
       }
     } catch (error) {
       console.log(error)
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, selecting: false }))
     }
   }
 
+  /* PRESERVED LOTTIE ANIMATION GIF FROM ORIGINAL UI */
   const renderContactList = () => {
     if (loadingStates.searching) {
       return <CustomLoader type="search" message="Searching contacts..." />
     }
 
     return (
-      <div className="flex flex-col justify-center items-center mt-5 text-white text-opacity-80 text-center">
+      <div className="flex flex-col justify-center items-center py-4 text-center">
         <Lottie
           isClickToPauseDisabled={true}
           options={{
@@ -77,12 +76,12 @@ const CreateChannel = () => {
               preserveAspectRatio: 'xMidYMid slice',
             },
           }}
-          height={120}
-          width={120}
+          height={100}
+          width={100}
         />
-        <h3 className="poppins-thin mt-5">
-          Hi <span className="text-blue-500">👋</span> Search New Contact.
-        </h3>
+        <p className="text-xs font-medium text-white/60 mt-2">
+          Add members to build your channel <span className="text-indigo-400">🚀</span>
+        </p>
       </div>
     )
   }
@@ -94,53 +93,74 @@ const CreateChannel = () => {
   return (
     <div>
       <ToolTip content="Create A New Channel" direction="top">
-        <FaPlus
-          className="text-neutral-400 font-light text-opacity-90 text-start hover:text-neutral-100 cursor-pointer transition-all duration-300"
+        <button
           onClick={() => setNewChannelModal(true)}
-        />
+          className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all"
+        >
+          <FaPlus className="text-xs" />
+        </button>
       </ToolTip>
 
-      {newChannelModal && (
-        <div className="fixed inset-0 bg-black/10 backdrop-blur-sm bg-opacity-50 flex justify-center items-center z-20">
-          <div className="bg-[#0C0C14] border border-white/[0.05] rounded-2xl border-none p-5 max-h-[80vh] flex flex-col w-[600px] h-[600px] gap-3">
-            <div className="flex justify-between items-center  mb-3">
-              <h2 className="text-white text-lg font-semibold text-center w-full">Please fill up the details for new channel</h2>
-              <button className="p-2 rounded-lg bg-[#1C1C24] hover:bg-[#2C2C3A] hover:bg-white/[0.05] transition-colors duration-200" onClick={() => setNewChannelModal(false)}>
-                <IoClose className="text-gray-400 hover:text-white transition-colors duration-200 font-bold text-lg" />
-              </button>
-            </div>
-            <div>
-              <input
-                type="text"
-                placeholder="Channel Name"
-                className="w-full px-5 py-3.5 bg-[#1C1C24] rounded-lg border border-white/[0.05]
-                    text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500
-                    transition-all duration-300"
-                value={channelName}
-                onChange={(e) => setChannelName(e.target.value)}
-              />
-            </div>
-            <div>
-              <MultipleSelector
-                className="w-full"
-                defaultOption={allContacts}
-                placeholder="Select contacts for channel"
-                value={selectedContacts}
-                onChange={setSelectedContacts}
-                emptyIndicator={<p className="text-center text-gray-500">No contacts found matching your search</p>}
-              />
-            </div>
-            <div>
-              <button className="w-full bg-[#1C1C24] p-2 transition-all duration-300 hover:bg-white/[0.05]" onClick={createChannel}>
-                createChannel
-              </button>
-            </div>
-            <div className="mt-3 overflow-y-auto max-h-60 p-2 border-t border-neutral-700">
-              {loadingStates.selecting ? <CustomLoader type="default" message="Selecting contact..." /> : renderContactList()}
-            </div>
+      <AnimatePresence>
+        {newChannelModal && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="bg-[#0D0E12]/95 border border-white/10 rounded-3xl p-6 w-full max-w-lg shadow-2xl backdrop-blur-2xl flex flex-col gap-4"
+            >
+              <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                <h2 className="text-base font-bold text-white tracking-wide">Create New Channel</h2>
+                <button
+                  className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/5 transition-all"
+                  onClick={() => setNewChannelModal(false)}
+                >
+                  <IoClose className="text-lg" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-white/60 pl-1 mb-1 block">Channel Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Project Updates, General Chat"
+                    className="w-full px-4 py-3 bg-white/[0.04] rounded-2xl border border-white/10 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50 transition-all font-sans"
+                    value={channelName}
+                    onChange={(e) => setChannelName(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-white/60 pl-1 mb-1 block">Select Members</label>
+                  <MultipleSelector
+                    className="w-full bg-white/[0.04] border border-white/10 rounded-2xl text-sm"
+                    defaultOption={allContacts}
+                    placeholder="Search and select members..."
+                    value={selectedContacts}
+                    onChange={setSelectedContacts}
+                    emptyIndicator={<p className="text-center text-xs text-white/40 py-2">No contacts found</p>}
+                  />
+                </div>
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={createChannel}
+                disabled={!channelName.trim() || selectedContacts.length === 0 || loadingStates.selecting}
+                className="w-full py-3 px-6 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-semibold text-sm shadow-xl disabled:opacity-40 transition-all"
+              >
+                {loadingStates.selecting ? 'Creating Channel...' : 'Create Channel'}
+              </motion.button>
+
+              <div className="pt-2 border-t border-white/10">{renderContactList()}</div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   )
 }

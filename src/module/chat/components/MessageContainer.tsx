@@ -28,7 +28,13 @@ const MessageContainer = () => {
       lastDate = messageDate
       return (
         <div key={index}>
-          {showDate && <div className="text-center text-gray-500 my-2">{moment(message.timestamp).format('LL')}</div>}
+          {showDate && (
+            <div className="flex items-center justify-center my-6">
+              <div className="bg-white/[0.04] border border-white/10 backdrop-blur-md px-4 py-1 rounded-full text-[11px] font-medium tracking-wider text-white/50 uppercase">
+                {moment(message.timestamp).format('MMMM D, YYYY')}
+              </div>
+            </div>
+          )}
           {selectedChatType === 'contact' && renderDMmessages(message)}
           {selectedChatType === 'channel' && renderChannelMessages(message)}
         </div>
@@ -40,76 +46,82 @@ const MessageContainer = () => {
     const isCurrentUser = typeof message.sender === 'object' && message.sender?._id === userInfo?.id
 
     return (
-      <div className={`mt-5 ${isCurrentUser ? 'text-right' : 'text-left'}`}>
-        {/* Sender Avatar */}
-        {typeof message.sender === 'object' && message.sender?._id !== userInfo?.id ? (
-          <div className="flex items-center justify-end  gap-3">
+      <div className={`mt-4 flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
+        {typeof message.sender === 'object' && message.sender?._id !== userInfo?.id && (
+          <div className="flex items-center gap-2 mb-1.5 px-1">
             <div className="relative">
               {message.sender.image ? (
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold text-white"
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm overflow-hidden"
                   style={{ backgroundColor: colors[message.sender.color || 0] }}
                 >
-                  <img src={`${import.meta.env.VITE_LOCAL_HOST}/${message.sender.image}`} alt="Profile Preview" className="w-10 h-10 rounded-full object-cover" />
+                  <img src={`${import.meta.env.VITE_LOCAL_HOST}/${message.sender.image}`} alt="Profile" className="w-full h-full object-cover" />
                 </div>
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-lg font-bold text-white" style={{ backgroundColor: colors[message.sender.color || 0] }}>
-                  {message.sender.firstName ? message.sender.firstName.split('').shift() : message.sender.email?.split('').shift() || '?'}
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm"
+                  style={{ backgroundColor: colors[message.sender.color || 0] }}
+                >
+                  {message.sender.firstName ? message.sender.firstName[0].toUpperCase() : '?'}
                 </div>
               )}
             </div>
-            <span className="text-sm text-white/80">{`${message.sender.firstName} ${message.sender.lastName}`}</span>
-            <span className="text-sm text-white/80">{moment(message.timestamp).format('LT')}</span>
+            <span className="text-xs font-medium text-white/70">{`${message.sender.firstName || ''} ${message.sender.lastName || ''}`}</span>
+            <span className="text-[10px] text-white/40">{moment(message.timestamp).format('LT')}</span>
           </div>
-        ) : (
-          <div className="text-sm text-white/80 ">{moment(message.timestamp).format('LT')}</div>
         )}
-        {/* Text Message */}
+
         {message.messageType === 'text' && (
           <div
-            className={`${
-              isCurrentUser ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white' : 'bg-[#1C1C24] text-gray-100 border border-white/[0.05]'
-            } border inline-block p-4 rounded my-1 max-w-[50%] break-words mt-2`}
+            className={`px-4 py-3 rounded-2xl max-w-[80%] md:max-w-[60%] break-words text-sm tracking-wide leading-relaxed shadow-sm ${
+              isCurrentUser
+                ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-br-none border border-white/10'
+                : 'bg-white/[0.05] text-white/90 border border-white/10 rounded-bl-none backdrop-blur-md'
+            }`}
           >
             {message.content}
+            {isCurrentUser && <div className="text-[10px] text-white/60 text-right mt-1 font-mono">{moment(message.timestamp).format('LT')}</div>}
           </div>
         )}
 
         {message.messageType === 'file' && (
           <div
-            className={`${
-              typeof message.sender === 'object' && message.sender?._id === userInfo?.id
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
-                : 'bg-[#1C1C24] text-gray-100 border border-white/[0.05] '
-            } border inline-block p-4 rounded my-1 max-w-[50%] break-words `}
+            className={`p-3 rounded-2xl max-w-[80%] md:max-w-[60%] break-words ${
+              isCurrentUser
+                ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-br-none border border-white/10'
+                : 'bg-white/[0.05] text-white/90 border border-white/10 rounded-bl-none backdrop-blur-md'
+            }`}
           >
             {checkIfImage(message.fileUrl || '') ? (
-              <div
-                className="cursor-pointer"
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="cursor-pointer overflow-hidden rounded-xl border border-white/10"
                 onClick={() => {
                   setShowImage(true)
                   setImageUrl(message.fileUrl ?? null)
                 }}
               >
-                <img src={`${import.meta.env.VITE_LOCAL_HOST}/${message.fileUrl}`} alt="" height={300} width={300} />
-              </div>
+                <img src={`${import.meta.env.VITE_LOCAL_HOST}/${message.fileUrl}`} alt="Attachment" className="w-full h-auto max-h-[300px] object-cover rounded-xl" />
+              </motion.div>
             ) : (
-              <div className="flex items-center justify-center gap-4">
-                <span className="text-white/80 text-3xl bg-black/20 rounded-full p-3">
+              <div className="flex items-center gap-3 p-2 bg-black/20 rounded-xl">
+                <div className="p-3 bg-white/10 rounded-xl text-white text-xl">
                   <MdFolder />
-                </span>
-                <span>{message.fileUrl?.split('/').pop()}</span>
-                <span
-                  className="bg-black/20 rounded-full p-3 text-2xl hover:bg-black/50 cursor-pointer transition-all duration-300 "
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-white truncate">{message.fileUrl?.split('/').pop()}</p>
+                </div>
+                <button
                   onClick={() => downloadFile(message.fileUrl || '')}
+                  className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all"
+                  title="Download File"
                 >
-                  <IoMdArrowRoundDown />
-                </span>
+                  <IoMdArrowRoundDown className="text-base" />
+                </button>
               </div>
             )}
           </div>
         )}
-        <div></div>
       </div>
     )
   }
@@ -158,71 +170,62 @@ const MessageContainer = () => {
   }
 
   const renderDMmessages = (message: Message) => {
+    const isSentByMe = message.sender !== (typeof selectedChatData === 'object' && selectedChatData?._id)
+
     return (
-      <div className={`${message.sender === (typeof selectedChatData === 'object' && selectedChatData?._id) ? 'text-left' : 'text-right'}`}>
+      <div className={`mt-3 flex flex-col ${isSentByMe ? 'items-end' : 'items-start'}`}>
         {message.messageType === 'text' && (
           <div
-            className={`${
-              message.sender !== (typeof selectedChatData === 'object' && selectedChatData?._id)
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
-                : 'bg-[#1C1C24] text-gray-100 border border-white/[0.05] '
-            } border inline-block p-4 rounded my-1 max-w-[50%] break-words `}
+            className={`px-4 py-3 rounded-2xl max-w-[80%] md:max-w-[60%] break-words text-sm tracking-wide leading-relaxed shadow-sm ${
+              isSentByMe
+                ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-br-none border border-white/10'
+                : 'bg-white/[0.05] text-white/90 border border-white/10 rounded-bl-none backdrop-blur-md'
+            }`}
           >
             {message.content}
+            <div className={`text-[10px] mt-1 font-mono ${isSentByMe ? 'text-white/60 text-right' : 'text-white/40 text-left'}`}>{moment(message.timestamp).format('LT')}</div>
           </div>
         )}
+
         {message.messageType === 'file' && (
           <div
-            className={`${
-              message.sender !== (typeof selectedChatData === 'object' && selectedChatData?._id)
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
-                : 'bg-[#1C1C24] text-gray-100 border border-white/[0.05] '
-            } border inline-block p-4 rounded my-1 max-w-full sm:max-w-[70%] md:max-w-[60%] lg:max-w-[50%] break-words `}
+            className={`p-3 rounded-2xl max-w-[80%] md:max-w-[60%] break-words ${
+              isSentByMe
+                ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-br-none border border-white/10'
+                : 'bg-white/[0.05] text-white/90 border border-white/10 rounded-bl-none backdrop-blur-md'
+            }`}
           >
             {checkIfImage(message.fileUrl || '') ? (
               <motion.div
                 whileHover={{ scale: 1.02 }}
-                className="cursor-pointer"
+                className="cursor-pointer overflow-hidden rounded-xl border border-white/10"
                 onClick={() => {
                   setShowImage(true)
                   setImageUrl(message.fileUrl ?? null)
                 }}
               >
-                <img
-                  src={`${import.meta.env.VITE_LOCAL_HOST}/${message.fileUrl}`}
-                  alt=""
-                  height={300}
-                  width={300}
-                  className="w-full h-auto max-h-[300px] object-cover transition-transform duration-300"
-                />
+                <img src={`${import.meta.env.VITE_LOCAL_HOST}/${message.fileUrl}`} alt="Attached preview" className="w-full h-auto max-h-[300px] object-cover rounded-xl" />
               </motion.div>
             ) : (
-              <div className="group flex flex-col items-center gap-4 p-3 rounded-xl ">
-                <div className="flex items-center gap-3 flex-1 min-w-0 max-lg:flex-col  ">
-                  <span className="text-white/80 text-2xl bg-black/20 rounded-full p-3">
-                    <MdFolder />
-                  </span>
-                  {/* <span className="text-sm text-center truncate text-wrap ">{message.fileUrl?.split('/').pop()}</span> */}
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm">{message.fileUrl?.split('/').pop()}</p>
-                  </div>
+              <div className="flex items-center gap-3 p-2 bg-black/20 rounded-xl">
+                <div className="p-3 bg-white/10 rounded-xl text-white text-xl">
+                  <MdFolder />
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-white truncate">{message.fileUrl?.split('/').pop()}</p>
+                </div>
+                <button
                   onClick={() => downloadFile(message.fileUrl || '')}
-                  className="bg-black/20 p-3 text-2xl hover:bg-black/30 text-white px-4 py-2 rounded-lg transition-all duration-300"
+                  className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all"
+                  title="Download File"
                 >
-                  <IoMdArrowRoundDown className="text-lg" />
-                  <span className="text-sm font-medium">Download</span>
-                </motion.button>
+                  <IoMdArrowRoundDown className="text-base" />
+                </button>
               </div>
             )}
+            <div className={`text-[10px] mt-1 font-mono ${isSentByMe ? 'text-white/60 text-right' : 'text-white/40 text-left'}`}>{moment(message.timestamp).format('LT')}</div>
           </div>
         )}
-        <div className={`text-xs mt-1 ${message.sender !== (typeof selectedChatData === 'object' && selectedChatData?._id) ? 'text-white/70' : 'text-gray-400'}`}>
-          {moment(message.timestamp).format('LT')}
-        </div>
       </div>
     )
   }
@@ -245,7 +248,6 @@ const MessageContainer = () => {
           { withCredentials: true }
         )
         if (response?.data?.messages) {
-          console.log(response?.data?.messages)
           setSelectedChatMessages(response?.data?.messages)
         }
       } catch (error) {
@@ -261,7 +263,6 @@ const MessageContainer = () => {
         const response = await http.get(`/api/channel/get-channels-messages/${typeof selectedChatData === 'object' && selectedChatData?._id}`, { withCredentials: true })
 
         if (response?.data?.messages) {
-          console.log(response?.data?.messages)
           setSelectedChatMessages(response?.data?.messages)
         }
       } catch (error) {
@@ -291,49 +292,58 @@ const MessageContainer = () => {
       </div>
     )
   }
-  if (isLoading === false && isLoadingNewMessages == false && selectedChatMessages.length === 0) {
-    return <div className="flex-1 flex items-center justify-center text-gray-400">No messages yet. Start a conversation!</div>
+
+  if (isLoading === false && isLoadingNewMessages === false && selectedChatMessages.length === 0) {
+    return <div className="flex-1 flex items-center justify-center text-white/40 text-sm font-light select-none">No messages yet. Send a greeting to start the conversation!</div>
   }
+
   const ImageViewer = ({ imageUrl, onClose, onDownload }: { imageUrl: string; onClose: () => void; onDownload: () => void }) => (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-2 z-20 bg-black/90 backdrop-blur-lg">
-      <div className="absolute top-4 right-4 flex gap-2">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[500] bg-black/90 backdrop-blur-2xl flex flex-col items-center justify-center p-6"
+    >
+      <div className="absolute top-6 right-6 flex gap-3 z-10">
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={onDownload}
-          className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300"
+          className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/10 transition-all duration-200"
         >
-          <IoMdArrowRoundDown className="text-white text-xl" />
+          <IoMdArrowRoundDown className="text-xl" />
         </motion.button>
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={onClose}
-          className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300"
+          className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/10 transition-all duration-200"
         >
-          <IoCloseCircleSharp className="text-white text-xl" />
+          <IoCloseCircleSharp className="text-xl" />
         </motion.button>
       </div>
-      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="h-full w-full flex items-center justify-center p-8">
-        <img src={`${import.meta.env.VITE_LOCAL_HOST}/${imageUrl}`} alt="Full screen preview" className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl" />
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="max-h-[85vh] max-w-[85vw] flex items-center justify-center">
+        <img
+          src={`${import.meta.env.VITE_LOCAL_HOST}/${imageUrl}`}
+          alt="Preview"
+          className="max-h-[85vh] max-w-[85vw] object-contain rounded-2xl shadow-2xl border border-white/10"
+        />
       </motion.div>
     </motion.div>
   )
 
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 px-8 md:w-[65vw] lg:w-[70vw] xl:w-[80vw] w-full">
-      <div className="h-full p-6 space-y-6">
+    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 px-6 md:px-12 w-full">
+      <div className="h-full space-y-4">
         {showImage && imageUrl && (
-          <div>
-            <ImageViewer
-              imageUrl={imageUrl}
-              onClose={() => {
-                setShowImage(false)
-                setImageUrl(null)
-              }}
-              onDownload={() => downloadFile(imageUrl)}
-            />
-          </div>
+          <ImageViewer
+            imageUrl={imageUrl}
+            onClose={() => {
+              setShowImage(false)
+              setImageUrl(null)
+            }}
+            onDownload={() => downloadFile(imageUrl)}
+          />
         )}
         {renderMessages()}
         <div ref={scrollRef} />

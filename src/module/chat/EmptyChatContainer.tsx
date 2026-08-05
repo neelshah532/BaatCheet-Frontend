@@ -1,68 +1,66 @@
 import { motion } from 'framer-motion'
+import { FiMessageSquare, FiUsers, FiVideo, FiShield } from 'react-icons/fi'
 
 const EmptyChatContainer = () => {
+  const features = [
+    {
+      icon: <FiMessageSquare className="w-5 h-5 text-indigo-400" />,
+      title: 'Direct Messaging',
+      desc: 'Real-time encrypted text, file, and media sharing.',
+    },
+    {
+      icon: <FiVideo className="w-5 h-5 text-emerald-400" />,
+      title: 'HD Video & Audio',
+      desc: 'Crystal-clear peer-to-peer WebRTC calls.',
+    },
+    {
+      icon: <FiUsers className="w-5 h-5 text-purple-400" />,
+      title: 'Channels & Groups',
+      desc: 'Collaborate seamlessly in topic-based channels.',
+    },
+    {
+      icon: <FiShield className="w-5 h-5 text-amber-400" />,
+      title: 'Secure & Private',
+      desc: 'End-to-end socket channels with user privacy.',
+    },
+  ]
+
   return (
-    <div className="h-full bg-[#080810] backdrop-blur-xl md:flex flex-1 items-center justify-center p-8 hidden duration-1000 transition-all">
-      <div className="fixed inset-0 ">
-        <div className="absolute inset-0 bg-[#080810]">
-          <div className="absolute w-full h-full bg-[radial-gradient(ellipse_at_top,_#141420_0%,_#080810_100%)]" />
-        </div>
-        <div className="absolute inset-0 overflow-hidden">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className={`absolute w-[600px] h-[600px] rounded-full 
-                ${i === 0 ? 'top-[-300px] left-[-200px] bg-blue-500/10' : i === 1 ? 'top-[-200px] right-[-250px] bg-purple-500/10' : 'bottom-[-300px] left-[20%] bg-indigo-500/10'} 
-                blur-[120px] animate-blob animation-delay-${i * 2000}`}
-            />
-          ))}
-        </div>
-      </div>
+    <div className="h-full bg-[#0D0E12] hidden md:flex flex-1 items-center justify-center p-8 relative overflow-hidden select-none">
+      {/* Background Depth Effect */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_#161822_0%,_#0D0E12_70%)] opacity-80 pointer-events-none" />
+
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="relative group max-w-md flex-1 flex items-center justify-center bg-[radial-gradient(ellipse_at_top,_#141420_0%,_#080810_100%)] backdrop-blur-xl rounded-full text-center "
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 max-w-xl w-full flex flex-col items-center text-center"
       >
-        <div
-          className="absolute -inset-[1px] bg-gradient-to-r 
-        from-blue-500/30 to-indigo-500/30 rounded-3xl blur-md 
-        opacity-40 group-hover:opacity-60 transition duration-500"
-        />
-        <div
-          className="relative bg-[#13131A]/90 backdrop-blur-xl 
-        rounded-2xl border border-white/[0.05] p-8"
-        >
-          <motion.div
-            animate={{
-              scale: [1, 1.1, 1],
-              rotate: [0, 10, -10, 0],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              repeatType: 'loop',
-            }}
-            className="mx-auto w-32 h-32 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mb-6"
-          >
-            {/* <FiMessageCircle size={64} className="text-blue-500" /> */}
-            <svg className="w-12 h-12 text-white " fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              />
-            </svg>
-          </motion.div>
-          <h2
-            className="text-3xl font-bold text-white mt-8 mb-4 
-          bg-gradient-to-r from-blue-400 to-indigo-400 
-          bg-clip-text text-transparent"
-          >
-            Welcome to ChatApp
-          </h2>
-          <p className="text-gray-400 text-lg">Select a chat to start messaging or create a new conversation</p>
+        {/* Brand Badge */}
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center mb-6 shadow-2xl backdrop-blur-xl">
+          <FiMessageSquare className="w-8 h-8 text-indigo-400" />
+        </div>
+
+        <h2 className="text-3xl font-bold text-white tracking-tight mb-2">
+          Welcome to <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">BaatCheet</span>
+        </h2>
+        <p className="text-white/50 text-base max-w-md mb-10 leading-relaxed font-light">Select a contact or channel from the sidebar to join the conversation.</p>
+
+        {/* Features Grid */}
+        <div className="grid grid-cols-2 gap-4 w-full text-left">
+          {features.map((feat, idx) => (
+            <motion.div
+              key={idx}
+              whileHover={{ y: -3, transition: { duration: 0.2 } }}
+              className="bg-white/[0.02] border border-white/[0.06] hover:border-white/15 p-4 rounded-2xl transition-all duration-300 backdrop-blur-md"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 rounded-xl bg-white/5 border border-white/5">{feat.icon}</div>
+                <h3 className="text-sm font-semibold text-white/90">{feat.title}</h3>
+              </div>
+              <p className="text-xs text-white/40 leading-relaxed font-light pl-1">{feat.desc}</p>
+            </motion.div>
+          ))}
         </div>
       </motion.div>
     </div>

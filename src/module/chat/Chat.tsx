@@ -5,7 +5,8 @@ import { toast } from 'sonner'
 import ContactContainer from './ContactContainer'
 import EmptyChatContainer from './EmptyChatContainer'
 import ChatContainer from './ChatContainer'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { FiUploadCloud, FiDownloadCloud, FiX } from 'react-icons/fi'
 
 const Chat = () => {
   const { isUploading, isDownloading, fileUploadProgress, fileDownloadProgress, userInfo, selectedChatType, setIsUploading, setIsDownloading } = useAppStore()
@@ -19,60 +20,51 @@ const Chat = () => {
   }, [userInfo, navigate])
 
   const ProgressIndicator = ({ type, progress, onCancel }: { type: 'upload' | 'download'; progress: number; onCancel: () => void }) => (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[90vw] max-w-md">
-      <div className="bg-gray-900/95 backdrop-blur-lg border border-white/10 rounded-xl p-4 shadow-2xl">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className="animate-pulse">
-              <div className="w-2 h-2 bg-blue-500 rounded-full" />
+    <AnimatePresence>
+      <motion.div
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 50, opacity: 0 }}
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] w-[90vw] max-w-md"
+      >
+        <div className="bg-black/80 backdrop-blur-2xl border border-white/10 rounded-2xl p-4 shadow-2xl">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400">
+                {type === 'upload' ? <FiUploadCloud className="w-5 h-5 animate-bounce" /> : <FiDownloadCloud className="w-5 h-5 animate-bounce" />}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-white/90 text-sm font-semibold tracking-wide">{type === 'upload' ? 'Uploading File...' : 'Downloading File...'}</span>
+                <span className="text-white/50 text-xs font-mono">{progress}% completed</span>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <span className="text-white/90 text-sm font-medium">{type === 'upload' ? 'Uploading' : 'Downloading'} File</span>
-              <span className="text-white/60 text-xs">{progress}% completed</span>
-            </div>
+            <button onClick={onCancel} className="p-1.5 text-white/40 hover:text-white hover:bg-white/10 rounded-lg transition-colors" aria-label="Cancel progress">
+              <FiX className="w-4 h-4" />
+            </button>
           </div>
-          <button onClick={onCancel} className="text-white/60 hover:text-white/90 transition-colors px-2 py-1 text-sm">
-            Cancel
-          </button>
+          <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden border border-white/5">
+            <motion.div
+              className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full"
+              style={{ width: `${progress}%` }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+            />
+          </div>
         </div>
-        <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
-          <motion.div
-            className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
-            style={{ width: `${progress}%` }}
-            transition={{
-              duration: 0.3,
-              ease: 'easeInOut',
-            }}
-          />
-        </div>
-      </div>
-    </div>
+      </motion.div>
+    </AnimatePresence>
   )
-  return (
-    <div className="container-fluid h-[100vh] bg-[#0A0A0F] overflow-hidden flex flex-1 ">
-      <div className="relative h-full w-full max-w-full">
-        <div className="fixed inset-0 ">
-          <div className="absolute inset-0 bg-[#080810]">
-            <div className="absolute w-full h-full bg-[radial-gradient(ellipse_at_top,_#141420_0%,_#080810_100%)]" />
-          </div>
-          <div className="absolute inset-0 overflow-hidden">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div
-                key={i}
-                className={`absolute w-[600px] h-[600px] rounded-full 
-                ${i === 0 ? 'top-[-300px] left-[-200px] bg-blue-500/10' : i === 1 ? 'top-[-200px] right-[-250px] bg-purple-500/10' : 'bottom-[-300px] left-[20%] bg-indigo-500/10'} 
-                blur-[120px] animate-blob animation-delay-${i * 2000}`}
-              />
-            ))}
-          </div>
-        </div>
 
-        <div className=" z-10 h-[100vh] flex flex-1 bg-[#0A0A0F] overflow-hidden text-white">
-          {isUploading && <ProgressIndicator type="upload" progress={fileUploadProgress} onCancel={() => setIsUploading(false)} />}
-          {isDownloading && <ProgressIndicator type="download" progress={fileDownloadProgress} onCancel={() => setIsDownloading(false)} />}
-          <ContactContainer />
-          {selectedChatType === undefined ? <EmptyChatContainer /> : <ChatContainer />}
-        </div>
+  return (
+    <div className="h-screen w-screen bg-[#0B0C10] overflow-hidden flex flex-1 font-sans selection:bg-indigo-500/30 selection:text-white">
+      {/* Subtle Noise / Depth background */}
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,_#1A1C24_0%,_#0B0C10_60%)] opacity-80" />
+
+      <div className="relative z-10 h-full w-full flex flex-1 overflow-hidden text-white">
+        {isUploading && <ProgressIndicator type="upload" progress={fileUploadProgress} onCancel={() => setIsUploading(false)} />}
+        {isDownloading && <ProgressIndicator type="download" progress={fileDownloadProgress} onCancel={() => setIsDownloading(false)} />}
+
+        <ContactContainer />
+        {selectedChatType === undefined ? <EmptyChatContainer /> : <ChatContainer />}
       </div>
     </div>
   )

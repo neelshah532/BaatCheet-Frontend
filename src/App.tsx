@@ -6,6 +6,7 @@ import { useAppStore } from './store/store'
 import http from './services/http'
 import { handleError } from './common/HandleError'
 import { useNavigate } from 'react-router-dom'
+import CallsModule from './module/calls/CallsModule'
 
 function App() {
   const { userInfo, setUserInfo } = useAppStore()
@@ -49,6 +50,7 @@ function App() {
     <>
       <Suspense fallback={<MainLoader />}>
         <Approutes />
+        <CallsModule />
       </Suspense>
     </>
   )

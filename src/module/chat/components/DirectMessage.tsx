@@ -8,9 +8,11 @@ import { colors } from '../../../constants/color'
 import { useAppStore } from '../../../store/store'
 import { Contact } from '../../../types'
 import { IoClose } from 'react-icons/io5'
+import { FiSearch } from 'react-icons/fi'
 import '../../../styles/CustomScroll.css'
 import { handleError } from '../../../common/HandleError'
 import CustomLoader from '../../../common/CustomLoader'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const DirectMessage: React.FC = () => {
   const { setSelectedChatType, setSelectedChatData, userInfo } = useAppStore()
@@ -57,7 +59,7 @@ const DirectMessage: React.FC = () => {
       setLoadingStates((prev) => ({ ...prev, searching: true }))
       const timer = setTimeout(() => {
         searchContacts(searchCon)
-      }, 1000)
+      }, 500)
 
       return () => clearTimeout(timer)
     } else {
@@ -69,8 +71,7 @@ const DirectMessage: React.FC = () => {
   const selectNewContact = async (contact: Contact) => {
     setLoadingStates((prev) => ({ ...prev, selecting: true }))
     try {
-      // Simulate any additional loading time for smooth transition
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      await new Promise((resolve) => setTimeout(resolve, 300))
       setSelectedChatType('contact')
       setSelectedChatData(contact)
       setContacts([])
@@ -88,39 +89,46 @@ const DirectMessage: React.FC = () => {
 
     if (contacts.length > 0) {
       return (
-        <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
-          <div className="flex flex-col gap-6">
-            {contacts.map((contact) => (
-              <div
-                key={contact._id}
-                className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/[0.05] 
-                        cursor-pointer transition-colors duration-200 text-white"
-                onClick={() => selectNewContact(contact)}
-              >
-                <div className="relative w-12 h-12">
-                  {contact.image ? (
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold text-white" style={{ backgroundColor: colors[contact?.color ?? 0] }}>
-                      <img src={`${import.meta.env.VITE_LOCAL_HOST}/${contact.image}`} alt="Profile Preview" className="w-10 h-10 rounded-full object-cover" />
-                    </div>
-                  ) : (
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white" style={{ backgroundColor: colors[selectedColorIndex] }}>
-                      {contact.firstName && contact.lastName ? `${contact.firstName[0]}${contact.lastName[0]}`.toUpperCase() : '?'}
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col text-center">
-                  <span>{contact.firstName && contact.lastName ? `${contact.firstName}${' '}${contact.lastName}`.toUpperCase() : '?'}</span>
-                  <span className="text-xs text-white">{contact.email}</span>
-                </div>
+        <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+          {contacts.map((contact) => (
+            <motion.div
+              key={contact._id}
+              whileHover={{ x: 4, backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+              className="flex items-center gap-3.5 p-3 rounded-2xl cursor-pointer border border-white/5 hover:border-white/10 transition-all duration-200"
+              onClick={() => selectNewContact(contact)}
+            >
+              <div className="relative w-11 h-11 flex-shrink-0">
+                {contact.image ? (
+                  <div
+                    className="w-11 h-11 rounded-full flex items-center justify-center border border-white/10 overflow-hidden shadow-sm"
+                    style={{ backgroundColor: colors[contact?.color ?? 0] }}
+                  >
+                    <img src={`${import.meta.env.VITE_LOCAL_HOST}/${contact.image}`} alt="Profile" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div
+                    className="w-11 h-11 rounded-full flex items-center justify-center text-xs font-semibold text-white shadow-sm border border-white/10"
+                    style={{ backgroundColor: colors[contact?.color ?? selectedColorIndex] }}
+                  >
+                    {contact.firstName && contact.lastName ? `${contact.firstName[0]}${contact.lastName[0]}`.toUpperCase() : '?'}
+                  </div>
+                )}
+                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-[#0D0E12]" />
               </div>
-            ))}
-          </div>
+
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-sm font-semibold text-white truncate">{contact.firstName && contact.lastName ? `${contact.firstName} ${contact.lastName}` : 'User'}</span>
+                <span className="text-xs text-white/40 font-mono truncate">{contact.email}</span>
+              </div>
+            </motion.div>
+          ))}
         </div>
       )
     }
 
+    /* PRESERVED LOTTIE ANIMATION GIF FROM ORIGINAL UI */
     return (
-      <div className="flex flex-col justify-center items-center mt-5 text-white text-opacity-80 text-center">
+      <div className="flex flex-col justify-center items-center py-6 text-center">
         <Lottie
           isClickToPauseDisabled={true}
           options={{
@@ -134,9 +142,9 @@ const DirectMessage: React.FC = () => {
           height={120}
           width={120}
         />
-        <h3 className="poppins-thin mt-5">
-          Hi <span className="text-blue-500">👋</span> Search New Contact.
-        </h3>
+        <p className="text-sm font-medium text-white/70 mt-3">
+          Search contacts by name or email <span className="text-indigo-400">👋</span>
+        </p>
       </div>
     )
   }
@@ -148,36 +156,54 @@ const DirectMessage: React.FC = () => {
   return (
     <div>
       <ToolTip content="Select New Contact" direction="top">
-        <FaPlus
-          className="text-neutral-400 font-light text-opacity-90 text-start hover:text-neutral-100 cursor-pointer transition-all duration-300"
+        <button
           onClick={() => setOpenNewContactModal(true)}
-        />
+          className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all"
+        >
+          <FaPlus className="text-xs" />
+        </button>
       </ToolTip>
 
-      {openNewContactModal && (
-        <div className="fixed inset-0 bg-black/10 backdrop-blur-sm bg-opacity-50 flex justify-center items-center z-20">
-          <div className="bg-[#0C0C14] border border-white/[0.05] rounded-2xl border-none p-5 max-h-[80vh] flex flex-col w-[400px] h-[400px]">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-white text-lg font-semibold">Please Select New Contact</h2>
-              <button className="p-2 rounded-lg bg-[#1C1C24] group hover:bg-[#2C2C3A]/70 transition-colors duration-200" onClick={() => setOpenNewContactModal(false)}>
-                <IoClose className="text-gray-400 group-hover:text-white transition-colors duration-200 font-bold text-lg" />
-              </button>
-            </div>
-            <input
-              type="text"
-              placeholder="Search Contacts"
-              className="w-full px-5 py-3.5 bg-[#1C1C24] rounded-lg border border-white/[0.05]
-                    text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500
-                    transition-all duration-300"
-              value={searchCon}
-              onChange={(e) => setSearchCon(e.target.value)}
-            />
-            <div className="mt-3 overflow-y-auto max-h-60 p-2 border-t border-neutral-700">
-              {loadingStates.selecting ? <CustomLoader type="default" message="Selecting contact..." /> : renderContactList()}
-            </div>
+      <AnimatePresence>
+        {openNewContactModal && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="bg-[#0D0E12]/95 border border-white/10 rounded-3xl p-6 w-full max-w-md shadow-2xl backdrop-blur-2xl flex flex-col gap-4"
+            >
+              {/* Modal Header */}
+              <div className="flex justify-between items-center pb-2 border-b border-white/10">
+                <h2 className="text-base font-bold text-white tracking-wide">New Conversation</h2>
+                <button
+                  className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/5 transition-all"
+                  onClick={() => setOpenNewContactModal(false)}
+                >
+                  <IoClose className="text-lg" />
+                </button>
+              </div>
+
+              {/* Search Bar Input */}
+              <div className="relative flex items-center">
+                <FiSearch className="absolute left-4 text-white/40 text-base" />
+                <input
+                  type="text"
+                  placeholder="Search user by name or email..."
+                  className="w-full pl-11 pr-4 py-3 bg-white/[0.04] rounded-2xl border border-white/10 text-sm text-white placeholder-white/30 focus:outline-none focus:border-indigo-500/50 transition-all font-sans"
+                  value={searchCon}
+                  onChange={(e) => setSearchCon(e.target.value)}
+                  autoFocus
+                />
+              </div>
+
+              {/* Results Container */}
+              <div className="pt-2">{loadingStates.selecting ? <CustomLoader type="default" message="Opening conversation..." /> : renderContactList()}</div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   )
 }

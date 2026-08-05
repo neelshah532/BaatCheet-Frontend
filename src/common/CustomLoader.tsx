@@ -1,4 +1,3 @@
-// components/loaders/CustomLoader.tsx
 import { motion } from 'framer-motion'
 
 interface CustomLoaderProps {
@@ -8,76 +7,39 @@ interface CustomLoaderProps {
 }
 
 const CustomLoader = ({ type = 'default', message = 'Loading...' }: CustomLoaderProps) => {
-  const loaderTypes = {
-    default: {
-      gradient: 'from-blue-500 to-indigo-500',
-      particles: 8,
-    },
-    upload: {
-      gradient: 'from-green-500 to-teal-500',
-      particles: 15,
-    },
-    search: {
-      gradient: 'from-purple-500 to-pink-500',
-      particles: 8,
-    },
+  const loaderGradients = {
+    default: 'from-indigo-500 via-purple-500 to-pink-500',
+    upload: 'from-emerald-500 via-teal-500 to-cyan-500',
+    search: 'from-purple-500 via-indigo-500 to-blue-500',
   }
 
-  const { gradient, particles } = loaderTypes[type]
+  const gradient = loaderGradients[type] || loaderGradients.default
 
   return (
-    <div className="relative flex items-center justify-center p-4">
-      <div className="relative z-10 flex flex-col items-center">
-        <motion.div
-          className={`w-16 h-16 rounded-full bg-gradient-to-r ${gradient} relative`}
-          animate={{
-            scale: [1, 1.2, 1],
-            rotate: [0, 360],
-            transition: {
-              duration: 2,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            },
-          }}
-        >
-          <div className="absolute inset-2 bg-[#13131A] rounded-full" />
-        </motion.div>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{
-            opacity: 1,
-            y: 0,
-            transition: { delay: 0.3 },
-          }}
-          className="mt-4 text-sm text-gray-400"
-        >
+    <div className="relative flex flex-col items-center justify-center p-6 select-none">
+      <div className="relative z-10 flex flex-col items-center gap-3">
+        {/* Animated Gradient Spinner Ring */}
+        <div className="relative w-12 h-12 flex items-center justify-center">
+          <motion.div
+            className={`absolute inset-0 rounded-full bg-gradient-to-tr ${gradient} opacity-80 blur-sm`}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+          />
+          <motion.div
+            className={`w-12 h-12 rounded-full bg-gradient-to-tr ${gradient} p-0.5 shadow-lg`}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+          >
+            <div className="w-full h-full bg-[#0D0E12] rounded-full flex items-center justify-center">
+              <div className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-ping" />
+            </div>
+          </motion.div>
+        </div>
+
+        <motion.p initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="text-xs font-medium text-white/50 tracking-wide font-sans text-center">
           {message}
         </motion.p>
       </div>
-
-      {/* Particle Effect */}
-      {[...Array(particles)].map((_, i) => (
-        <motion.div
-          key={i}
-          className={`absolute rounded-full ${gradient} opacity-30`}
-          style={{
-            top: `${Math.random() * 100}%`,
-            left: `${Math.random() * 100}%`,
-            width: `${Math.random() * 8 + 4}px`,
-            height: `${Math.random() * 8 + 4}px`,
-          }}
-          animate={{
-            x: Math.random() * 100 - 50,
-            y: Math.random() * 100 - 50,
-            opacity: [0.2, 0.5, 0.2],
-            transition: {
-              duration: Math.random() * 8 + 5,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            },
-          }}
-        />
-      ))}
     </div>
   )
 }
