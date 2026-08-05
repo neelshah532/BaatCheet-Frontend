@@ -20,6 +20,7 @@ export interface UserInfo {
   userImage?: string
   token?: string
 }
+
 export interface AuthState {
   userInfo?: UserInfo | undefined
   setUserInfo: (userInfo: UserInfo | undefined) => void
@@ -48,14 +49,17 @@ export interface Message {
         email?: string
       }
   channelId?: string
-  content: string
-  createdAt: string
-  updatedAt: string
+  content?: string
+  createdAt?: string
+  updatedAt?: string
   _id?: string
+  tempId?: string
   type?: 'text' | 'image' | 'file'
   timestamp?: Date | string
   messageType?: 'text' | 'image' | 'file'
   fileUrl?: string
+  replyTo?: Message | string
+  status?: 'sending' | 'sent' | 'delivered' | 'read'
 }
 
 export interface ChatState {
@@ -69,6 +73,8 @@ export interface ChatState {
   fileUploadProgress: number
   fileDownloadProgress: number
   channels: Contact[]
+  replyingToMessage: Message | null
+  setReplyingToMessage: (message: Message | null) => void
   setChannels: (channels: Contact[]) => void
   setIsUploading: (isUploading: boolean) => void
   setIsDownloading: (isDownloading: boolean) => void
@@ -134,5 +140,4 @@ export interface CallState {
   setIsCallRinging: (isRinging: boolean) => void
 }
 
-// Update AppStore type to include CallState
 export type AppStore = AuthState & ChatState & CallState

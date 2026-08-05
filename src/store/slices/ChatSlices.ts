@@ -11,6 +11,9 @@ export const createChatSlice: StateCreator<ChatState> = (set, get) => ({
   fileUploadProgress: 0,
   fileDownloadProgress: 0,
   channels: [],
+  replyingToMessage: null,
+
+  setReplyingToMessage: (message) => set({ replyingToMessage: message }),
   setChannels: (channels) => set({ channels }),
   setIsUploading: (isUploading) => set({ isUploading }),
   setIsDownloading: (isDownloading) => set({ isDownloading }),
@@ -20,26 +23,39 @@ export const createChatSlice: StateCreator<ChatState> = (set, get) => ({
   setSelectedChatData: (data) => set({ selectedChatData: data }),
   setSelectedChatMessages: (messages) => set({ selectedChatMessages: messages }),
   closeChat: () => {
-    set({ selectedChatType: undefined, selectedChatData: undefined, selectedChatMessages: [] })
+    set({ selectedChatType: undefined, selectedChatData: undefined, selectedChatMessages: [], replyingToMessage: null })
   },
   setDirectContactMessages: (directContactMessages) => set({ directContactMessages }),
   addChannels: (channel) => {
     const channels = get().channels
     set({ channels: [...(Array.isArray(channel) ? channel : [channel]), ...channels] })
   },
-  addMessage: (message) => {
-    // const { selectedChatMessages, selectedChatType } = get()
-    const selectedChatType = get().selectedChatType
+
+  // Optimistic-update-then-reconcile discipline
+  addMessage: (incomingMessage) => {
     const selectedChatMessages = get().selectedChatMessages
+
+    const tempIndex = selectedChatMessages.findIndex(
+      (m) => (incomingMessage.tempId && m.tempId === incomingMessage.tempId) || (m._id?.startsWith('temp-') && m.content === incomingMessage.content)
+    )
+
+    if (tempIndex !== -1) {
+      const updatedMessages = [...selectedChatMessages]
+      updatedMessages[tempIndex] = incomingMessage
+      set({ selectedChatMessages: updatedMessages })
+      return
+    }
+
+    const exists = selectedChatMessages.some((m) => m._id && m._id === incomingMessage._id)
+    if (exists) {
+      set({
+        selectedChatMessages: selectedChatMessages.map((m) => (m._id === incomingMessage._id ? { ...m, ...incomingMessage } : m)),
+      })
+      return
+    }
+
     set({
-      selectedChatMessages: [
-        ...selectedChatMessages,
-        {
-          ...message,
-          recipient: selectedChatType === 'channel' ? message.recipient : typeof message.recipient === 'string' ? message.recipient : message.recipient._id,
-          sender: selectedChatType === 'channel' ? message.sender : typeof message.sender === 'string' ? message.sender : message.sender?._id || '',
-        },
-      ],
+      selectedChatMessages: [...selectedChatMessages, incomingMessage],
     })
   },
 
@@ -49,14 +65,14 @@ export const createChatSlice: StateCreator<ChatState> = (set, get) => ({
 
       if (index !== -1) {
         const updatedChannels = [...state.channels] as Contact[]
-        const [selectedChannel] = updatedChannels.splice(index, 1) // Remove the selected channel
-        return { channels: [selectedChannel, ...updatedChannels] as Contact[] } // Move it to the first index
+        const [selectedChannel] = updatedChannels.splice(index, 1)
+        return { channels: [selectedChannel, ...updatedChannels] as Contact[] }
       }
 
-      return state // Return the unchanged state if the channel is not found
+      return state
     })
   },
-  // Moves the most recently messaged contact to the top of the list
+
   addContactInContactList: (message) => {
     const userID = get().userInfo?.id
     if (!userID) return

@@ -16,17 +16,22 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       })
 
       socket.current.on('connect', () => {
-        console.log('Connected to the server')
+        console.log('Connected to socket server')
       })
 
       const handleReceiveMessage = (message: Message) => {
         const { selectedChatData, selectedChatType, addMessage, addContactInContactList } = useAppStore.getState()
-        if (
+        const senderId = typeof message.sender === 'object' ? message.sender?._id : message.sender
+
+        if (selectedChatType === 'contact' && typeof selectedChatData !== 'string' && selectedChatData?._id === senderId) {
+          // Send mark-messages-read ack immediately back to server
+          socket.current?.emit('mark-messages-read', { senderId })
+          addMessage({ ...message, status: 'read' })
+        } else if (
           selectedChatType !== undefined ||
           (typeof selectedChatData !== 'string' &&
-            (selectedChatData?._id === (message.sender as { _id: string })._id || selectedChatData?._id === (message.recipient as { _id: string })._id))
+            (selectedChatData?._id === senderId || selectedChatData?._id === (typeof message.recipient === 'object' ? message.recipient?._id : message.recipient)))
         ) {
-          console.log('Received Message:', message)
           addMessage(message)
         }
         addContactInContactList(message)
@@ -36,7 +41,6 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         const { selectedChatData, selectedChatType, addMessage, addChannelinChannelList } = useAppStore.getState()
 
         if (typeof selectedChatData !== 'string' && selectedChatType !== undefined && selectedChatData?._id === message.channelId) {
-          console.log('Received Channel Message:', message)
           addMessage(message)
         }
         if (message._id && message.channelId) {
@@ -44,8 +48,23 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
+      const handleMessagesReadUpdate = (data: { readBy: string; senderId: string }) => {
+        const { selectedChatMessages, setSelectedChatMessages, userInfo: currentUser } = useAppStore.getState()
+        if (data.readBy && currentUser?.id) {
+          const updated = selectedChatMessages.map((msg) => {
+            const msgSenderId = typeof msg.sender === 'object' ? msg.sender?._id : msg.sender
+            if (msgSenderId === currentUser.id) {
+              return { ...msg, status: 'read' as const }
+            }
+            return msg
+          })
+          setSelectedChatMessages(updated)
+        }
+      }
+
       socket.current?.on('recieveMessage', handleReceiveMessage)
       socket.current?.on('recieveChannelMessage', handleReceiveChannelMessage)
+      socket.current?.on('messages-read-update', handleMessagesReadUpdate)
 
       return () => {
         socket.current?.disconnect()

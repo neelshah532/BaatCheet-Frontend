@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '../../../store/store'
+import { useSocket } from '../../../hook/socketContext'
 import moment from 'moment'
 import { Message } from '../../../types'
 import '../../../styles/CustomScroll.css'
@@ -7,6 +8,8 @@ import http from '../../../services/http'
 import { MdFolder } from 'react-icons/md'
 import { IoMdArrowRoundDown } from 'react-icons/io'
 import { IoCloseCircleSharp } from 'react-icons/io5'
+import { FiCornerUpLeft, FiClock } from 'react-icons/fi'
+import { BsCheck, BsCheckAll } from 'react-icons/bs'
 import { colors } from '../../../constants/color'
 import { motion } from 'framer-motion'
 import { handleError } from '../../../common/HandleError'
@@ -14,11 +17,93 @@ import CustomLoader from '../../../common/CustomLoader'
 
 const MessageContainer = () => {
   const scrollRef = useRef<HTMLDivElement>(null)
-  const { selectedChatType, selectedChatData, selectedChatMessages, userInfo, isDownloading, setIsDownloading, setFileDownloadProgress, setSelectedChatMessages } = useAppStore()
+  const socket = useSocket()
+  const {
+    selectedChatType,
+    selectedChatData,
+    selectedChatMessages,
+    userInfo,
+    isDownloading,
+    setIsDownloading,
+    setFileDownloadProgress,
+    setSelectedChatMessages,
+    setReplyingToMessage,
+  } = useAppStore()
   const [showImage, setShowImage] = useState(false)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [isLoadingNewMessages, setIsLoadingNewMessages] = useState<boolean>(false)
+
+  // Listen for real-time delivery & read state updates over socket
+  useEffect(() => {
+    if (!socket) return
+
+    const handleMessagesRead = () => {
+      setSelectedChatMessages(selectedChatMessages.map((msg) => ({ ...msg, status: 'read' })))
+    }
+
+    socket.on('messages-read-update', handleMessagesRead)
+    return () => {
+      socket.off('messages-read-update', handleMessagesRead)
+    }
+  }, [socket, selectedChatMessages, setSelectedChatMessages])
+
+  // Emit mark-messages-read when opening/viewing DM messages
+  useEffect(() => {
+    if (socket && selectedChatType === 'contact' && selectedChatData && typeof selectedChatData === 'object') {
+      socket.emit('mark-messages-read', { senderId: selectedChatData._id })
+    }
+  }, [socket, selectedChatType, selectedChatData, selectedChatMessages.length])
+
+  const scrollToMessage = (msgId?: string) => {
+    if (!msgId) return
+    const el = document.getElementById(`message-${msgId}`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('ring-2', 'ring-indigo-400')
+      setTimeout(() => el.classList.remove('ring-2', 'ring-indigo-400'), 1500)
+    }
+  }
+
+  // Double check (white/slate) for Delivered, Blue double check for Read
+  const renderStatusTicks = (status?: string) => {
+    if (status === 'sending') {
+      return <FiClock className="text-[10px] text-white/50 animate-pulse" title="Sending..." />
+    }
+    if (status === 'delivered') {
+      return <BsCheckAll className="text-sm text-white/70" title="Delivered (Double Tick)" />
+    }
+    if (status === 'read') {
+      return <BsCheckAll className="text-sm text-blue-400 font-bold drop-shadow-md" title="Read (Blue Tick)" />
+    }
+    return <BsCheck className="text-sm text-white/70" title="Sent (Single Tick)" />
+  }
+
+  const renderReplyCard = (replyTo?: Message | string) => {
+    if (!replyTo) return null
+
+    let authorName = 'Message'
+    let contentSnippet = '...'
+    let replyId = ''
+
+    if (typeof replyTo === 'object') {
+      replyId = replyTo._id || ''
+      if (typeof replyTo.sender === 'object' && replyTo.sender?.firstName) {
+        authorName = `${replyTo.sender.firstName} ${replyTo.sender.lastName || ''}`
+      }
+      contentSnippet = replyTo.messageType === 'file' ? `📎 ${replyTo.fileUrl?.split('/').pop() || 'Attachment'}` : replyTo.content || ''
+    }
+
+    return (
+      <div
+        onClick={() => scrollToMessage(replyId)}
+        className="bg-black/30 border-l-2 border-indigo-400 rounded-lg p-2 mb-1.5 cursor-pointer hover:bg-black/40 transition-colors select-none"
+      >
+        <div className="text-[11px] font-semibold text-indigo-400 truncate">{authorName}</div>
+        <div className="text-xs text-white/70 truncate font-light">{contentSnippet}</div>
+      </div>
+    )
+  }
 
   const renderMessages = () => {
     let lastDate: string | null = null
@@ -27,7 +112,7 @@ const MessageContainer = () => {
       const showDate = messageDate !== lastDate
       lastDate = messageDate
       return (
-        <div key={index}>
+        <div key={message._id || index} id={message._id ? `message-${message._id}` : undefined}>
           {showDate && (
             <div className="flex items-center justify-center my-6">
               <div className="bg-white/[0.04] border border-white/10 backdrop-blur-md px-4 py-1 rounded-full text-[11px] font-medium tracking-wider text-white/50 uppercase">
@@ -46,7 +131,7 @@ const MessageContainer = () => {
     const isCurrentUser = typeof message.sender === 'object' && message.sender?._id === userInfo?.id
 
     return (
-      <div className={`mt-4 flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
+      <div className={`group relative mt-4 flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
         {typeof message.sender === 'object' && message.sender?._id !== userInfo?.id && (
           <div className="flex items-center gap-2 mb-1.5 px-1">
             <div className="relative">
@@ -71,57 +156,62 @@ const MessageContainer = () => {
           </div>
         )}
 
-        {message.messageType === 'text' && (
-          <div
-            className={`px-4 py-3 rounded-2xl max-w-[80%] md:max-w-[60%] break-words text-sm tracking-wide leading-relaxed shadow-sm ${
-              isCurrentUser
-                ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-br-none border border-white/10'
-                : 'bg-white/[0.05] text-white/90 border border-white/10 rounded-bl-none backdrop-blur-md'
-            }`}
+        <div className="relative flex items-center gap-2 max-w-[80%] md:max-w-[60%]">
+          <button
+            onClick={() => setReplyingToMessage(message)}
+            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
+            title="Reply to message"
           >
-            {message.content}
-            {isCurrentUser && <div className="text-[10px] text-white/60 text-right mt-1 font-mono">{moment(message.timestamp).format('LT')}</div>}
-          </div>
-        )}
+            <FiCornerUpLeft className="text-xs" />
+          </button>
 
-        {message.messageType === 'file' && (
           <div
-            className={`p-3 rounded-2xl max-w-[80%] md:max-w-[60%] break-words ${
+            className={`px-4 py-3 rounded-2xl w-full break-words text-sm tracking-wide leading-relaxed shadow-sm ${
               isCurrentUser
                 ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-br-none border border-white/10'
                 : 'bg-white/[0.05] text-white/90 border border-white/10 rounded-bl-none backdrop-blur-md'
             }`}
           >
-            {checkIfImage(message.fileUrl || '') ? (
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                className="cursor-pointer overflow-hidden rounded-xl border border-white/10"
-                onClick={() => {
-                  setShowImage(true)
-                  setImageUrl(message.fileUrl ?? null)
-                }}
-              >
-                <img src={`${import.meta.env.VITE_LOCAL_HOST}/${message.fileUrl}`} alt="Attachment" className="w-full h-auto max-h-[300px] object-cover rounded-xl" />
-              </motion.div>
-            ) : (
-              <div className="flex items-center gap-3 p-2 bg-black/20 rounded-xl">
-                <div className="p-3 bg-white/10 rounded-xl text-white text-xl">
-                  <MdFolder />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-white truncate">{message.fileUrl?.split('/').pop()}</p>
-                </div>
-                <button
-                  onClick={() => downloadFile(message.fileUrl || '')}
-                  className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all"
-                  title="Download File"
+            {renderReplyCard(message.replyTo)}
+
+            {message.messageType === 'text' && message.content}
+
+            {message.messageType === 'file' &&
+              (checkIfImage(message.fileUrl || '') ? (
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  className="cursor-pointer overflow-hidden rounded-xl border border-white/10 my-1"
+                  onClick={() => {
+                    setShowImage(true)
+                    setImageUrl(message.fileUrl ?? null)
+                  }}
                 >
-                  <IoMdArrowRoundDown className="text-base" />
-                </button>
-              </div>
-            )}
+                  <img src={`${import.meta.env.VITE_LOCAL_HOST}/${message.fileUrl}`} alt="Attachment" className="w-full h-auto max-h-[300px] object-cover rounded-xl" />
+                </motion.div>
+              ) : (
+                <div className="flex items-center gap-3 p-2 bg-black/20 rounded-xl my-1">
+                  <div className="p-3 bg-white/10 rounded-xl text-white text-xl">
+                    <MdFolder />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-white truncate">{message.fileUrl?.split('/').pop()}</p>
+                  </div>
+                  <button
+                    onClick={() => downloadFile(message.fileUrl || '')}
+                    className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all"
+                    title="Download File"
+                  >
+                    <IoMdArrowRoundDown className="text-base" />
+                  </button>
+                </div>
+              ))}
+
+            <div className={`text-[10px] mt-1 font-mono flex items-center justify-end gap-1 ${isCurrentUser ? 'text-white/60' : 'text-white/40'}`}>
+              <span>{moment(message.timestamp).format('LT')}</span>
+              {isCurrentUser && renderStatusTicks(message.status)}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     )
   }
@@ -170,62 +260,66 @@ const MessageContainer = () => {
   }
 
   const renderDMmessages = (message: Message) => {
-    const isSentByMe = message.sender !== (typeof selectedChatData === 'object' && selectedChatData?._id)
+    const isSentByMe = message.sender === userInfo?.id || (typeof message.sender === 'object' && message.sender?._id === userInfo?.id)
 
     return (
-      <div className={`mt-3 flex flex-col ${isSentByMe ? 'items-end' : 'items-start'}`}>
-        {message.messageType === 'text' && (
-          <div
-            className={`px-4 py-3 rounded-2xl max-w-[80%] md:max-w-[60%] break-words text-sm tracking-wide leading-relaxed shadow-sm ${
-              isSentByMe
-                ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-br-none border border-white/10'
-                : 'bg-white/[0.05] text-white/90 border border-white/10 rounded-bl-none backdrop-blur-md'
-            }`}
+      <div className={`group relative mt-3 flex flex-col ${isSentByMe ? 'items-end' : 'items-start'}`}>
+        <div className={`flex items-center gap-2 max-w-[80%] md:max-w-[60%] ${isSentByMe ? 'flex-row-reverse' : 'flex-row'}`}>
+          <button
+            onClick={() => setReplyingToMessage(message)}
+            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
+            title="Reply to message"
           >
-            {message.content}
-            <div className={`text-[10px] mt-1 font-mono ${isSentByMe ? 'text-white/60 text-right' : 'text-white/40 text-left'}`}>{moment(message.timestamp).format('LT')}</div>
-          </div>
-        )}
+            <FiCornerUpLeft className="text-xs" />
+          </button>
 
-        {message.messageType === 'file' && (
           <div
-            className={`p-3 rounded-2xl max-w-[80%] md:max-w-[60%] break-words ${
+            className={`px-4 py-3 rounded-2xl w-full break-words text-sm tracking-wide leading-relaxed shadow-sm ${
               isSentByMe
                 ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-br-none border border-white/10'
                 : 'bg-white/[0.05] text-white/90 border border-white/10 rounded-bl-none backdrop-blur-md'
             }`}
           >
-            {checkIfImage(message.fileUrl || '') ? (
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                className="cursor-pointer overflow-hidden rounded-xl border border-white/10"
-                onClick={() => {
-                  setShowImage(true)
-                  setImageUrl(message.fileUrl ?? null)
-                }}
-              >
-                <img src={`${import.meta.env.VITE_LOCAL_HOST}/${message.fileUrl}`} alt="Attached preview" className="w-full h-auto max-h-[300px] object-cover rounded-xl" />
-              </motion.div>
-            ) : (
-              <div className="flex items-center gap-3 p-2 bg-black/20 rounded-xl">
-                <div className="p-3 bg-white/10 rounded-xl text-white text-xl">
-                  <MdFolder />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-white truncate">{message.fileUrl?.split('/').pop()}</p>
-                </div>
-                <button
-                  onClick={() => downloadFile(message.fileUrl || '')}
-                  className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all"
-                  title="Download File"
+            {renderReplyCard(message.replyTo)}
+
+            {message.messageType === 'text' && message.content}
+
+            {message.messageType === 'file' &&
+              (checkIfImage(message.fileUrl || '') ? (
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  className="cursor-pointer overflow-hidden rounded-xl border border-white/10 my-1"
+                  onClick={() => {
+                    setShowImage(true)
+                    setImageUrl(message.fileUrl ?? null)
+                  }}
                 >
-                  <IoMdArrowRoundDown className="text-base" />
-                </button>
-              </div>
-            )}
-            <div className={`text-[10px] mt-1 font-mono ${isSentByMe ? 'text-white/60 text-right' : 'text-white/40 text-left'}`}>{moment(message.timestamp).format('LT')}</div>
+                  <img src={`${import.meta.env.VITE_LOCAL_HOST}/${message.fileUrl}`} alt="Attached preview" className="w-full h-auto max-h-[300px] object-cover rounded-xl" />
+                </motion.div>
+              ) : (
+                <div className="flex items-center gap-3 p-2 bg-black/20 rounded-xl my-1">
+                  <div className="p-3 bg-white/10 rounded-xl text-white text-xl">
+                    <MdFolder />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-white truncate">{message.fileUrl?.split('/').pop()}</p>
+                  </div>
+                  <button
+                    onClick={() => downloadFile(message.fileUrl || '')}
+                    className="p-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all"
+                    title="Download File"
+                  >
+                    <IoMdArrowRoundDown className="text-base" />
+                  </button>
+                </div>
+              ))}
+
+            <div className={`text-[10px] mt-1 font-mono flex items-center justify-end gap-1 ${isSentByMe ? 'text-white/60' : 'text-white/40'}`}>
+              <span>{moment(message.timestamp).format('LT')}</span>
+              {isSentByMe && renderStatusTicks(message.status)}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     )
   }
