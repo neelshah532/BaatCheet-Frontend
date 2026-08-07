@@ -325,7 +325,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
 
   // Spectator detection — user is a spectator if a session is loaded but they're not listed as a player
   const [gameSessionPlayers, setGameSessionPlayers] = useState<string[]>([])
-  const isSpectator = gameSessionPlayers.length > 0 && !gameSessionPlayers.includes(userInfo?.id || '')
+  const isSpectator = gameSessionPlayers.length > 0 && !gameSessionPlayers.includes(myId)
 
   // Reaction state for game event messages (e.g. game_result)
   const [gameEventReactions, setGameEventReactions] = useState<Record<string, { userId: string; emoji: string }[]>>({})
@@ -334,8 +334,8 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   const [serverPlayerColor, setServerPlayerColor] = useState<'w' | 'b' | null>(null)
   const [currentTurnUserId, setCurrentTurnUserId] = useState<string>('')
 
-  const myChessColor = serverPlayerColor || (userInfo?.id && opponentId && userInfo.id < opponentId ? 'w' : 'b')
-  const isMyChessTurn = currentTurnUserId ? currentTurnUserId === userInfo?.id : chessInstanceRef.current.turn() === myChessColor
+  const myChessColor = serverPlayerColor || (myId && opponentId && myId < opponentId ? 'w' : 'b')
+  const isMyChessTurn = currentTurnUserId ? currentTurnUserId === myId : chessInstanceRef.current.turn() === myChessColor
 
   // Chess puzzles states
   const [currentPuzzleIdx, setCurrentPuzzleIdx] = useState(0)
@@ -349,7 +349,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   const [ludoActiveTurn, setLudoActiveTurn] = useState<string>('')
   const [ludoRollState, setLudoRollState] = useState<'idle' | 'rolled'>('idle')
 
-  const isMyLudoTurn = ludoActiveTurn === userInfo?.id
+  const isMyLudoTurn = ludoActiveTurn === myId
 
   // Visual local animated positions for step-by-step walking along Ludo track
   const [visualLudoTokens, setVisualLudoTokens] = useState<LudoToken[]>([])
@@ -541,7 +541,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       // Track player IDs for spectator detection
       setGameSessionPlayers(session.players.map((p) => p.userId))
 
-      const myPlayer = session.players.find((p) => p.userId === userInfo?.id)
+      const myPlayer = session.players.find((p) => p.userId === myId)
       if (myPlayer) {
         setServerPlayerColor(myPlayer.color)
       }
@@ -1447,7 +1447,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
                   <h4 className="text-sm font-semibold text-white">Ludo (Authoritative)</h4>
                   <p className="text-[10px] text-white/40 font-light mt-0.5">
                     {gameResult
-                      ? `Winner: ${gameResult.winnerId === userInfo?.id ? 'You' : 'Partner'} (${gameResult.reason})`
+                      ? `Winner: ${gameResult.winnerId === myId ? 'You' : 'Partner'} (${gameResult.reason})`
                       : isMyLudoTurn
                         ? 'Your Turn - Roll the dice or select a legal token to move!'
                         : "Waiting for partner's turn..."}
@@ -1566,7 +1566,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
                   {visualLudoTokens.map((token) => {
                     const [row, col] = getLudoGridCoords(token)
                     const actualToken = ludoTokens.find((lt) => lt.userId === token.userId && lt.tokenIndex === token.tokenIndex)
-                    const isMine = token.userId === userInfo?.id
+                    const isMine = token.userId === myId
                     const isRollable = isMine && actualToken && ludoRollableIndices.includes(actualToken.tokenIndex)
 
                     return (
@@ -1627,7 +1627,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
                 <div>
                   <h4 className="text-sm font-semibold text-white">Classic Jigsaw Puzzle (Race)</h4>
                   <p className="text-[10px] text-white/40 font-light mt-0.5">
-                    {gameResult ? `Winner: ${gameResult.winnerId === userInfo?.id ? 'You! 🎉' : 'Partner wins!'}` : 'Assemble the puzzle — first to finish wins!'}
+                    {gameResult ? `Winner: ${gameResult.winnerId === myId ? 'You! 🎉' : 'Partner wins!'}` : 'Assemble the puzzle — first to finish wins!'}
                   </p>
                 </div>
                 <button
@@ -1641,7 +1641,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
               <div className="flex-1 flex flex-col items-center justify-center w-full py-2 gap-4">
                 {/* Status bar */}
                 <div className="w-full max-w-[600px] flex items-center justify-between text-[10px] text-white/60 bg-white/5 border border-white/5 p-2.5 rounded-xl">
-                  <span>{gameResult ? (gameResult.winnerId === userInfo?.id ? '🏆 You solved it first!' : '⏳ Partner solved it first!') : 'Solving...'}</span>
+                  <span>{gameResult ? (gameResult.winnerId === myId ? '🏆 You solved it first!' : '⏳ Partner solved it first!') : 'Solving...'}</span>
                   {isSpectator && <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-[9px] font-semibold">👁 Spectating</span>}
                 </div>
 
@@ -1995,7 +1995,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
             </div>
           ) : (
             gameMessages.map((msg) => {
-              const isMe = msg.senderId === userInfo?.id || msg.senderId === 'self'
+              const isMe = msg.senderId === myId || msg.senderId === 'self'
               const isSystem = msg.senderId === 'system'
               return (
                 <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
