@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { FaMicrophoneSlash } from 'react-icons/fa'
 import { CallUser } from '../../../types'
 import { motion } from 'framer-motion'
@@ -8,14 +8,14 @@ interface VideoViewProps {
   user: CallUser
   isSelf?: boolean
   size?: 'small' | 'medium' | 'large' | 'full'
-  isAudioOnly?: boolean
 }
 
-const VideoView = ({ user, isSelf = false, size = 'medium', isAudioOnly = false }: VideoViewProps) => {
+const VideoView = ({ user, isSelf = false, size = 'medium' }: VideoViewProps) => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
+  const [hasActiveVideo, setHasActiveVideo] = useState(false)
 
-  const sizeClasses = {
+  const sizeClasses: Record<string, string> = {
     small: 'w-40 h-56 rounded-2xl shadow-2xl',
     medium: 'w-full h-full rounded-3xl',
     large: 'w-full h-full rounded-3xl',
@@ -23,20 +23,70 @@ const VideoView = ({ user, isSelf = false, size = 'medium', isAudioOnly = false 
   }
 
   useEffect(() => {
-    if (videoRef.current && user.stream) {
-      videoRef.current.srcObject = user.stream
-      videoRef.current.muted = isSelf
-      videoRef.current.play().catch((err) => console.log('Video autoplay error:', err))
-    }
-    if (audioRef.current && user.stream && !isSelf) {
-      audioRef.current.srcObject = user.stream
-      audioRef.current.muted = false
-      audioRef.current.play().catch((err) => console.log('Audio autoplay error:', err))
-    }
-  }, [user.stream, isSelf])
+    const stream = user.stream
 
-  const showPlaceholder =
-    isAudioOnly || !user.video || !user.stream || user.stream.getVideoTracks().length === 0 || (user.stream.getVideoTracks().length > 0 && !user.stream.getVideoTracks()[0].enabled)
+    // ─── Bind to <video> ──────────────────────────────────────────────────
+    if (videoRef.current && videoRef.current.srcObject !== stream) {
+      videoRef.current.srcObject = stream ?? null
+      videoRef.current.muted = isSelf
+      if (stream) {
+        videoRef.current.play().catch(() => {
+          /* autoplay policy — fine */
+        })
+      }
+    }
+
+    // ─── Bind to dedicated <audio> for remote participant ─────────────────
+    // We use a SEPARATE audio element (not the <video> element) because:
+    //  1. The <video> element may have opacity:0 which can cause browsers to
+    //     throttle its audio pipeline.
+    //  2. Having a dedicated <audio> element guarantees playback even when
+    //     there are no video tracks (audio-only calls).
+    //
+    // MUST NOT be muted, MUST NOT be display:none, MUST be in the DOM.
+    if (!isSelf && audioRef.current) {
+      const el = audioRef.current
+      if (stream && el.srcObject !== stream) {
+        el.srcObject = stream
+        el.muted = false
+        el.volume = 1.0
+        // play() returns a promise — catch silently; autoplay policy is fine
+        // since the user gestured to accept the call
+        el.play().catch((err: Error) => {
+          console.warn('[AudioElement] play() blocked:', err.message)
+        })
+      }
+    }
+
+    // ─── Live video track detection ───────────────────────────────────────
+    const checkVideo = () => {
+      if (!stream) {
+        setHasActiveVideo(false)
+        return
+      }
+      const active = stream.getVideoTracks().some((t) => t.enabled && t.readyState === 'live')
+      setHasActiveVideo(active)
+
+      // Re-bind video element when a new track is added mid-call
+      if (videoRef.current && videoRef.current.srcObject !== stream) {
+        videoRef.current.srcObject = stream
+        videoRef.current.play().catch(() => {})
+      }
+    }
+
+    checkVideo()
+
+    if (stream) {
+      stream.addEventListener('addtrack', checkVideo)
+      stream.addEventListener('removetrack', checkVideo)
+      return () => {
+        stream.removeEventListener('addtrack', checkVideo)
+        stream.removeEventListener('removetrack', checkVideo)
+      }
+    }
+  }, [user.stream, user.video, isSelf])
+
+  const showPlaceholder = !hasActiveVideo
 
   const initials = user.firstName && user.lastName ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() : user.firstName ? user.firstName[0].toUpperCase() : '?'
 
@@ -45,7 +95,7 @@ const VideoView = ({ user, isSelf = false, size = 'medium', isAudioOnly = false 
 
   return (
     <div className={`relative overflow-hidden bg-black flex items-center justify-center ${sizeClasses[size]} ${size !== 'full' ? 'border border-white/10 backdrop-blur-sm' : ''}`}>
-      {/* Video element is NEVER unmounted or CSS hidden to ensure remote audio streams play 100% reliably */}
+      {/* Video is always in the DOM — opacity hides it but keeps audio running */}
       <video
         ref={videoRef}
         autoPlay
@@ -54,18 +104,28 @@ const VideoView = ({ user, isSelf = false, size = 'medium', isAudioOnly = false 
         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isSelf ? 'mirror' : ''} ${showPlaceholder ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
       />
 
-      {/* Dedicated audio element for remote participants to bypass browser video element mute/hide restrictions */}
-      {!isSelf && <audio ref={audioRef} autoPlay playsInline muted={false} className="hidden" />}
+      {/* Dedicated audio element for remote — invisible but NOT display:none.
+          Browsers (Chrome/Safari) suspend audio on elements with display:none. */}
+      {!isSelf && (
+        <audio
+          ref={audioRef}
+          autoPlay
+          playsInline
+          // DO NOT set muted here — that would silence audio. The muted attr
+          // on <audio> can only be un-set programmatically AFTER mount.
+          style={{ position: 'absolute', width: '1px', height: '1px', opacity: 0, left: '-9999px' }}
+        />
+      )}
 
       {showPlaceholder && (
-        <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center z-10" style={{ background: themeGradient, opacity: 0.85 }}>
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-10" style={{ background: themeGradient, opacity: 0.85 }}>
           <motion.div
             className="relative flex flex-col items-center justify-center"
             animate={user.audio ? { scale: [1, 1.05, 1] } : {}}
             transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
           >
             <div
-              className="w-28 h-28 rounded-full flex items-center justify-center text-3xl font-light text-white shadow-2xl relative z-10 border border-white/20 backdrop-blur-md"
+              className="w-28 h-28 rounded-full flex items-center justify-center text-3xl font-light text-white shadow-2xl border border-white/20 backdrop-blur-md"
               style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
             >
               {initials}
@@ -89,12 +149,12 @@ const VideoView = ({ user, isSelf = false, size = 'medium', isAudioOnly = false 
         </div>
       )}
 
-      {/* Gradient Vignette */}
+      {/* Vignette */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none z-15" />
 
-      {/* User Details & (You) Badge */}
-      <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end z-20">
-        <div className="flex items-center space-x-3 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+      {/* Name badge */}
+      <div className="absolute bottom-4 left-4 right-4 flex items-end z-20">
+        <div className="flex items-center space-x-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
           <span className="text-white text-sm font-medium tracking-wide">
             {user.firstName} {isSelf && '(You)'}
           </span>

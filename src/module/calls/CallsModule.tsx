@@ -18,7 +18,6 @@ const CallsModule = () => {
     if (!socket) return
 
     socket.on('call-started', (data) => {
-      console.log('Call room created:', data)
       if (data.roomId) {
         setActiveCallId(data.roomId)
       }
@@ -26,7 +25,6 @@ const CallsModule = () => {
 
     // When recipient joins call room, populate existing participants (Caller A)
     socket.on('call-joined', (data) => {
-      console.log('Call joined data:', data)
       if (data.roomId) {
         setActiveCallId(data.roomId)
       }
@@ -47,7 +45,6 @@ const CallsModule = () => {
     })
 
     socket.on('incoming-call', (data) => {
-      console.log('Incoming call:', data)
       handleIncomingCall({
         callId: data.callId || data.roomId,
         caller: data.caller,
@@ -65,9 +62,7 @@ const CallsModule = () => {
       resetCallState()
     })
 
-    socket.on('user-disconnected', ({ userId }) => {
-      console.log(`Participant disconnected: ${userId}`)
-    })
+    socket.on('user-disconnected', () => {})
 
     socket.on('call-error', ({ message }) => {
       console.error('Call error:', message)

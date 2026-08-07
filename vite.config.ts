@@ -12,6 +12,18 @@ export default defineConfig({
       process: 'process/browser',
       stream: 'stream-browserify',
       util: 'util',
+      // Polyfill Node.js 'events' module for simple-peer in browser
+      events: 'events',
+    },
+  },
+  optimizeDeps: {
+    // Force Vite to pre-bundle simple-peer and its Node deps together
+    // This prevents "events.EventEmitter is not a constructor" at runtime
+    include: ['simple-peer'],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',
+      },
     },
   },
   build: {

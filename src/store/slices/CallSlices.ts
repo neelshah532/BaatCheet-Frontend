@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand'
 import { AppStore, CallState } from '../../types'
 import { toast } from 'sonner'
+import webRTCService from '../../services/webrtc'
 
 export const createCallSlice: StateCreator<AppStore, [], [], CallState> = (set, get) => ({
   isInCall: false,
@@ -50,7 +51,12 @@ export const createCallSlice: StateCreator<AppStore, [], [], CallState> = (set, 
         isCallInitiator: true,
         callType,
         localStream: stream,
-        activeCallId: Date.now().toString(),
+        // activeCallId is intentionally NOT set here.
+        // It will be set when the server responds with 'call-started'
+        // containing the real roomId. Setting a temp id here causes
+        // CallInterface.useEffect to re-run and destroy WebRTC peers
+        // when the real id arrives.
+        activeCallId: null,
         isCallRinging: true,
       })
 
@@ -177,27 +183,20 @@ export const createCallSlice: StateCreator<AppStore, [], [], CallState> = (set, 
 
   toggleVideo: async (isEnabled) => {
     const { localStream } = get()
+    if (!localStream) return
 
-    if (localStream) {
-      const videoTracks = localStream.getVideoTracks()
-      if (videoTracks.length > 0) {
-        videoTracks.forEach((track) => {
-          track.enabled = isEnabled
-        })
-      } else if (isEnabled) {
-        try {
-          const videoStream = await navigator.mediaDevices.getUserMedia({ video: true })
-          const newTrack = videoStream.getVideoTracks()[0]
-          if (newTrack) {
-            localStream.addTrack(newTrack)
-            set({ callType: 'video' })
-          }
-        } catch (err) {
-          console.error('Failed to get video track:', err)
-          toast.error('Could not access camera device.')
-        }
-      }
+    try {
+      await webRTCService.toggleVideo(isEnabled)
+    } catch (err) {
+      console.error('Failed to toggle video:', err)
+      toast.error('Camera is currently unavailable or in use by another tab.')
+      return
     }
+
+    // Create a new MediaStream reference from the same tracks so React detects the change
+    // (MediaStream is mutable, so mutating it in-place doesn\'t trigger re-renders)
+    const refreshedStream = new MediaStream(localStream.getTracks())
+    set({ localStream: refreshedStream, callType: isEnabled ? 'video' : get().callType })
   },
 
   handleIncomingCall: (callData) => {

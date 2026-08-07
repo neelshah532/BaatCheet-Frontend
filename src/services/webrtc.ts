@@ -1,6 +1,5 @@
 import SimplePeer from 'simple-peer'
 import { Socket } from 'socket.io-client'
-import { toast } from 'sonner'
 
 type PeerConnectionsMap = {
   [userId: string]: SimplePeer.Instance
@@ -14,84 +13,10 @@ class WebRTCService {
   private localStream: MediaStream | null = null
   private roomId: string | null = null
   private userId: string | null = null
+  private isInitialized = false
 
-  constructor() {
-    this.peerConnections = {}
-  }
-
-  initialize(socket: Socket, userId: string) {
-    this.socket = socket
-    this.userId = userId
-    this.setupSocketListeners()
-  }
-
-  private setupSocketListeners() {
-    if (!this.socket) return
-
-    this.socket.on('webrtc-signal', ({ from, signal }) => {
-      console.log(`Received WebRTC signal from ${from}`)
-      let peer = this.peerConnections[from]
-
-      if (!peer && this.localStream) {
-        console.log(`Creating non-initiator peer for ${from}`)
-        peer = new SimplePeer({
-          initiator: false,
-          trickle: true,
-          stream: this.localStream,
-          config: { iceServers: defaultIceServers },
-        })
-
-        this.peerConnections[from] = peer
-        this.setupPeerEvents(peer, from)
-      }
-
-      if (peer) {
-        try {
-          peer.signal(signal)
-        } catch (err) {
-          console.error(`Error signaling peer ${from}:`, err)
-        }
-      }
-    })
-
-    this.socket.on('user-disconnected', ({ userId }) => {
-      this.removePeer(userId)
-    })
-
-    this.socket.on('user-left-call', ({ userId }) => {
-      this.removePeer(userId)
-    })
-  }
-
-  private setupPeerEvents(peer: SimplePeer.Instance, remoteUserId: string) {
-    peer.on('stream', (stream) => {
-      console.log(`WebRTC stream received from ${remoteUserId}`)
-      if (this.onStreamCallback) {
-        this.onStreamCallback(remoteUserId, stream)
-      }
-    })
-
-    peer.on('signal', (data) => {
-      if (this.socket) {
-        this.socket.emit('webrtc-signal', {
-          to: remoteUserId,
-          from: this.userId,
-          signal: data,
-          roomId: this.roomId,
-        })
-      }
-    })
-
-    peer.on('close', () => {
-      console.log(`Connection with ${remoteUserId} closed`)
-      this.removePeer(remoteUserId)
-    })
-
-    peer.on('error', (err) => {
-      console.error(`Error in connection with ${remoteUserId}:`, err)
-      this.removePeer(remoteUserId)
-    })
-  }
+  // Queue signals that arrive before the peer is created
+  private signalQueue: { from: string; signal: SimplePeer.SignalData }[] = []
 
   private onStreamCallback: ((userId: string, stream: MediaStream) => void) | null = null
   private onPeerDisconnectCallback: ((userId: string) => void) | null = null
@@ -104,89 +29,213 @@ class WebRTCService {
     this.onPeerDisconnectCallback = callback
   }
 
-  startCall(userIds: string[], localStream: MediaStream, roomId: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!this.socket || !this.userId) {
-        reject('Socket or user ID not available')
-        return
-      }
+  initialize(socket: Socket, userId: string, localStream: MediaStream, roomId: string) {
+    if (this.isInitialized && this.roomId === roomId) {
+      // Just update callbacks if re-initializing same session
+      return
+    }
+    // Clean up previous session if any
+    this.cleanup(false)
 
-      this.localStream = localStream
-      this.roomId = roomId
+    this.socket = socket
+    this.userId = userId
+    this.localStream = localStream
+    this.roomId = roomId
+    this.isInitialized = true
+    this.signalQueue = []
 
-      userIds.forEach((remoteUserId) => {
-        if (!this.peerConnections[remoteUserId]) {
-          try {
-            console.log(`Creating initiator peer for ${remoteUserId}`)
-            const peer = new SimplePeer({
-              initiator: true,
-              trickle: true,
-              stream: localStream,
-              config: { iceServers: defaultIceServers },
-            })
+    this.registerSocketListeners()
+  }
 
-            this.peerConnections[remoteUserId] = peer
-            this.setupPeerEvents(peer, remoteUserId)
-          } catch (error) {
-            console.error(`Error creating peer for ${remoteUserId}:`, error)
-          }
-        }
-      })
+  private registerSocketListeners() {
+    if (!this.socket) return
 
-      resolve()
+    // Remove stale listeners first
+    this.socket.off('webrtc-signal')
+
+    this.socket.on('webrtc-signal', ({ from, signal }: { from: string; signal: SimplePeer.SignalData }) => {
+      this.handleSignal(from, signal)
     })
   }
 
-  joinCall(roomId: string, localStream: MediaStream): void {
-    if (!this.socket || !this.userId) {
-      toast.error('Socket or user ID not available')
+  private handleSignal(from: string, signal: SimplePeer.SignalData) {
+    let peer = this.peerConnections[from]
+
+    if (!peer) {
+      if (!this.localStream) {
+        // Stream not ready yet — queue the signal
+        console.warn(`[WebRTC] No local stream yet, queuing signal from ${from}`)
+        this.signalQueue.push({ from, signal })
+        return
+      }
+      peer = this.createPeer(false, from)
+    }
+
+    try {
+      peer.signal(signal)
+    } catch (err) {
+      console.error(`[WebRTC] Error signaling peer ${from}:`, err)
+    }
+  }
+
+  private createPeer(initiator: boolean, remoteUserId: string): SimplePeer.Instance {
+    const peer = new SimplePeer({
+      initiator,
+      trickle: true,
+      stream: this.localStream!,
+      config: { iceServers: defaultIceServers },
+    })
+
+    this.peerConnections[remoteUserId] = peer
+
+    peer.on('stream', (stream: MediaStream) => {
+      if (this.onStreamCallback) this.onStreamCallback(remoteUserId, stream)
+    })
+
+    peer.on('track', (_track: MediaStreamTrack, stream: MediaStream) => {
+      if (this.onStreamCallback) this.onStreamCallback(remoteUserId, stream)
+    })
+
+    peer.on('signal', (data: SimplePeer.SignalData) => {
+      if (this.socket) {
+        this.socket.emit('webrtc-signal', {
+          to: remoteUserId,
+          from: this.userId,
+          signal: data,
+          roomId: this.roomId,
+        })
+      }
+    })
+
+    peer.on('connect', () => {
+      // connection established
+    })
+
+    peer.on('close', () => {
+      this.removePeer(remoteUserId)
+    })
+
+    peer.on('error', (err: Error) => {
+      console.error(`[WebRTC] Peer ${remoteUserId} error:`, err)
+    })
+
+    return peer
+  }
+
+  /**
+   * Called by the call initiator when the other user joins the room.
+   */
+  connectToPeer(remoteUserId: string) {
+    if (this.peerConnections[remoteUserId]) {
+      console.warn(`[WebRTC] Already connected to ${remoteUserId}`)
       return
     }
-
-    this.localStream = localStream
-    this.roomId = roomId
-  }
-
-  leaveCall(): void {
-    if (!this.socket || !this.roomId) return
-
-    Object.keys(this.peerConnections).forEach(this.removePeer.bind(this))
-
-    if (this.localStream) {
-      this.localStream.getTracks().forEach((track) => track.stop())
-      this.localStream = null
+    if (!this.localStream) {
+      console.error('[WebRTC] No local stream — cannot initiate peer')
+      return
     }
-
-    this.roomId = null
-    this.peerConnections = {}
+    this.createPeer(true, remoteUserId)
   }
 
-  removePeer(userId: string): void {
+  /**
+   * Called after localStream is ready to flush any queued signals
+   * (race: signal arrives before stream is ready)
+   */
+  flushSignalQueue() {
+    while (this.signalQueue.length > 0) {
+      const { from, signal } = this.signalQueue.shift()!
+      this.handleSignal(from, signal)
+    }
+  }
+
+  /** Toggle audio mute — track.enabled does NOT renegotiate, just mutes locally */
+  toggleAudio(enabled: boolean) {
+    this.localStream?.getAudioTracks().forEach((t) => {
+      t.enabled = enabled
+    })
+  }
+
+  /**
+   * Toggle video.
+   * - If video track exists: enable/disable it (no renegotiation needed).
+   * - If no video track: acquire camera and add via RTCPeerConnection.addTrack
+   *   which triggers automatic renegotiation in modern browsers.
+   */
+  async toggleVideo(enabled: boolean): Promise<void> {
+    if (!this.localStream) return
+
+    const existingTracks = this.localStream.getVideoTracks()
+
+    if (existingTracks.length > 0) {
+      existingTracks.forEach((t) => {
+        t.enabled = enabled
+      })
+      // Sync the sender's track enabled state on each peer
+      Object.values(this.peerConnections).forEach((peer) => {
+        const pc = (peer as unknown as { _pc: RTCPeerConnection })._pc
+        if (!pc) return
+        pc.getSenders().forEach((s) => {
+          if (s.track?.kind === 'video') s.track.enabled = enabled
+        })
+      })
+    } else if (enabled) {
+      const camStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      const newTrack = camStream.getVideoTracks()[0]
+      if (!newTrack) return
+
+      this.localStream.addTrack(newTrack)
+
+      await Promise.all(
+        Object.values(this.peerConnections).map(async (peer) => {
+          const pc = (peer as unknown as { _pc: RTCPeerConnection })._pc
+          if (!pc) return
+          try {
+            pc.addTrack(newTrack, this.localStream!)
+          } catch (e) {
+            console.error('[WebRTC] addTrack failed:', e)
+          }
+        })
+      )
+      console.log('[WebRTC] Video track added to all peers')
+    }
+  }
+
+  removePeer(userId: string) {
     const peer = this.peerConnections[userId]
     if (peer) {
-      peer.destroy()
-      delete this.peerConnections[userId]
-
-      if (this.onPeerDisconnectCallback) {
-        this.onPeerDisconnectCallback(userId)
+      try {
+        peer.destroy()
+      } catch {
+        // peer may already be closed
       }
+      delete this.peerConnections[userId]
+      this.onPeerDisconnectCallback?.(userId)
     }
   }
 
-  toggleAudio(enabled: boolean): void {
-    if (this.localStream) {
-      this.localStream.getAudioTracks().forEach((track) => {
-        track.enabled = enabled
-      })
+  cleanup(stopTracks = true) {
+    if (this.socket) {
+      this.socket.off('webrtc-signal')
     }
-  }
 
-  toggleVideo(enabled: boolean): void {
-    if (this.localStream) {
-      this.localStream.getVideoTracks().forEach((track) => {
-        track.enabled = enabled
-      })
+    Object.keys(this.peerConnections).forEach((uid) => {
+      try {
+        this.peerConnections[uid].destroy()
+      } catch {
+        // peer may already be closed
+      }
+    })
+    this.peerConnections = {}
+    this.signalQueue = []
+
+    if (stopTracks && this.localStream) {
+      this.localStream.getTracks().forEach((t) => t.stop())
     }
+
+    this.localStream = null
+    this.roomId = null
+    this.isInitialized = false
+    console.log('[WebRTC] Cleaned up')
   }
 }
 

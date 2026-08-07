@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { FaMicrophone, FaMicrophoneSlash, FaPhoneSlash, FaVideo, FaVideoSlash } from 'react-icons/fa'
 import { useAppStore } from '../../../store/store'
 import { useSocket } from '../../../hook/socketContext'
@@ -15,16 +15,36 @@ const CallControls = ({
 }: CallControlsProps) => {
   const { toggleAudio, toggleVideo, endCall, localStream, activeCallId } = useAppStore()
   const socket = useSocket()
+  const isVideoToggling = useRef(false)
 
   const [isAudioEnabled, setIsAudioEnabled] = useState(true)
   const [isVideoEnabled, setIsVideoEnabled] = useState(false)
 
+  // Sync button state whenever localStream changes or tracks are added/removed
   useEffect(() => {
-    if (localStream) {
+    if (!localStream) {
+      setIsAudioEnabled(true)
+      setIsVideoEnabled(false)
+      return
+    }
+
+    const syncTracks = () => {
       const audioTrack = localStream.getAudioTracks()[0]
-      const videoTrack = localStream.getVideoTracks()[0]
+      const videoTracks = localStream.getVideoTracks()
+      const activeVideoTrack = videoTracks.find((t) => t.readyState === 'live')
+
       setIsAudioEnabled(audioTrack ? audioTrack.enabled : true)
-      setIsVideoEnabled(videoTrack ? videoTrack.enabled : false)
+      setIsVideoEnabled(!!(activeVideoTrack && activeVideoTrack.enabled))
+    }
+
+    syncTracks()
+
+    localStream.addEventListener('addtrack', syncTracks)
+    localStream.addEventListener('removetrack', syncTracks)
+
+    return () => {
+      localStream.removeEventListener('addtrack', syncTracks)
+      localStream.removeEventListener('removetrack', syncTracks)
     }
   }, [localStream])
 
@@ -34,33 +54,29 @@ const CallControls = ({
     toggleAudio(newState)
 
     if (socket && activeCallId) {
-      socket.emit('toggle-media', {
-        roomId: activeCallId,
-        type: 'audio',
-        enabled: newState,
-      })
+      socket.emit('toggle-media', { roomId: activeCallId, type: 'audio', enabled: newState })
     }
   }
 
   const handleToggleVideo = async () => {
-    const newState = !isVideoEnabled
-    setIsVideoEnabled(newState)
-    await toggleVideo(newState)
+    // Prevent double-fire while async toggleVideo is in progress
+    if (isVideoToggling.current) return
+    isVideoToggling.current = true
 
-    if (socket && activeCallId) {
-      socket.emit('toggle-media', {
-        roomId: activeCallId,
-        type: 'video',
-        enabled: newState,
-      })
+    const newState = !isVideoEnabled
+    try {
+      await toggleVideo(newState)
+      if (socket && activeCallId) {
+        socket.emit('toggle-media', { roomId: activeCallId, type: 'video', enabled: newState })
+      }
+    } finally {
+      isVideoToggling.current = false
     }
   }
 
   const handleEndCall = () => {
     if (socket && activeCallId) {
-      socket.emit('end-call', {
-        roomId: activeCallId,
-      })
+      socket.emit('end-call', { roomId: activeCallId })
     }
     endCall()
   }
