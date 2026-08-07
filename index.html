@@ -6,7 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <script>
             window.global = window;
-            window.process = window.process || { env: {}, nextTick: function(cb) { setTimeout(cb, 0); } };
+            window.process = window.process || { env: {}, browser: true, nextTick: function(cb) { setTimeout(cb, 0); } };
         </script>
         <title>BaatCheet</title>
     </head>

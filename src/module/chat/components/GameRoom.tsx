@@ -445,12 +445,15 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   useEffect(() => {
     if (!socket || !userInfo || !localStream) return
 
-    // Notify opponent we joined the game room
-    socket.emit('join-game', { opponentId })
+    const isInitiator = myId < opponentId
 
-    const handleOpponentJoin = () => {
+    const createPeer = (initiator: boolean) => {
+      if (peerRef.current && !peerRef.current.destroyed) {
+        return peerRef.current
+      }
+
       const peer = new SimplePeer({
-        initiator: true,
+        initiator,
         trickle: true,
         stream: localStream,
       })
@@ -466,35 +469,40 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
         }
       })
 
+      peer.on('error', (err) => {
+        console.warn('Game peer error:', err)
+      })
+
       peerRef.current = peer
+      return peer
+    }
+
+    if (isInitiator) {
+      createPeer(true)
     }
 
     const handleGameSignal = ({ from, signal }: { from: string; signal: SimplePeer.SignalData }) => {
       if (from !== opponentId) return
       let peer = peerRef.current
 
-      if (!peer) {
-        peer = new SimplePeer({
-          initiator: false,
-          trickle: true,
-          stream: localStream,
-        })
-
-        peer.on('signal', (sig) => {
-          socket.emit('game-signal', { opponentId, signal: sig })
-        })
-
-        peer.on('stream', (stream) => {
-          setRemoteStream(stream)
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = stream
-          }
-        })
-
-        peerRef.current = peer
+      if (!peer || peer.destroyed) {
+        if (signal.type === 'answer') return
+        peer = createPeer(false)
       }
+
       if (peer && !peer.destroyed) {
         try {
+          const pc = (peer as unknown as { _pc?: RTCPeerConnection })._pc
+          if (pc) {
+            if (signal.type === 'offer' && pc.signalingState !== 'stable') {
+              console.warn('[Game WebRTC] Ignoring offer because signaling state is', pc.signalingState)
+              return
+            }
+            if (signal.type === 'answer' && pc.signalingState !== 'have-local-offer') {
+              console.warn('[Game WebRTC] Ignoring answer because signaling state is', pc.signalingState)
+              return
+            }
+          }
           peer.signal(signal)
         } catch (err) {
           console.warn('Game signal error ignored:', err)

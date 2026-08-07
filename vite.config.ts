@@ -7,6 +7,7 @@ export default defineConfig({
   define: {
     global: 'globalThis',
     'process.env': {},
+    'process.browser': true,
     'process.nextTick': 'globalThis.setTimeout',
   },
   resolve: {
@@ -19,12 +20,13 @@ export default defineConfig({
   },
   optimizeDeps: {
     // Force Vite to pre-bundle simple-peer and its Node deps together
-    // This prevents "events.EventEmitter is not a constructor" at runtime
-    include: ['simple-peer'],
+    // This prevents "events.EventEmitter is not a constructor" and _readableState undefined at runtime
+    include: ['simple-peer', 'stream-browserify', 'events', 'process'],
     esbuildOptions: {
       define: {
         global: 'globalThis',
         'process.env': '{}',
+        'process.browser': 'true',
       },
     },
   },
