@@ -931,6 +931,17 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     const legalMove = moves.find((m) => m.to === square)
 
     if (legalMove) {
+      // Optimistically execute valid move locally for instant click-to-move response
+      const move = chessInstanceRef.current.move({
+        from: moveFrom as Square,
+        to: square as Square,
+        promotion: 'q',
+      })
+
+      if (move) {
+        setChessFen(chessInstanceRef.current.fen())
+      }
+
       if (socket) {
         socket.emit('chess:proposeMove', {
           conversationId,
@@ -1384,7 +1395,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
                     onSquareClick={handleSquareClick}
                     customSquareStyles={optionSquares}
                     boardOrientation={myChessColor === 'w' ? 'white' : 'black'}
-                    arePiecesDraggable={!gameResult && isMyChessTurn && !isSpectator}
+                    arePiecesDraggable={false}
                     customBoardStyle={{
                       borderRadius: '12px',
                       boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
