@@ -26,36 +26,29 @@ const VideoView = ({ user, isSelf = false, size = 'medium' }: VideoViewProps) =>
     const stream = user.stream
 
     // ─── Bind to <video> ──────────────────────────────────────────────────
-    if (videoRef.current && videoRef.current.srcObject !== stream) {
-      videoRef.current.srcObject = stream ?? null
+    if (videoRef.current) {
+      if (videoRef.current.srcObject !== stream) {
+        videoRef.current.srcObject = stream ?? null
+      }
       videoRef.current.muted = isSelf
-      if (stream) {
-        videoRef.current.play().catch(() => {
-          /* autoplay policy — fine */
+      if (stream && stream.getTracks().length > 0) {
+        videoRef.current.play().catch((err: Error) => {
+          console.warn('[VideoView] video play() error:', err.message)
         })
       }
     }
 
     // ─── Bind to dedicated <audio> for remote participant ─────────────────
-    // We use a SEPARATE audio element (not the <video> element) because:
-    //  1. The <video> element may have opacity:0 which can cause browsers to
-    //     throttle its audio pipeline.
-    //  2. Having a dedicated <audio> element guarantees playback even when
-    //     there are no video tracks (audio-only calls).
-    //
-    // MUST NOT be muted, MUST NOT be display:none, MUST be in the DOM.
-    if (!isSelf && audioRef.current) {
+    if (!isSelf && audioRef.current && stream && stream.getAudioTracks().length > 0) {
       const el = audioRef.current
-      if (stream && el.srcObject !== stream) {
+      if (el.srcObject !== stream) {
         el.srcObject = stream
-        el.muted = false
-        el.volume = 1.0
-        // play() returns a promise — catch silently; autoplay policy is fine
-        // since the user gestured to accept the call
-        el.play().catch((err: Error) => {
-          console.warn('[AudioElement] play() blocked:', err.message)
-        })
       }
+      el.muted = false
+      el.volume = 1.0
+      el.play().catch((err: Error) => {
+        console.warn('[AudioElement] play() blocked:', err.message)
+      })
     }
 
     // ─── Live video track detection ───────────────────────────────────────
@@ -67,10 +60,19 @@ const VideoView = ({ user, isSelf = false, size = 'medium' }: VideoViewProps) =>
       const active = stream.getVideoTracks().some((t) => t.enabled && t.readyState === 'live')
       setHasActiveVideo(active)
 
-      // Re-bind video element when a new track is added mid-call
-      if (videoRef.current && videoRef.current.srcObject !== stream) {
-        videoRef.current.srcObject = stream
+      if (videoRef.current && stream.getVideoTracks().length > 0) {
+        if (videoRef.current.srcObject !== stream) {
+          videoRef.current.srcObject = stream
+        }
         videoRef.current.play().catch(() => {})
+      }
+
+      if (!isSelf && audioRef.current && stream.getAudioTracks().length > 0) {
+        if (audioRef.current.srcObject !== stream) {
+          audioRef.current.srcObject = stream
+        }
+        audioRef.current.muted = false
+        audioRef.current.play().catch(() => {})
       }
     }
 
@@ -79,9 +81,18 @@ const VideoView = ({ user, isSelf = false, size = 'medium' }: VideoViewProps) =>
     if (stream) {
       stream.addEventListener('addtrack', checkVideo)
       stream.addEventListener('removetrack', checkVideo)
+      stream.getTracks().forEach((t) => {
+        t.addEventListener('unmute', checkVideo)
+        t.addEventListener('mute', checkVideo)
+      })
+
       return () => {
         stream.removeEventListener('addtrack', checkVideo)
         stream.removeEventListener('removetrack', checkVideo)
+        stream.getTracks().forEach((t) => {
+          t.removeEventListener('unmute', checkVideo)
+          t.removeEventListener('mute', checkVideo)
+        })
       }
     }
   }, [user.stream, user.video, isSelf])

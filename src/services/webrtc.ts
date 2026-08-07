@@ -79,6 +79,14 @@ class WebRTCService {
   }
 
   private createPeer(initiator: boolean, remoteUserId: string): SimplePeer.Instance {
+    console.log(`[WebRTC Diagnostic] Creating peer for ${remoteUserId} (initiator: ${initiator})`)
+    if (this.localStream) {
+      console.log('[WebRTC Diagnostic] LOCAL MEDIA TRACKS:', {
+        audio: this.localStream.getAudioTracks().map((t) => ({ id: t.id, readyState: t.readyState, enabled: t.enabled })),
+        video: this.localStream.getVideoTracks().map((t) => ({ id: t.id, readyState: t.readyState, enabled: t.enabled })),
+      })
+    }
+
     const peer = new SimplePeer({
       initiator,
       trickle: true,
@@ -88,11 +96,31 @@ class WebRTCService {
 
     this.peerConnections[remoteUserId] = peer
 
+    // Add state change listeners on underlying RTCPeerConnection for diagnostics
+    const pc = (peer as unknown as { _pc: RTCPeerConnection })._pc
+    if (pc) {
+      pc.onsignalingstatechange = () => console.log(`[WebRTC Diagnostic] Peer ${remoteUserId} signalingState:`, pc.signalingState)
+      pc.onicegatheringstatechange = () => console.log(`[WebRTC Diagnostic] Peer ${remoteUserId} iceGatheringState:`, pc.iceGatheringState)
+      pc.oniceconnectionstatechange = () => console.log(`[WebRTC Diagnostic] Peer ${remoteUserId} iceConnectionState:`, pc.iceConnectionState)
+      pc.onconnectionstatechange = () => console.log(`[WebRTC Diagnostic] Peer ${remoteUserId} connectionState:`, pc.connectionState)
+    }
+
     peer.on('stream', (stream: MediaStream) => {
+      console.log(`[WebRTC Diagnostic] REMOTE STREAM RECEIVED from ${remoteUserId}:`, {
+        streamId: stream.id,
+        tracks: stream.getTracks().map((t) => ({ kind: t.kind, id: t.id, readyState: t.readyState, enabled: t.enabled })),
+      })
       if (this.onStreamCallback) this.onStreamCallback(remoteUserId, stream)
     })
 
-    peer.on('track', (_track: MediaStreamTrack, stream: MediaStream) => {
+    peer.on('track', (track: MediaStreamTrack, stream: MediaStream) => {
+      console.log(`[WebRTC Diagnostic] REMOTE TRACK RECEIVED from ${remoteUserId}:`, {
+        kind: track.kind,
+        id: track.id,
+        readyState: track.readyState,
+        enabled: track.enabled,
+        streamId: stream.id,
+      })
       if (this.onStreamCallback) this.onStreamCallback(remoteUserId, stream)
     })
 
@@ -108,15 +136,16 @@ class WebRTCService {
     })
 
     peer.on('connect', () => {
-      // connection established
+      console.log(`[WebRTC Diagnostic] Peer connection ESTABLISHED with ${remoteUserId}`)
     })
 
     peer.on('close', () => {
+      console.log(`[WebRTC Diagnostic] Peer connection CLOSED with ${remoteUserId}`)
       this.removePeer(remoteUserId)
     })
 
     peer.on('error', (err: Error) => {
-      console.error(`[WebRTC] Peer ${remoteUserId} error:`, err)
+      console.error(`[WebRTC Diagnostic] Peer ${remoteUserId} error:`, err)
     })
 
     return peer

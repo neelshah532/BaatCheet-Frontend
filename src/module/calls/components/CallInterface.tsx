@@ -24,10 +24,15 @@ const CallInterface = () => {
 
   const handleRemoteStream = useCallback(
     (userId: string, stream: MediaStream) => {
+      const refreshedStream = new MediaStream(stream.getTracks())
+      console.log(`[WebRTC Diagnostic] handleRemoteStream called for ${userId}`, {
+        audioTracks: refreshedStream.getAudioTracks().length,
+        videoTracks: refreshedStream.getVideoTracks().length,
+      })
       updateCallUser(userId, {
-        stream,
-        video: stream.getVideoTracks().some((t) => t.enabled && t.readyState === 'live'),
-        audio: stream.getAudioTracks().some((t) => t.enabled),
+        stream: refreshedStream,
+        video: refreshedStream.getVideoTracks().some((t) => t.enabled && t.readyState === 'live'),
+        audio: refreshedStream.getAudioTracks().some((t) => t.enabled),
       })
     },
     [updateCallUser]
