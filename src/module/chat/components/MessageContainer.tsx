@@ -5,15 +5,17 @@ import moment from 'moment'
 import { Message } from '../../../types'
 import '../../../styles/CustomScroll.css'
 import http from '../../../services/http'
+import aiService from '../../../services/ai'
 import { MdFolder } from 'react-icons/md'
 import { IoMdArrowRoundDown } from 'react-icons/io'
 import { IoCloseCircleSharp } from 'react-icons/io5'
 import { FiCornerUpLeft, FiClock } from 'react-icons/fi'
 import { BsCheck, BsCheckAll } from 'react-icons/bs'
+import { FaLanguage } from 'react-icons/fa'
 import { colors } from '../../../constants/color'
 import { motion } from 'framer-motion'
 import { handleError } from '../../../common/HandleError'
-import CustomLoader from '../../../common/CustomLoader'
+import { toast } from 'sonner'
 
 const MessageContainer = () => {
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -29,10 +31,27 @@ const MessageContainer = () => {
     setSelectedChatMessages,
     setReplyingToMessage,
   } = useAppStore()
+
   const [showImage, setShowImage] = useState(false)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [isLoadingNewMessages, setIsLoadingNewMessages] = useState<boolean>(false)
+
+  // Translation States
+  const [translatedMessages, setTranslatedMessages] = useState<Record<string, string>>({})
+  const [activeTranslateMenu, setActiveTranslateMenu] = useState<string | null>(null)
+  const [translatingMessageId, setTranslatingMessageId] = useState<string | null>(null)
+
+  const translateMenuRef = useRef<HTMLDivElement>(null)
+
+  const languages = [
+    { code: 'English', label: 'English' },
+    { code: 'Spanish', label: 'Español' },
+    { code: 'French', label: 'Français' },
+    { code: 'Hindi', label: 'हिन्दी' },
+    { code: 'German', label: 'Deutsch' },
+    { code: 'Arabic', label: 'العربية' },
+  ]
 
   // Listen for real-time delivery & read state updates over socket
   useEffect(() => {
@@ -47,6 +66,17 @@ const MessageContainer = () => {
       socket.off('messages-read-update', handleMessagesRead)
     }
   }, [socket, selectedChatMessages, setSelectedChatMessages])
+
+  // Close translate menus on click outside
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (translateMenuRef.current && !translateMenuRef.current.contains(e.target as Node)) {
+        setActiveTranslateMenu(null)
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [])
 
   // Emit mark-messages-read when opening/viewing DM messages
   useEffect(() => {
@@ -105,26 +135,80 @@ const MessageContainer = () => {
     )
   }
 
-  const renderMessages = () => {
-    let lastDate: string | null = null
-    return selectedChatMessages.map((message, index) => {
-      const messageDate = moment(message.timestamp).format('YYYY-MM-DD')
-      const showDate = messageDate !== lastDate
-      lastDate = messageDate
+  const handleTranslate = async (message: Message, targetLang: string) => {
+    if (!message._id || !message.content) return
+    setActiveTranslateMenu(null)
+    setTranslatingMessageId(message._id)
+
+    try {
+      const result = await aiService.translateText(message.content, targetLang)
+      setTranslatedMessages((prev) => ({ ...prev, [message._id!]: result }))
+      toast.success(`Translated to ${targetLang}!`)
+    } catch (err) {
+      console.error(err)
+      toast.error('Translation failed.')
+    } finally {
+      setTranslatingMessageId(null)
+    }
+  }
+
+  const toggleTranslateMenu = (msgId: string) => {
+    setActiveTranslateMenu(activeTranslateMenu === msgId ? null : msgId)
+  }
+
+  const renderTranslationText = (message: Message) => {
+    const translated = translatedMessages[message._id || '']
+    if (translatingMessageId === message._id) {
       return (
-        <div key={message._id || index} id={message._id ? `message-${message._id}` : undefined}>
-          {showDate && (
-            <div className="flex items-center justify-center my-6">
-              <div className="bg-white/[0.04] border border-white/10 backdrop-blur-md px-4 py-1 rounded-full text-[11px] font-medium tracking-wider text-white/50 uppercase">
-                {moment(message.timestamp).format('MMMM D, YYYY')}
-              </div>
-            </div>
-          )}
-          {selectedChatType === 'contact' && renderDMmessages(message)}
-          {selectedChatType === 'channel' && renderChannelMessages(message)}
+        <span className="flex items-center gap-1.5 text-white/60">
+          <svg className="animate-spin h-3 w-3 text-indigo-400" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          Translating...
+        </span>
+      )
+    }
+    if (translated) {
+      return (
+        <div className="flex flex-col gap-1.5">
+          <p className="italic text-white/95">{translated}</p>
+          <button
+            onClick={() => {
+              setTranslatedMessages((prev) => {
+                const next = { ...prev }
+                delete next[message._id!]
+                return next
+              })
+            }}
+            className="text-[10px] text-indigo-300 hover:text-indigo-400 font-medium self-start flex items-center gap-1"
+          >
+            Show Original
+          </button>
         </div>
       )
-    })
+    }
+    return message.content
+  }
+
+  const renderTranslateDropdown = (message: Message) => {
+    if (activeTranslateMenu !== message._id) return null
+    return (
+      <div ref={translateMenuRef} className="absolute bottom-full mb-2 z-50 bg-[#0F1015]/95 border border-white/10 rounded-2xl p-2 shadow-2xl backdrop-blur-xl w-40">
+        <div className="text-[9px] font-semibold text-indigo-400 uppercase tracking-wider px-2 pb-1 border-b border-white/[0.08] mb-1.5">Translate to:</div>
+        <div className="space-y-0.5 max-h-48 overflow-y-auto custom-scrollbar">
+          {languages.map((lang) => (
+            <button
+              key={lang.code}
+              onClick={() => handleTranslate(message, lang.code)}
+              className="w-full text-left px-2.5 py-1.5 text-xs text-white/80 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-all"
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   const renderChannelMessages = (message: Message) => {
@@ -156,14 +240,31 @@ const MessageContainer = () => {
           </div>
         )}
 
-        <div className="relative flex items-center gap-2 max-w-[80%] md:max-w-[60%]">
-          <button
-            onClick={() => setReplyingToMessage(message)}
-            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
-            title="Reply to message"
+        <div className="relative flex items-center max-w-[80%] md:max-w-[60%]">
+          {/* Action buttons */}
+          <div
+            className={`absolute ${isCurrentUser ? 'right-full mr-2.5' : 'left-full ml-2.5'} top-1/2 -translate-y-1/2 opacity-45 md:opacity-25 md:group-hover:opacity-100 hover:!opacity-100 flex items-center gap-1 transition-all duration-200 z-10`}
           >
-            <FiCornerUpLeft className="text-xs" />
-          </button>
+            {message.messageType === 'text' && message._id && (
+              <div className="relative">
+                <button
+                  onClick={() => toggleTranslateMenu(message._id!)}
+                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
+                  title="Translate message"
+                >
+                  <FaLanguage className="text-sm" />
+                </button>
+                {renderTranslateDropdown(message)}
+              </div>
+            )}
+            <button
+              onClick={() => setReplyingToMessage(message)}
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
+              title="Reply to message"
+            >
+              <FiCornerUpLeft className="text-xs" />
+            </button>
+          </div>
 
           <div
             className={`px-4 py-3 rounded-2xl w-full break-words text-sm tracking-wide leading-relaxed shadow-sm ${
@@ -174,7 +275,7 @@ const MessageContainer = () => {
           >
             {renderReplyCard(message.replyTo)}
 
-            {message.messageType === 'text' && message.content}
+            {message.messageType === 'text' && renderTranslationText(message)}
 
             {message.messageType === 'file' &&
               (checkIfImage(message.fileUrl || '') ? (
@@ -264,14 +365,31 @@ const MessageContainer = () => {
 
     return (
       <div className={`group relative mt-3 flex flex-col ${isSentByMe ? 'items-end' : 'items-start'}`}>
-        <div className={`flex items-center gap-2 max-w-[80%] md:max-w-[60%] ${isSentByMe ? 'flex-row-reverse' : 'flex-row'}`}>
-          <button
-            onClick={() => setReplyingToMessage(message)}
-            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
-            title="Reply to message"
+        <div className="relative flex items-center max-w-[80%] md:max-w-[60%]">
+          {/* Action buttons */}
+          <div
+            className={`absolute ${isSentByMe ? 'right-full mr-2.5' : 'left-full ml-2.5'} top-1/2 -translate-y-1/2 opacity-45 md:opacity-25 md:group-hover:opacity-100 hover:!opacity-100 flex items-center gap-1 transition-all duration-200 z-10`}
           >
-            <FiCornerUpLeft className="text-xs" />
-          </button>
+            {message.messageType === 'text' && message._id && (
+              <div className="relative">
+                <button
+                  onClick={() => toggleTranslateMenu(message._id!)}
+                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
+                  title="Translate message"
+                >
+                  <FaLanguage className="text-sm" />
+                </button>
+                {renderTranslateDropdown(message)}
+              </div>
+            )}
+            <button
+              onClick={() => setReplyingToMessage(message)}
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
+              title="Reply to message"
+            >
+              <FiCornerUpLeft className="text-xs" />
+            </button>
+          </div>
 
           <div
             className={`px-4 py-3 rounded-2xl w-full break-words text-sm tracking-wide leading-relaxed shadow-sm ${
@@ -282,7 +400,7 @@ const MessageContainer = () => {
           >
             {renderReplyCard(message.replyTo)}
 
-            {message.messageType === 'text' && message.content}
+            {message.messageType === 'text' && renderTranslationText(message)}
 
             {message.messageType === 'file' &&
               (checkIfImage(message.fileUrl || '') ? (
@@ -322,6 +440,28 @@ const MessageContainer = () => {
         </div>
       </div>
     )
+  }
+
+  const renderMessages = () => {
+    let lastDate: string | null = null
+    return selectedChatMessages.map((message, index) => {
+      const messageDate = moment(message.timestamp).format('YYYY-MM-DD')
+      const showDate = messageDate !== lastDate
+      lastDate = messageDate
+      return (
+        <div key={message._id || index} id={message._id ? `message-${message._id}` : undefined}>
+          {showDate && (
+            <div className="flex items-center justify-center my-6">
+              <div className="bg-white/[0.04] border border-white/10 backdrop-blur-md px-4 py-1 rounded-full text-[11px] font-medium tracking-wider text-white/50 uppercase">
+                {moment(message.timestamp).format('MMMM D, YYYY')}
+              </div>
+            </div>
+          )}
+          {selectedChatType === 'contact' && renderDMmessages(message)}
+          {selectedChatType === 'channel' && renderChannelMessages(message)}
+        </div>
+      )
+    })
   }
 
   useEffect(() => {
@@ -380,11 +520,7 @@ const MessageContainer = () => {
   }, [selectedChatType, selectedChatData, setSelectedChatMessages])
 
   if (isLoading === true || isLoadingNewMessages === true) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <CustomLoader type="default" message="Loading conversation..." />
-      </div>
-    )
+    return <div className="flex-1 bg-[#0b0c10]" />
   }
 
   if (isLoading === false && isLoadingNewMessages === false && selectedChatMessages.length === 0) {

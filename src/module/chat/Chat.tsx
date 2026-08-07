@@ -61,8 +61,15 @@ const Chat = () => {
         {isUploading && <ProgressIndicator type="upload" progress={fileUploadProgress} onCancel={() => setIsUploading(false)} />}
         {isDownloading && <ProgressIndicator type="download" progress={fileDownloadProgress} onCancel={() => setIsDownloading(false)} />}
 
-        <ContactContainer />
-        {selectedChatType === undefined ? <EmptyChatContainer /> : <ChatContainer />}
+        {/* Sidebar wrapper */}
+        <div className={`${selectedChatType !== undefined ? 'hidden md:flex' : 'flex'} md:w-[35vw] lg:w-[30vw] xl:w-[22vw] w-full h-full flex-shrink-0`}>
+          <ContactContainer />
+        </div>
+
+        {/* Chat window wrapper */}
+        <div className={`${selectedChatType === undefined ? 'hidden md:flex' : 'flex'} flex-1 h-full`}>
+          {selectedChatType === undefined ? <EmptyChatContainer /> : <ChatContainer />}
+        </div>
       </div>
     </div>
   )

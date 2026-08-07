@@ -37,14 +37,24 @@ const EmptyChatContainer = () => {
         className="relative z-10 max-w-xl w-full flex flex-col items-center text-center"
       >
         {/* Brand Badge */}
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center mb-6 shadow-2xl backdrop-blur-xl">
-          <FiMessageSquare className="w-8 h-8 text-indigo-400" />
+        <div className="w-16 h-16 rounded-2xl bg-white/[0.02] border border-white/10 flex items-center justify-center mb-6 shadow-2xl backdrop-blur-xl text-indigo-400">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M16 26C21.5228 26 26 21.5228 26 16C26 10.4772 21.5228 6 16 6C10.4772 6 6 10.4772 6 16C6 18.3263 6.79328 20.4674 8.12519 22.1704L7 25L9.82958 23.8752C11.5326 25.2071 13.6737 26 16 26Z"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path d="M12 13H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <path d="M12 17H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
         </div>
 
-        <h2 className="text-3xl font-bold text-white tracking-tight mb-2">
-          Welcome to <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">BaatCheet</span>
+        <h2 className="text-2xl font-light tracking-widest text-white mb-2 uppercase">
+          Welcome to <span className="font-semibold text-indigo-400">BaatCheet</span>
         </h2>
-        <p className="text-white/50 text-base max-w-md mb-10 leading-relaxed font-light">Select a contact or channel from the sidebar to join the conversation.</p>
+        <p className="text-white/40 text-sm max-w-md mb-10 leading-relaxed font-light">Select a contact or channel from the sidebar to join the conversation.</p>
 
         {/* Features Grid */}
         <div className="grid grid-cols-2 gap-4 w-full text-left">

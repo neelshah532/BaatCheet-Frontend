@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import victory from '../../assets/Victoryicon.svg'
 import DirectMessage from './components/DirectMessage'
 import ProfileInfo from './components/ProfileInfo'
 import http from '../../services/http'
@@ -53,17 +52,26 @@ const ContactContainer = () => {
 
   return (
     <div
-      className="relative md:w-[35vw] lg:w-[30vw] xl:w-[22vw] w-full
-      border-r border-white/[0.08] bg-[#0D0E12]/95 backdrop-blur-2xl
+      className="relative w-full border-r border-white/[0.08] bg-[#0D0E12]/95 backdrop-blur-2xl
       flex flex-col h-full overflow-hidden select-none z-10"
     >
       {/* App Header */}
       <div className="h-16 px-6 flex items-center justify-between border-b border-white/[0.08] bg-white/[0.02]">
         <div className="flex items-center gap-3">
-          <div className="p-1.5 rounded-xl bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 border border-white/10 shadow-md">
-            <img src={victory} alt="logo" className="h-6 w-6" />
+          <div className="p-1.5 rounded-xl bg-white/[0.02] border border-white/10 shadow-md text-indigo-400">
+            <svg width="18" height="18" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M16 26C21.5228 26 26 21.5228 26 16C26 10.4772 21.5228 6 16 6C10.4772 6 6 10.4772 6 16C6 18.3263 6.79328 20.4674 8.12519 22.1704L7 25L9.82958 23.8752C11.5326 25.2071 13.6737 26 16 26Z"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path d="M12 13H20" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              <path d="M12 17H17" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
           </div>
-          <span className="text-base font-bold text-white tracking-wide bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text">BaatCheet</span>
+          <span className="text-[13px] font-medium tracking-[0.2em] text-white uppercase font-sans">BaatCheet</span>
         </div>
       </div>
 
