@@ -8,7 +8,7 @@ import { BiUser } from 'react-icons/bi'
 import { FiHash } from 'react-icons/fi'
 
 const ContactList = ({ contacts, isChannel = false }: { contacts: Contact[] | string[]; isChannel?: boolean }) => {
-  const { selectedChatData, setSelectedChatData, setSelectedChatType, setSelectedChatMessages } = useAppStore()
+  const { selectedChatData, setSelectedChatData, setSelectedChatType, setSelectedChatMessages, onlineUsers } = useAppStore()
   const [colorIndex, setColorIndex] = useState<number>(0)
 
   const handleClick = useCallback(
@@ -82,7 +82,13 @@ const ContactList = ({ contacts, isChannel = false }: { contacts: Contact[] | st
                       )}
                     </div>
                   )}
-                  {!isChannel && <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-[#0D0E12]" />}
+                  {!isChannel && (
+                    <div
+                      className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-[#0D0E12] ${
+                        typeof contact === 'object' && contact?._id && onlineUsers.includes(contact._id) ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-white/20'
+                      }`}
+                    />
+                  )}
                 </div>
 
                 <div className="flex-1 min-w-0">

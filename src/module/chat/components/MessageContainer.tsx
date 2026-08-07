@@ -226,10 +226,13 @@ const MessageContainer = () => {
 
   const handleEmojiSelect = (messageId: string, emoji: string) => {
     if (socket && messageId) {
+      const recipientId = typeof selectedChatData === 'object' ? selectedChatData._id : selectedChatData || ''
+      const myId = userInfo?.id || (userInfo as { _id?: string })?._id || ''
+      const convId = [myId, recipientId].filter(Boolean).sort().join('-')
       socket.emit('message:addReaction', {
         messageId,
         emoji,
-        conversationId: typeof selectedChatData === 'object' ? selectedChatData._id : selectedChatData || '',
+        conversationId: convId,
       })
     }
     setActiveReactionPicker(null)

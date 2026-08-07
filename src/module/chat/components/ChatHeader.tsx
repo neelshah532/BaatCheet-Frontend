@@ -17,11 +17,14 @@ interface ChatHeaderProps {
 }
 
 const ChatHeader = ({ onToggleGame, isGameActive }: ChatHeaderProps) => {
-  const { closeChat, selectedChatData, selectedChatType, selectedChatMessages } = useAppStore()
+  const { closeChat, selectedChatData, selectedChatType, selectedChatMessages, onlineUsers } = useAppStore()
   const [colorIndex, setColorIndex] = useState<number>(0)
   const [isSummaryOpen, setIsSummaryOpen] = useState(false)
   const [summary, setSummary] = useState<string | null>(null)
   const [isSummaryLoading, setIsSummaryLoading] = useState(false)
+
+  const contactId = typeof selectedChatData === 'object' ? selectedChatData?._id || '' : ''
+  const isOnline = selectedChatType === 'contact' ? (contactId ? onlineUsers.includes(contactId) : false) : true
 
   useEffect(() => {
     if (typeof selectedChatData !== 'string' && selectedChatData?.color) {
@@ -107,15 +110,19 @@ const ChatHeader = ({ onToggleGame, isGameActive }: ChatHeaderProps) => {
             )}
 
             {/* Status dot */}
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#0D0E12]" />
+            <div
+              className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#0D0E12] ${
+                isOnline ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-white/20'
+              }`}
+            />
           </div>
 
           {/* User Name & Status */}
           <div className="flex flex-col">
             <h2 className="text-white text-base font-semibold tracking-wide">{name}</h2>
             <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs text-white/50 font-light">Online & Active</span>
+              <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-white/30'}`} />
+              <span className="text-xs text-white/50 font-light">{isOnline ? 'Online & Active' : 'Offline'}</span>
             </div>
           </div>
         </div>

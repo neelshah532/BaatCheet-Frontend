@@ -13,7 +13,20 @@ export const createChatSlice: StateCreator<ChatState> = (set, get) => ({
   channels: [],
   replyingToMessage: null,
   isGameActive: false,
+  onlineUsers: [],
 
+  setOnlineUsers: (users) => set({ onlineUsers: users }),
+  setUserOnline: (userId, isOnline) =>
+    set((state) => {
+      const exists = state.onlineUsers.includes(userId)
+      if (isOnline && !exists) {
+        return { onlineUsers: [...state.onlineUsers, userId] }
+      }
+      if (!isOnline && exists) {
+        return { onlineUsers: state.onlineUsers.filter((id) => id !== userId) }
+      }
+      return state
+    }),
   setIsGameActive: (isGameActive) => set({ isGameActive }),
   setReplyingToMessage: (message) => set({ replyingToMessage: message }),
   setChannels: (channels) => set({ channels }),

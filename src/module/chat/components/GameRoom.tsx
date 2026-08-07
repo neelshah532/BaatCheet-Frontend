@@ -268,8 +268,22 @@ const DiceFace = ({ value }: { value: number }) => {
 const GameRoom = ({ onClose }: GameRoomProps) => {
   const socket = useSocket()
   const { selectedChatData, userInfo } = useAppStore()
+  const myId = userInfo?.id || (userInfo as { _id?: string })?._id || ''
   const opponentId = typeof selectedChatData === 'object' ? selectedChatData._id : selectedChatData || ''
-  const conversationId = [userInfo?.id, opponentId].sort().join('-')
+  const conversationId = [myId, opponentId].sort().join('-')
+
+  useEffect(() => {
+    if (socket && conversationId) {
+      socket.emit('game:join-room', { conversationId })
+      const handleConnect = () => {
+        socket.emit('game:join-room', { conversationId })
+      }
+      socket.on('connect', handleConnect)
+      return () => {
+        socket.off('connect', handleConnect)
+      }
+    }
+  }, [socket, conversationId])
 
   // Camera & WebRTC streams states
   const localVideoRef = useRef<HTMLVideoElement>(null)
@@ -665,16 +679,18 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       ])
     }
 
-    const handleGameChatReceived = ({ message }: { senderId: string; message: string }) => {
-      setGameMessages((prev) => [
-        ...prev,
-        {
-          id: String(Date.now()),
-          senderId: opponentId,
-          text: message,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ])
+    const handleGameChatReceived = ({ senderId, message }: { senderId: string; message: string }) => {
+      if (senderId !== myId) {
+        setGameMessages((prev) => [
+          ...prev,
+          {
+            id: String(Date.now()),
+            senderId: opponentId,
+            text: message,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        ])
+      }
     }
 
     const handleGameReactionReceived = ({ emoji }: { emoji: string }) => {
@@ -721,7 +737,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       socket.off('game-reaction-received', handleGameReactionReceived)
       socket.off('message:reactionUpdated', handleMessageReactionUpdated)
     }
-  }, [socket, userInfo, localStream, opponentId, activeGame])
+  }, [socket, myId, localStream, opponentId, activeGame])
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -751,19 +767,19 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       ...prev,
       {
         id: String(Date.now()),
-        senderId: userInfo?.id || 'self',
+        senderId: myId || 'self',
         text,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ])
-    socket.emit('game-chat-message', { opponentId, message: text })
+    socket.emit('game-chat-message', { conversationId, opponentId, message: text })
     setMiniChatInput('')
   }
 
   const triggerReaction = (emoji: string) => {
     setFloatingEmojis((prev) => [...prev, { id: Date.now() + Math.random(), emoji, x: 10 + Math.random() * 80 }])
     if (socket) {
-      socket.emit('game-reaction', { opponentId, emoji })
+      socket.emit('game-reaction', { conversationId, opponentId, emoji })
     }
   }
 
@@ -925,8 +941,20 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   // The server is authoritative: we only emit the proposal, never modify local state directly.
   const handleChessPieceDrop = (sourceSquare: string, targetSquare: string): boolean => {
     if (gameResult || !isMyChessTurn || isSpectator) return false
+
+    // Optimistically execute valid move locally for instant smooth drag & drop
+    const move = chessInstanceRef.current.move({
+      from: sourceSquare as Square,
+      to: targetSquare as Square,
+      promotion: 'q',
+    })
+
+    if (!move) return false
+
+    setChessFen(chessInstanceRef.current.fen())
     setMoveFrom(null)
     setOptionSquares({})
+
     if (socket) {
       socket.emit('chess:proposeMove', {
         conversationId,
@@ -935,9 +963,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
         promotion: 'q',
       })
     }
-    // Return false so react-chessboard doesn't snap the piece locally.
-    // The server will broadcast the accepted move which we apply via handleChessMoveAccepted.
-    return false
+    return true
   }
 
   const proposeDraw = () => {

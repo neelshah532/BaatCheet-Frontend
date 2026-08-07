@@ -76,6 +76,9 @@ export interface ChatState {
   channels: Contact[]
   replyingToMessage: Message | null
   isGameActive: boolean
+  onlineUsers: string[]
+  setOnlineUsers: (users: string[]) => void
+  setUserOnline: (userId: string, isOnline: boolean) => void
   setIsGameActive: (isGameActive: boolean) => void
   setReplyingToMessage: (message: Message | null) => void
   setChannels: (channels: Contact[]) => void

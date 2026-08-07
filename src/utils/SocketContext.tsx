@@ -18,7 +18,24 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
 
       socket.current.on('connect', () => {
         console.log('Connected to socket server')
+        socket.current?.emit('get-online-users')
       })
+
+      const handleOnlineUsersList = (users: string[]) => {
+        const { setOnlineUsers } = useAppStore.getState()
+        setOnlineUsers(users)
+      }
+
+      const handleUserStatusChanged = (data: { userId: string; isOnline: boolean }) => {
+        const { setUserOnline } = useAppStore.getState()
+        setUserOnline(data.userId, data.isOnline)
+      }
+
+      const handleReactionUpdated = (data: { messageId: string; reactions: { userId: string; emoji: string }[] }) => {
+        const { selectedChatMessages, setSelectedChatMessages } = useAppStore.getState()
+        const updated = selectedChatMessages.map((msg) => (msg._id === data.messageId ? { ...msg, reactions: data.reactions } : msg))
+        setSelectedChatMessages(updated)
+      }
 
       const handleReceiveMessage = (message: Message) => {
         const { selectedChatData, selectedChatType, addMessage, addContactInContactList } = useAppStore.getState()
@@ -71,12 +88,18 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
+      socket.current?.on('online-users-list', handleOnlineUsersList)
+      socket.current?.on('user-status-changed', handleUserStatusChanged)
+      socket.current?.on('message:reactionUpdated', handleReactionUpdated)
       socket.current?.on('recieveMessage', handleReceiveMessage)
       socket.current?.on('recieveChannelMessage', handleReceiveChannelMessage)
       socket.current?.on('messages-read-update', handleMessagesReadUpdate)
       socket.current?.on('game:invited', handleGameInvited)
 
       return () => {
+        socket.current?.off('online-users-list', handleOnlineUsersList)
+        socket.current?.off('user-status-changed', handleUserStatusChanged)
+        socket.current?.off('message:reactionUpdated', handleReactionUpdated)
         socket.current?.off('game:invited', handleGameInvited)
         socket.current?.disconnect()
       }
