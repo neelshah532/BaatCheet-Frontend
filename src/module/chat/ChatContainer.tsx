@@ -2,7 +2,6 @@ import { useAppStore } from '../../store/store'
 import ChatHeader from './components/ChatHeader'
 import MessageBar from './components/MessageBar'
 import MessageContainer from './components/MessageContainer'
-import GameInviteDialog from './components/GameInviteDialog'
 import GameRoom from './components/GameRoom'
 
 const ChatContainer = () => {
@@ -10,7 +9,6 @@ const ChatContainer = () => {
 
   return (
     <div className="fixed top-0 h-[100vh] w-full bg-[#080810] backdrop-blur-xl flex flex-col md:static md:flex-1">
-      <GameInviteDialog />
       <div className="relative h-full flex flex-col">
         {/* Gradient background effect */}
         <div className="fixed inset-0 -z-50 ">

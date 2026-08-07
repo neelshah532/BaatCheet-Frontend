@@ -493,7 +493,13 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
 
         peerRef.current = peer
       }
-      peer.signal(signal)
+      if (peer && !peer.destroyed) {
+        try {
+          peer.signal(signal)
+        } catch (err) {
+          console.warn('Game signal error ignored:', err)
+        }
+      }
     }
 
     const handleGameStateUpdated = ({ gameState, senderId }: { gameState: GameStateSync; senderId?: string }) => {

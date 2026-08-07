@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [react()],
   define: {
     global: 'globalThis',
+    'process.env': {},
+    'process.nextTick': 'globalThis.setTimeout',
   },
   resolve: {
     alias: {
@@ -22,6 +24,7 @@ export default defineConfig({
     esbuildOptions: {
       define: {
         global: 'globalThis',
+        'process.env': '{}',
       },
     },
   },
