@@ -19,15 +19,17 @@ export const createChatSlice: StateCreator<ChatState> = (set, get) => ({
 
   setIncomingGameInvite: (invite) => set({ incomingGameInvite: invite }),
   setIsWaitingForGameAcceptance: (isWaiting) => set({ isWaitingForGameAcceptance: isWaiting }),
-  setOnlineUsers: (users) => set({ onlineUsers: users }),
+  setOnlineUsers: (users) => set({ onlineUsers: users.map((u) => u.toString().trim()) }),
   setUserOnline: (userId, isOnline) =>
     set((state) => {
-      const exists = state.onlineUsers.includes(userId)
+      const cleanId = userId ? userId.toString().trim() : ''
+      if (!cleanId) return state
+      const exists = state.onlineUsers.includes(cleanId)
       if (isOnline && !exists) {
-        return { onlineUsers: [...state.onlineUsers, userId] }
+        return { onlineUsers: [...state.onlineUsers, cleanId] }
       }
       if (!isOnline && exists) {
-        return { onlineUsers: state.onlineUsers.filter((id) => id !== userId) }
+        return { onlineUsers: state.onlineUsers.filter((id) => id !== cleanId) }
       }
       return state
     }),

@@ -86,10 +86,20 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         setIncomingGameInvite(data)
       }
 
-      const handleGameInviteApproved = () => {
-        const { setIncomingGameInvite, setIsWaitingForGameAcceptance, setIsGameActive } = useAppStore.getState()
+      const handleGameInviteApproved = (data?: { partnerId?: string }) => {
+        const { setIncomingGameInvite, setIsWaitingForGameAcceptance, setIsGameActive, setSelectedChatType, setSelectedChatData, directContactMessages, selectedChatData } =
+          useAppStore.getState()
         setIncomingGameInvite(null)
         setIsWaitingForGameAcceptance(false)
+
+        if (data?.partnerId) {
+          const currentId = typeof selectedChatData === 'object' ? selectedChatData?._id : selectedChatData
+          if (currentId !== data.partnerId) {
+            const partnerContact = directContactMessages.find((c) => c._id === data.partnerId)
+            setSelectedChatType('contact')
+            setSelectedChatData(partnerContact || data.partnerId)
+          }
+        }
         setIsGameActive(true)
       }
 

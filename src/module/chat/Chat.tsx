@@ -7,6 +7,8 @@ import ChatContainer from './ChatContainer'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiUploadCloud, FiDownloadCloud, FiX } from 'react-icons/fi'
 
+import GameInviteDialog from './components/GameInviteDialog'
+
 const Chat = () => {
   const { isUploading, isDownloading, fileUploadProgress, fileDownloadProgress, userInfo, selectedChatType, setIsUploading, setIsDownloading } = useAppStore()
   const navigate = useNavigate()
@@ -58,6 +60,7 @@ const Chat = () => {
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,_#1A1C24_0%,_#0B0C10_60%)] opacity-80" />
 
       <div className="relative z-10 h-full w-full flex flex-1 overflow-hidden text-white">
+        <GameInviteDialog />
         {isUploading && <ProgressIndicator type="upload" progress={fileUploadProgress} onCancel={() => setIsUploading(false)} />}
         {isDownloading && <ProgressIndicator type="download" progress={fileDownloadProgress} onCancel={() => setIsDownloading(false)} />}
 
