@@ -5,7 +5,7 @@ import { useAppStore } from '../../../store/store'
 import { useSocket } from '../../../hook/socketContext'
 import SimplePeer from 'simple-peer'
 import { colors } from '../../../constants/color'
-import { Chess } from 'chess.js'
+import { Chess, Square } from 'chess.js'
 import { Chessboard } from 'react-chessboard'
 import { JigsawPuzzle } from 'react-jigsaw-puzzle'
 import 'react-jigsaw-puzzle/lib/jigsaw-puzzle.css'
@@ -302,6 +302,8 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   const chessInstanceRef = useRef(new Chess())
   const [chessFen, setChessFen] = useState(chessInstanceRef.current.fen())
   const [, setSelectedChessSlot] = useState<string | null>(null)
+  const [moveFrom, setMoveFrom] = useState<string | null>(null)
+  const [optionSquares, setOptionSquares] = useState<Record<string, { background: string; borderRadius?: string }>>({})
   const [isShaking, setIsShaking] = useState(false)
   const [drawOfferReceived, setDrawOfferReceived] = useState(false)
   const [gameResult, setGameResult] = useState<{ winnerId: string | null; reason: string; _id?: string } | null>(null)
@@ -559,6 +561,8 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       chessInstanceRef.current.load(session.state.fen || '')
       setChessFen(session.state.fen || '')
       setSelectedChessSlot(null)
+      setMoveFrom(null)
+      setOptionSquares({})
       if (session.currentTurn) {
         setCurrentTurnUserId(session.currentTurn)
       }
@@ -570,6 +574,8 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     const handleChessMoveRejected = () => {
       setIsShaking(true)
       setSelectedChessSlot(null)
+      setMoveFrom(null)
+      setOptionSquares({})
       setTimeout(() => setIsShaking(false), 500)
     }
 
@@ -842,10 +848,85 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   }
 
   // ─── CHESS ACTIONS ──────────────────────────────────────────────────────────
+  const highlightLegalMoves = (square: string) => {
+    const moves = chessInstanceRef.current.moves({ square: square as Square, verbose: true })
+    if (moves.length === 0) {
+      setOptionSquares({})
+      return
+    }
+
+    const newSquares: Record<string, { background: string; borderRadius?: string }> = {}
+
+    // Highlight selected piece square in gold/amber
+    newSquares[square] = {
+      background: 'rgba(234, 179, 8, 0.45)',
+    }
+
+    moves.forEach((move) => {
+      const isCapture = chessInstanceRef.current.get(move.to as Square) !== null
+      newSquares[move.to] = {
+        background: isCapture ? 'radial-gradient(circle, rgba(239, 68, 68, 0.7) 22%, transparent 23%)' : 'radial-gradient(circle, rgba(16, 185, 129, 0.65) 24%, transparent 25%)',
+        borderRadius: '50%',
+      }
+    })
+
+    setOptionSquares(newSquares)
+  }
+
+  const handleSquareClick = (square: string) => {
+    if (gameResult || !isMyChessTurn || isSpectator) return
+
+    // 1. If no square was previously selected: select if piece belongs to current player
+    if (!moveFrom) {
+      const piece = chessInstanceRef.current.get(square as Square)
+      if (piece && piece.color === myChessColor) {
+        setMoveFrom(square)
+        highlightLegalMoves(square)
+      }
+      return
+    }
+
+    // 2. If clicking the exact same square: deselect
+    if (moveFrom === square) {
+      setMoveFrom(null)
+      setOptionSquares({})
+      return
+    }
+
+    // 3. Check if target square is a valid move from moveFrom
+    const moves = chessInstanceRef.current.moves({ square: moveFrom as Square, verbose: true })
+    const legalMove = moves.find((m) => m.to === square)
+
+    if (legalMove) {
+      if (socket) {
+        socket.emit('chess:proposeMove', {
+          conversationId,
+          from: moveFrom,
+          to: square,
+          promotion: 'q',
+        })
+      }
+      setMoveFrom(null)
+      setOptionSquares({})
+    } else {
+      // 4. If clicked another friendly piece, switch selection to that piece
+      const piece = chessInstanceRef.current.get(square as Square)
+      if (piece && piece.color === myChessColor) {
+        setMoveFrom(square)
+        highlightLegalMoves(square)
+      } else {
+        setMoveFrom(null)
+        setOptionSquares({})
+      }
+    }
+  }
+
   // onPieceDrop is called by react-chessboard when the user drags and drops a piece.
   // The server is authoritative: we only emit the proposal, never modify local state directly.
   const handleChessPieceDrop = (sourceSquare: string, targetSquare: string): boolean => {
     if (gameResult || !isMyChessTurn || isSpectator) return false
+    setMoveFrom(null)
+    setOptionSquares({})
     if (socket) {
       socket.emit('chess:proposeMove', {
         conversationId,
@@ -1270,6 +1351,8 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
                   <Chessboard
                     position={chessFen}
                     onPieceDrop={handleChessPieceDrop}
+                    onSquareClick={handleSquareClick}
+                    customSquareStyles={optionSquares}
                     boardOrientation={myChessColor === 'w' ? 'white' : 'black'}
                     arePiecesDraggable={!gameResult && isMyChessTurn && !isSpectator}
                     customBoardStyle={{
