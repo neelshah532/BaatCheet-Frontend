@@ -1,13 +1,17 @@
+import { useState } from 'react'
 import ChatHeader from './components/ChatHeader'
 import MessageBar from './components/MessageBar'
 import MessageContainer from './components/MessageContainer'
+import GameRoom from './components/GameRoom'
 
 const ChatContainer = () => {
+  const [isGameActive, setIsGameActive] = useState(false)
+
   return (
     <div className="fixed top-0 h-[100vh] w-full bg-[#080810] backdrop-blur-xl flex flex-col md:static md:flex-1">
       <div className="relative h-full flex flex-col">
         {/* Gradient background effect */}
-        <div className="fixed inset-0  -z-50 ">
+        <div className="fixed inset-0 -z-50 ">
           <div className="absolute inset-0 bg-[#080810]">
             <div className="absolute w-full h-full bg-[radial-gradient(ellipse_at_top,_#141420_0%,_#080810_100%)]" />
           </div>
@@ -25,9 +29,16 @@ const ChatContainer = () => {
 
         {/* Content */}
         <div className="relative z-10 flex flex-col h-full">
-          <ChatHeader />
-          <MessageContainer />
-          <MessageBar />
+          <ChatHeader onToggleGame={() => setIsGameActive((prev) => !prev)} isGameActive={isGameActive} />
+
+          {isGameActive ? (
+            <GameRoom onClose={() => setIsGameActive(false)} />
+          ) : (
+            <>
+              <MessageContainer />
+              <MessageBar />
+            </>
+          )}
         </div>
       </div>
     </div>

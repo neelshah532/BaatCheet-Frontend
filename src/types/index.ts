@@ -60,6 +60,7 @@ export interface Message {
   fileUrl?: string
   replyTo?: Message | string
   status?: 'sending' | 'sent' | 'delivered' | 'read'
+  reactions?: { userId: string; emoji: string }[]
 }
 
 export interface ChatState {

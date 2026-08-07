@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { RiCloseFill } from 'react-icons/ri'
 import { FiArrowLeft } from 'react-icons/fi'
+import { FaGamepad } from 'react-icons/fa'
 import { HiOutlineSparkles } from 'react-icons/hi'
 import { useAppStore } from '../../../store/store'
 import { colors } from '../../../constants/color'
@@ -10,7 +11,12 @@ import SummaryModal from './SummaryModal'
 import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 
-const ChatHeader = () => {
+interface ChatHeaderProps {
+  onToggleGame: () => void
+  isGameActive: boolean
+}
+
+const ChatHeader = ({ onToggleGame, isGameActive }: ChatHeaderProps) => {
   const { closeChat, selectedChatData, selectedChatType, selectedChatMessages } = useAppStore()
   const [colorIndex, setColorIndex] = useState<number>(0)
   const [isSummaryOpen, setIsSummaryOpen] = useState(false)
@@ -127,6 +133,24 @@ const ChatHeader = () => {
             >
               <HiOutlineSparkles className="text-base" />
               <span className="hidden sm:inline">Catch Me Up</span>
+            </motion.button>
+          )}
+
+          {/* Game Room Button */}
+          {selectedChatType === 'contact' && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onToggleGame}
+              className={`p-2 rounded-xl border transition-all duration-200 flex items-center gap-1.5 text-xs font-medium ${
+                isGameActive
+                  ? 'bg-rose-500/10 border-rose-500/30 text-rose-400 hover:text-rose-300 animate-pulse'
+                  : 'bg-indigo-500/10 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-400 hover:text-indigo-300'
+              }`}
+              title={isGameActive ? 'Close Game Room' : 'Open LDR Game Room'}
+            >
+              <FaGamepad className="text-base" />
+              <span className="hidden sm:inline">{isGameActive ? 'Exit Game' : 'Game Room'}</span>
             </motion.button>
           )}
 

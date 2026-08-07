@@ -9,7 +9,7 @@ import aiService from '../../../services/ai'
 import { MdFolder } from 'react-icons/md'
 import { IoMdArrowRoundDown } from 'react-icons/io'
 import { IoCloseCircleSharp } from 'react-icons/io5'
-import { FiCornerUpLeft, FiClock } from 'react-icons/fi'
+import { FiCornerUpLeft, FiClock, FiSmile } from 'react-icons/fi'
 import { BsCheck, BsCheckAll } from 'react-icons/bs'
 import { FaLanguage } from 'react-icons/fa'
 import { colors } from '../../../constants/color'
@@ -42,7 +42,11 @@ const MessageContainer = () => {
   const [activeTranslateMenu, setActiveTranslateMenu] = useState<string | null>(null)
   const [translatingMessageId, setTranslatingMessageId] = useState<string | null>(null)
 
+  // Reaction States
+  const [activeReactionPicker, setActiveReactionPicker] = useState<string | null>(null)
+
   const translateMenuRef = useRef<HTMLDivElement>(null)
+  const reactionMenuRef = useRef<HTMLDivElement>(null)
 
   const languages = [
     { code: 'English', label: 'English' },
@@ -53,7 +57,7 @@ const MessageContainer = () => {
     { code: 'Arabic', label: 'العربية' },
   ]
 
-  // Listen for real-time delivery & read state updates over socket
+  // Listen for real-time delivery & read state updates and reactions over socket
   useEffect(() => {
     if (!socket) return
 
@@ -61,17 +65,26 @@ const MessageContainer = () => {
       setSelectedChatMessages(selectedChatMessages.map((msg) => ({ ...msg, status: 'read' })))
     }
 
+    const handleReactionUpdated = ({ messageId, reactions }: { messageId: string; reactions: { userId: string; emoji: string }[] }) => {
+      setSelectedChatMessages(selectedChatMessages.map((msg) => (msg._id === messageId ? { ...msg, reactions } : msg)))
+    }
+
     socket.on('messages-read-update', handleMessagesRead)
+    socket.on('message:reactionUpdated', handleReactionUpdated)
     return () => {
       socket.off('messages-read-update', handleMessagesRead)
+      socket.off('message:reactionUpdated', handleReactionUpdated)
     }
   }, [socket, selectedChatMessages, setSelectedChatMessages])
 
-  // Close translate menus on click outside
+  // Close menus on click outside
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (translateMenuRef.current && !translateMenuRef.current.contains(e.target as Node)) {
         setActiveTranslateMenu(null)
+      }
+      if (reactionMenuRef.current && !reactionMenuRef.current.contains(e.target as Node)) {
+        setActiveReactionPicker(null)
       }
     }
     document.addEventListener('mousedown', handleOutsideClick)
@@ -211,6 +224,70 @@ const MessageContainer = () => {
     )
   }
 
+  const handleEmojiSelect = (messageId: string, emoji: string) => {
+    if (socket && messageId) {
+      socket.emit('message:addReaction', {
+        messageId,
+        emoji,
+        conversationId: typeof selectedChatData === 'object' ? selectedChatData._id : selectedChatData || '',
+      })
+    }
+    setActiveReactionPicker(null)
+  }
+
+  const toggleReactionPicker = (msgId: string) => {
+    setActiveReactionPicker(activeReactionPicker === msgId ? null : msgId)
+  }
+
+  const renderReactionPicker = (message: Message) => {
+    const emojis = ['❤️', '👍', '😂', '😮', '🔥', '🎉']
+    return (
+      <div
+        ref={reactionMenuRef}
+        className="absolute bottom-full mb-2 z-50 bg-[#0F1015]/95 border border-white/10 rounded-full p-1.5 shadow-2xl backdrop-blur-xl flex gap-1 items-center"
+      >
+        {emojis.map((emoji) => (
+          <button key={emoji} onClick={() => handleEmojiSelect(message._id!, emoji)} className="hover:scale-125 transition-transform text-sm p-1 select-none">
+            {emoji}
+          </button>
+        ))}
+      </div>
+    )
+  }
+
+  const renderReactionsList = (message: Message) => {
+    if (!message.reactions || message.reactions.length === 0) return null
+
+    const counts: Record<string, { count: number; users: string[] }> = {}
+    message.reactions.forEach((r) => {
+      if (!counts[r.emoji]) {
+        counts[r.emoji] = { count: 0, users: [] }
+      }
+      counts[r.emoji].count++
+      counts[r.emoji].users.push(r.userId)
+    })
+
+    return (
+      <div className="flex flex-wrap gap-1 mt-1.5 select-none">
+        {Object.entries(counts).map(([emoji, data]) => {
+          const reactedByMe = data.users.includes(userInfo?.id || '')
+          return (
+            <button
+              key={emoji}
+              onClick={() => handleEmojiSelect(message._id!, emoji)}
+              className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-medium transition-all ${
+                reactedByMe ? 'bg-indigo-500/20 border-indigo-500/35 text-indigo-300' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'
+              }`}
+            >
+              <span>{emoji}</span>
+              <span>{data.count}</span>
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
   const renderChannelMessages = (message: Message) => {
     const isCurrentUser = typeof message.sender === 'object' && message.sender?._id === userInfo?.id
 
@@ -264,6 +341,18 @@ const MessageContainer = () => {
             >
               <FiCornerUpLeft className="text-xs" />
             </button>
+            {message._id && (
+              <div className="relative">
+                <button
+                  onClick={() => toggleReactionPicker(message._id!)}
+                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
+                  title="React to message"
+                >
+                  <FiSmile className="text-xs" />
+                </button>
+                {activeReactionPicker === message._id && renderReactionPicker(message)}
+              </div>
+            )}
           </div>
 
           <div
@@ -306,6 +395,8 @@ const MessageContainer = () => {
                   </button>
                 </div>
               ))}
+
+            {renderReactionsList(message)}
 
             <div className={`text-[10px] mt-1 font-mono flex items-center justify-end gap-1 ${isCurrentUser ? 'text-white/60' : 'text-white/40'}`}>
               <span>{moment(message.timestamp).format('LT')}</span>
@@ -389,6 +480,18 @@ const MessageContainer = () => {
             >
               <FiCornerUpLeft className="text-xs" />
             </button>
+            {message._id && (
+              <div className="relative">
+                <button
+                  onClick={() => toggleReactionPicker(message._id!)}
+                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
+                  title="React to message"
+                >
+                  <FiSmile className="text-xs" />
+                </button>
+                {activeReactionPicker === message._id && renderReactionPicker(message)}
+              </div>
+            )}
           </div>
 
           <div
@@ -431,6 +534,8 @@ const MessageContainer = () => {
                   </button>
                 </div>
               ))}
+
+            {renderReactionsList(message)}
 
             <div className={`text-[10px] mt-1 font-mono flex items-center justify-end gap-1 ${isSentByMe ? 'text-white/60' : 'text-white/40'}`}>
               <span>{moment(message.timestamp).format('LT')}</span>
