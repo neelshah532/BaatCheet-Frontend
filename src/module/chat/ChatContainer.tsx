@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useAppStore } from '../../store/store'
 import ChatHeader from './components/ChatHeader'
 import MessageBar from './components/MessageBar'
 import MessageContainer from './components/MessageContainer'
 import GameRoom from './components/GameRoom'
 
 const ChatContainer = () => {
-  const [isGameActive, setIsGameActive] = useState(false)
+  const { isGameActive, setIsGameActive } = useAppStore()
 
   return (
     <div className="fixed top-0 h-[100vh] w-full bg-[#080810] backdrop-blur-xl flex flex-col md:static md:flex-1">
@@ -29,7 +29,7 @@ const ChatContainer = () => {
 
         {/* Content */}
         <div className="relative z-10 flex flex-col h-full">
-          <ChatHeader onToggleGame={() => setIsGameActive((prev) => !prev)} isGameActive={isGameActive} />
+          <ChatHeader onToggleGame={() => setIsGameActive(!isGameActive)} isGameActive={isGameActive} />
 
           {isGameActive ? (
             <GameRoom onClose={() => setIsGameActive(false)} />

@@ -75,6 +75,8 @@ export interface ChatState {
   fileDownloadProgress: number
   channels: Contact[]
   replyingToMessage: Message | null
+  isGameActive: boolean
+  setIsGameActive: (isGameActive: boolean) => void
   setReplyingToMessage: (message: Message | null) => void
   setChannels: (channels: Contact[]) => void
   setIsUploading: (isUploading: boolean) => void

@@ -12,7 +12,9 @@ export const createChatSlice: StateCreator<ChatState> = (set, get) => ({
   fileDownloadProgress: 0,
   channels: [],
   replyingToMessage: null,
+  isGameActive: false,
 
+  setIsGameActive: (isGameActive) => set({ isGameActive }),
   setReplyingToMessage: (message) => set({ replyingToMessage: message }),
   setChannels: (channels) => set({ channels }),
   setIsUploading: (isUploading) => set({ isUploading }),
@@ -20,10 +22,10 @@ export const createChatSlice: StateCreator<ChatState> = (set, get) => ({
   setFileUploadProgress: (progress) => set({ fileUploadProgress: progress }),
   setFileDownloadProgress: (progress) => set({ fileDownloadProgress: progress }),
   setSelectedChatType: (type) => set({ selectedChatType: type }),
-  setSelectedChatData: (data) => set({ selectedChatData: data }),
+  setSelectedChatData: (data) => set({ selectedChatData: data, isGameActive: false }),
   setSelectedChatMessages: (messages) => set({ selectedChatMessages: messages }),
   closeChat: () => {
-    set({ selectedChatType: undefined, selectedChatData: undefined, selectedChatMessages: [], replyingToMessage: null })
+    set({ selectedChatType: undefined, selectedChatData: undefined, selectedChatMessages: [], replyingToMessage: null, isGameActive: false })
   },
   setDirectContactMessages: (directContactMessages) => set({ directContactMessages }),
   addChannels: (channel) => {

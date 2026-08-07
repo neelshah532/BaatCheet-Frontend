@@ -63,11 +63,21 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
+      const handleGameInvited = (data: { initiatorId: string; gameType: string }) => {
+        const { selectedChatData, setIsGameActive } = useAppStore.getState()
+        const currentSelectedId = typeof selectedChatData === 'object' ? selectedChatData?._id : selectedChatData
+        if (currentSelectedId === data.initiatorId) {
+          setIsGameActive(true)
+        }
+      }
+
       socket.current?.on('recieveMessage', handleReceiveMessage)
       socket.current?.on('recieveChannelMessage', handleReceiveChannelMessage)
       socket.current?.on('messages-read-update', handleMessagesReadUpdate)
+      socket.current?.on('game:invited', handleGameInvited)
 
       return () => {
+        socket.current?.off('game:invited', handleGameInvited)
         socket.current?.disconnect()
       }
     }

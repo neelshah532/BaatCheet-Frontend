@@ -301,6 +301,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   // 4. "Chess" & "Chess Puzzles" game states
   const chessInstanceRef = useRef(new Chess())
   const [chessFen, setChessFen] = useState(chessInstanceRef.current.fen())
+  const [, setSelectedChessSlot] = useState<string | null>(null)
   const [isShaking, setIsShaking] = useState(false)
   const [drawOfferReceived, setDrawOfferReceived] = useState(false)
   const [gameResult, setGameResult] = useState<{ winnerId: string | null; reason: string; _id?: string } | null>(null)
