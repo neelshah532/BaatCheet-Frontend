@@ -313,8 +313,11 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   const [gameEventReactions, setGameEventReactions] = useState<Record<string, { userId: string; emoji: string }[]>>({})
   const [activeGameReactionPicker, setActiveGameReactionPicker] = useState<string | null>(null)
 
-  const myChessColor = userInfo?.id && opponentId && userInfo.id < opponentId ? 'w' : 'b'
-  const isMyChessTurn = chessInstanceRef.current.turn() === myChessColor
+  const [serverPlayerColor, setServerPlayerColor] = useState<'w' | 'b' | null>(null)
+  const [currentTurnUserId, setCurrentTurnUserId] = useState<string>('')
+
+  const myChessColor = serverPlayerColor || (userInfo?.id && opponentId && userInfo.id < opponentId ? 'w' : 'b')
+  const isMyChessTurn = currentTurnUserId ? currentTurnUserId === userInfo?.id : chessInstanceRef.current.turn() === myChessColor
 
   // Chess puzzles states
   const [currentPuzzleIdx, setCurrentPuzzleIdx] = useState(0)
@@ -510,13 +513,27 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       // Track player IDs for spectator detection
       setGameSessionPlayers(session.players.map((p) => p.userId))
 
+      const myPlayer = session.players.find((p) => p.userId === userInfo?.id)
+      if (myPlayer) {
+        setServerPlayerColor(myPlayer.color)
+      }
+      if (session.currentTurn) {
+        setCurrentTurnUserId(session.currentTurn)
+      }
+
       if (session.gameType === 'chess') {
+        if (activeGame !== 'chess') {
+          setActiveGame('chess')
+        }
         chessInstanceRef.current.load(session.state.fen || '')
         setChessFen(session.state.fen || '')
         if (session.result) {
           setGameResult(session.result)
         }
       } else if (session.gameType === 'ludo') {
+        if (activeGame !== 'ludo') {
+          setActiveGame('ludo')
+        }
         if (session.state.tokens) setLudoTokens(session.state.tokens)
         if (session.state.currentRoll !== undefined) setLudoRoll(session.state.currentRoll)
         setLudoActiveTurn(session.currentTurn)
@@ -525,6 +542,9 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
           setGameResult(session.result)
         }
       } else if (session.gameType === 'puzzle') {
+        if (activeGame !== 'jigsaw') {
+          setActiveGame('jigsaw')
+        }
         if (session.state.imageUrl) setPuzzleImage(session.state.imageUrl)
         if (session.state.rows) setPuzzleRows(session.state.rows)
         if (session.state.cols) setPuzzleCols(session.state.cols)
@@ -538,6 +558,9 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       chessInstanceRef.current.load(session.state.fen || '')
       setChessFen(session.state.fen || '')
       setSelectedChessSlot(null)
+      if (session.currentTurn) {
+        setCurrentTurnUserId(session.currentTurn)
+      }
       if (session.result) {
         setGameResult(session.result)
       }
@@ -691,7 +714,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       socket.off('game-reaction-received', handleGameReactionReceived)
       socket.off('message:reactionUpdated', handleMessageReactionUpdated)
     }
-  }, [socket, userInfo, localStream, opponentId])
+  }, [socket, userInfo, localStream, opponentId, activeGame])
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })

@@ -9,10 +9,11 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const { userInfo } = useAppStore()
 
   useEffect(() => {
-    if (userInfo) {
+    const currentUserId = userInfo?.id || (userInfo as { _id?: string })?._id
+    if (currentUserId) {
       socket.current = io(`${import.meta.env.VITE_LOCAL_HOST}`, {
         withCredentials: true,
-        query: { userID: userInfo.id },
+        query: { userID: currentUserId },
       })
 
       socket.current.on('connect', () => {
