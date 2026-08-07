@@ -270,7 +270,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   const socket = useSocket()
   const { selectedChatData, userInfo } = useAppStore()
   const myId = userInfo?.id || (userInfo as { _id?: string })?._id || ''
-  const opponentId = typeof selectedChatData === 'object' ? selectedChatData._id : selectedChatData || ''
+  const opponentId = typeof selectedChatData === 'object' ? selectedChatData._id || (selectedChatData as { id?: string }).id || '' : selectedChatData || ''
   const conversationId = [myId, opponentId].sort().join('-')
 
   useEffect(() => {
@@ -920,8 +920,20 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     setOptionSquares(newSquares)
   }
 
+  const handlePieceClick = (_piece: string, square?: string) => {
+    if (square) {
+      handleSquareClick(square)
+    }
+  }
+
   const handleSquareClick = (square: string) => {
-    if (gameResult || !isMyChessTurn || isSpectator) return
+    if (gameResult || isSpectator) return
+
+    const turnColor = chessInstanceRef.current.turn()
+    if (myChessColor !== turnColor) {
+      toast.info(`It's your partner's turn (${turnColor === 'w' ? 'White' : 'Black'})`)
+      return
+    }
 
     // 1. If no square was previously selected: select if piece belongs to current player
     if (!moveFrom) {
@@ -1407,6 +1419,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
                     position={chessFen}
                     onPieceDrop={handleChessPieceDrop}
                     onSquareClick={handleSquareClick}
+                    onPieceClick={handlePieceClick}
                     customSquareStyles={optionSquares}
                     boardOrientation={myChessColor === 'w' ? 'white' : 'black'}
                     arePiecesDraggable={false}
