@@ -721,7 +721,6 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       setGameEventReactions((prev) => ({ ...prev, [messageId]: reactions }))
     }
 
-    socket.on('opponent-joined-game', handleOpponentJoin)
     socket.on('game-signal-received', handleGameSignal)
     socket.on('game-state-updated', handleGameStateUpdated)
     socket.on('game:state', handleGameState)
@@ -740,7 +739,6 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     socket.emit('join-game', { opponentId })
 
     return () => {
-      socket.off('opponent-joined-game', handleOpponentJoin)
       socket.off('game-signal-received', handleGameSignal)
       socket.off('game-state-updated', handleGameStateUpdated)
       socket.off('game:state', handleGameState)
