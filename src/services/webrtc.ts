@@ -6,6 +6,8 @@ type PeerConnectionsMap = {
   [userId: string]: SimplePeer.Instance
 }
 
+const defaultIceServers = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }]
+
 class WebRTCService {
   private peerConnections: PeerConnectionsMap = {}
   private socket: Socket | null = null
@@ -20,25 +22,23 @@ class WebRTCService {
   initialize(socket: Socket, userId: string) {
     this.socket = socket
     this.userId = userId
-
     this.setupSocketListeners()
   }
 
   private setupSocketListeners() {
     if (!this.socket) return
 
-    // Unified WebRTC signaling event (offers, answers, ICE candidates)
     this.socket.on('webrtc-signal', ({ from, signal }) => {
       console.log(`Received WebRTC signal from ${from}`)
       let peer = this.peerConnections[from]
 
-      // If receiving signal (e.g., offer) from peer and connection doesn't exist yet
       if (!peer && this.localStream) {
         console.log(`Creating non-initiator peer for ${from}`)
         peer = new SimplePeer({
           initiator: false,
           trickle: true,
           stream: this.localStream,
+          config: { iceServers: defaultIceServers },
         })
 
         this.peerConnections[from] = peer
@@ -54,7 +54,6 @@ class WebRTCService {
       }
     })
 
-    // When a user disconnects or leaves
     this.socket.on('user-disconnected', ({ userId }) => {
       this.removePeer(userId)
     })
@@ -65,7 +64,6 @@ class WebRTCService {
   }
 
   private setupPeerEvents(peer: SimplePeer.Instance, remoteUserId: string) {
-    // When remote stream arrives
     peer.on('stream', (stream) => {
       console.log(`WebRTC stream received from ${remoteUserId}`)
       if (this.onStreamCallback) {
@@ -73,7 +71,6 @@ class WebRTCService {
       }
     })
 
-    // Emit ALL signals (offer, answer, ICE candidates) to target peer
     peer.on('signal', (data) => {
       if (this.socket) {
         this.socket.emit('webrtc-signal', {
@@ -107,7 +104,6 @@ class WebRTCService {
     this.onPeerDisconnectCallback = callback
   }
 
-  // Start call with users (initiator)
   startCall(userIds: string[], localStream: MediaStream, roomId: string): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.socket || !this.userId) {
@@ -126,6 +122,7 @@ class WebRTCService {
               initiator: true,
               trickle: true,
               stream: localStream,
+              config: { iceServers: defaultIceServers },
             })
 
             this.peerConnections[remoteUserId] = peer
@@ -140,7 +137,6 @@ class WebRTCService {
     })
   }
 
-  // Join call (non-initiator)
   joinCall(roomId: string, localStream: MediaStream): void {
     if (!this.socket || !this.userId) {
       toast.error('Socket or user ID not available')

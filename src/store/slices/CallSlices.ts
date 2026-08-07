@@ -99,12 +99,28 @@ export const createCallSlice: StateCreator<AppStore, [], [], CallState> = (set, 
         }
       }
 
+      const callerUser = incomingCall.caller
+
       set({
         isInCall: true,
         isCallInitiator: false,
         callType: callType,
         localStream: stream,
         activeCallId: callId || incomingCall.callId,
+        callUsers: callerUser
+          ? [
+              {
+                id: callerUser.id,
+                firstName: callerUser.firstName || 'Caller',
+                lastName: callerUser.lastName || '',
+                email: callerUser.email || '',
+                image: callerUser.image,
+                color: callerUser.color || 0,
+                audio: true,
+                video: callType === 'video',
+              },
+            ]
+          : [],
         incomingCall: {
           callId: null,
           caller: null,

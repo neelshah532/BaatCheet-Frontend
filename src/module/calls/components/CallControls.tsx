@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FaMicrophone, FaMicrophoneSlash, FaPhoneSlash, FaVideo, FaVideoSlash } from 'react-icons/fa'
 import { useAppStore } from '../../../store/store'
 import { useSocket } from '../../../hook/socketContext'
@@ -16,9 +16,17 @@ const CallControls = ({
   const { toggleAudio, toggleVideo, endCall, localStream, activeCallId } = useAppStore()
   const socket = useSocket()
 
-  const [isAudioEnabled, setIsAudioEnabled] = useState(localStream?.getAudioTracks().length ? localStream.getAudioTracks()[0].enabled : true)
+  const [isAudioEnabled, setIsAudioEnabled] = useState(true)
+  const [isVideoEnabled, setIsVideoEnabled] = useState(false)
 
-  const [isVideoEnabled, setIsVideoEnabled] = useState(localStream?.getVideoTracks().length ? localStream.getVideoTracks()[0].enabled : false)
+  useEffect(() => {
+    if (localStream) {
+      const audioTrack = localStream.getAudioTracks()[0]
+      const videoTrack = localStream.getVideoTracks()[0]
+      setIsAudioEnabled(audioTrack ? audioTrack.enabled : true)
+      setIsVideoEnabled(videoTrack ? videoTrack.enabled : false)
+    }
+  }, [localStream])
 
   const handleToggleAudio = () => {
     const newState = !isAudioEnabled
@@ -34,10 +42,10 @@ const CallControls = ({
     }
   }
 
-  const handleToggleVideo = () => {
+  const handleToggleVideo = async () => {
     const newState = !isVideoEnabled
     setIsVideoEnabled(newState)
-    toggleVideo(newState)
+    await toggleVideo(newState)
 
     if (socket && activeCallId) {
       socket.emit('toggle-media', {

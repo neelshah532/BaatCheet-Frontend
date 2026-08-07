@@ -13,9 +13,10 @@ interface VideoViewProps {
 
 const VideoView = ({ user, isSelf = false, size = 'medium', isAudioOnly = false }: VideoViewProps) => {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
 
   const sizeClasses = {
-    small: 'w-40 h-56 rounded-2xl shadow-xl',
+    small: 'w-40 h-56 rounded-2xl shadow-2xl',
     medium: 'w-full h-full rounded-3xl',
     large: 'w-full h-full rounded-3xl',
     full: 'w-full h-full',
@@ -24,11 +25,13 @@ const VideoView = ({ user, isSelf = false, size = 'medium', isAudioOnly = false 
   useEffect(() => {
     if (videoRef.current && user.stream) {
       videoRef.current.srcObject = user.stream
-      if (isSelf) {
-        videoRef.current.muted = true
-      } else {
-        videoRef.current.muted = false
-      }
+      videoRef.current.muted = isSelf
+      videoRef.current.play().catch((err) => console.log('Video autoplay error:', err))
+    }
+    if (audioRef.current && user.stream && !isSelf) {
+      audioRef.current.srcObject = user.stream
+      audioRef.current.muted = false
+      audioRef.current.play().catch((err) => console.log('Audio autoplay error:', err))
     }
   }, [user.stream, isSelf])
 
@@ -42,8 +45,17 @@ const VideoView = ({ user, isSelf = false, size = 'medium', isAudioOnly = false 
 
   return (
     <div className={`relative overflow-hidden bg-black flex items-center justify-center ${sizeClasses[size]} ${size !== 'full' ? 'border border-white/10 backdrop-blur-sm' : ''}`}>
-      {/* The video element MUST remain in the DOM so remote audio tracks can be output by the browser! */}
-      <video ref={videoRef} autoPlay playsInline className={`absolute inset-0 w-full h-full object-cover ${isSelf ? 'mirror' : ''} ${showPlaceholder ? 'hidden' : ''}`} />
+      {/* Video element is NEVER unmounted or CSS hidden to ensure remote audio streams play 100% reliably */}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted={isSelf}
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isSelf ? 'mirror' : ''} ${showPlaceholder ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+      />
+
+      {/* Dedicated audio element for remote participants to bypass browser video element mute/hide restrictions */}
+      {!isSelf && <audio ref={audioRef} autoPlay playsInline muted={false} className="hidden" />}
 
       {showPlaceholder && (
         <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center z-10" style={{ background: themeGradient, opacity: 0.85 }}>
@@ -77,10 +89,10 @@ const VideoView = ({ user, isSelf = false, size = 'medium', isAudioOnly = false 
         </div>
       )}
 
-      {/* Gradient Vignette for text legibility */}
+      {/* Gradient Vignette */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none z-15" />
 
-      {/* User Details & Indicators */}
+      {/* User Details & (You) Badge */}
       <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end z-20">
         <div className="flex items-center space-x-3 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
           <span className="text-white text-sm font-medium tracking-wide">

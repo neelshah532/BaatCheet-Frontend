@@ -21,7 +21,7 @@ const CallInterface = () => {
     }
     controlsTimeoutRef.current = setTimeout(() => {
       setShowControls(false)
-    }, 3000)
+    }, 3500)
   }, [])
 
   useEffect(() => {
@@ -36,7 +36,11 @@ const CallInterface = () => {
   const handleRemoteStream = useCallback(
     (userId: string, stream: MediaStream) => {
       console.log(`Received remote WebRTC stream for user: ${userId}`)
-      updateCallUser(userId, { stream })
+      updateCallUser(userId, {
+        stream,
+        video: stream.getVideoTracks().length > 0 && stream.getVideoTracks()[0].enabled,
+        audio: stream.getAudioTracks().length > 0 && stream.getAudioTracks()[0].enabled,
+      })
     },
     [updateCallUser]
   )
@@ -109,6 +113,8 @@ const CallInterface = () => {
 
   if (!isInCall || !activeCallId) return null
 
+  const hasVideoTrack = !!(localStream && localStream.getVideoTracks().length > 0 && localStream.getVideoTracks()[0].enabled)
+
   const selfUser: CallUser = {
     id: userInfo?.id || 'self',
     firstName: userInfo?.firstName || 'You',
@@ -117,8 +123,8 @@ const CallInterface = () => {
     image: userInfo?.userImage,
     color: userInfo?.color || 0,
     stream: localStream,
-    audio: localStream?.getAudioTracks()[0]?.enabled || false,
-    video: localStream?.getVideoTracks()[0]?.enabled || false,
+    audio: localStream?.getAudioTracks()[0]?.enabled ?? false,
+    video: hasVideoTrack,
   }
 
   const isGroupCall = callUsers.length > 1
