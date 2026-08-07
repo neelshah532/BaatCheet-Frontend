@@ -3,6 +3,7 @@ import { useAppStore } from '../store/store'
 import { io, Socket } from 'socket.io-client'
 import { Message } from '../types'
 import { SocketContext } from '../hook/socketContext'
+import { toast } from 'sonner'
 
 export const SocketProvider = ({ children }: { children: ReactNode }) => {
   const socket = useRef<Socket | null>(null)
@@ -80,6 +81,29 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
+      const handleGameInviteReceived = (data: { senderId: string; sender: Contact }) => {
+        const { setIncomingGameInvite } = useAppStore.getState()
+        setIncomingGameInvite(data)
+      }
+
+      const handleGameInviteApproved = () => {
+        const { setIncomingGameInvite, setIsWaitingForGameAcceptance, setIsGameActive } = useAppStore.getState()
+        setIncomingGameInvite(null)
+        setIsWaitingForGameAcceptance(false)
+        setIsGameActive(true)
+      }
+
+      const handleGameInviteRejected = (data: { message?: string }) => {
+        const { setIsWaitingForGameAcceptance } = useAppStore.getState()
+        setIsWaitingForGameAcceptance(false)
+        toast.info(data?.message || 'Game invitation declined.')
+      }
+
+      const handleGameInviteCanceled = () => {
+        const { setIncomingGameInvite } = useAppStore.getState()
+        setIncomingGameInvite(null)
+      }
+
       const handleGameInvited = (data: { initiatorId: string; gameType: string }) => {
         const { selectedChatData, setIsGameActive } = useAppStore.getState()
         const currentSelectedId = typeof selectedChatData === 'object' ? selectedChatData?._id : selectedChatData
@@ -95,12 +119,20 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
       socket.current?.on('recieveChannelMessage', handleReceiveChannelMessage)
       socket.current?.on('messages-read-update', handleMessagesReadUpdate)
       socket.current?.on('game:invited', handleGameInvited)
+      socket.current?.on('game:invite-received', handleGameInviteReceived)
+      socket.current?.on('game:invite-approved', handleGameInviteApproved)
+      socket.current?.on('game:invite-rejected', handleGameInviteRejected)
+      socket.current?.on('game:invite-canceled', handleGameInviteCanceled)
 
       return () => {
         socket.current?.off('online-users-list', handleOnlineUsersList)
         socket.current?.off('user-status-changed', handleUserStatusChanged)
         socket.current?.off('message:reactionUpdated', handleReactionUpdated)
         socket.current?.off('game:invited', handleGameInvited)
+        socket.current?.off('game:invite-received', handleGameInviteReceived)
+        socket.current?.off('game:invite-approved', handleGameInviteApproved)
+        socket.current?.off('game:invite-rejected', handleGameInviteRejected)
+        socket.current?.off('game:invite-canceled', handleGameInviteCanceled)
         socket.current?.disconnect()
       }
     }

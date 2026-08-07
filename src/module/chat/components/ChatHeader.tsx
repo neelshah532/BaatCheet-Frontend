@@ -11,17 +11,31 @@ import SummaryModal from './SummaryModal'
 import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 
+import { useSocket } from '../../../hook/socketContext'
+
 interface ChatHeaderProps {
   onToggleGame: () => void
   isGameActive: boolean
 }
 
 const ChatHeader = ({ onToggleGame, isGameActive }: ChatHeaderProps) => {
-  const { closeChat, selectedChatData, selectedChatType, selectedChatMessages, onlineUsers } = useAppStore()
+  const socket = useSocket()
+  const { closeChat, selectedChatData, selectedChatType, selectedChatMessages, onlineUsers, setIsWaitingForGameAcceptance } = useAppStore()
   const [colorIndex, setColorIndex] = useState<number>(0)
   const [isSummaryOpen, setIsSummaryOpen] = useState(false)
   const [summary, setSummary] = useState<string | null>(null)
   const [isSummaryLoading, setIsSummaryLoading] = useState(false)
+
+  const handleGameClick = () => {
+    if (isGameActive) {
+      onToggleGame()
+      return
+    }
+    if (!socket || !selectedChatData) return
+    const recipientId = typeof selectedChatData === 'object' ? selectedChatData._id : selectedChatData || ''
+    socket.emit('game:request-invite', { recipientId })
+    setIsWaitingForGameAcceptance(true)
+  }
 
   const contactId = typeof selectedChatData === 'object' ? selectedChatData?._id || '' : ''
   const isOnline = selectedChatType === 'contact' ? (contactId ? onlineUsers.includes(contactId) : false) : true
@@ -148,7 +162,7 @@ const ChatHeader = ({ onToggleGame, isGameActive }: ChatHeaderProps) => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={onToggleGame}
+              onClick={handleGameClick}
               className={`p-2 rounded-xl border transition-all duration-200 flex items-center gap-1.5 text-xs font-medium ${
                 isGameActive
                   ? 'bg-rose-500/10 border-rose-500/30 text-rose-400 hover:text-rose-300 animate-pulse'

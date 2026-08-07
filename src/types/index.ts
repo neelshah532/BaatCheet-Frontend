@@ -76,7 +76,11 @@ export interface ChatState {
   channels: Contact[]
   replyingToMessage: Message | null
   isGameActive: boolean
+  incomingGameInvite: { senderId: string; sender: Contact } | null
+  isWaitingForGameAcceptance: boolean
   onlineUsers: string[]
+  setIncomingGameInvite: (invite: { senderId: string; sender: Contact } | null) => void
+  setIsWaitingForGameAcceptance: (isWaiting: boolean) => void
   setOnlineUsers: (users: string[]) => void
   setUserOnline: (userId: string, isOnline: boolean) => void
   setIsGameActive: (isGameActive: boolean) => void

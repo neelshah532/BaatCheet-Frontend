@@ -13,8 +13,12 @@ export const createChatSlice: StateCreator<ChatState> = (set, get) => ({
   channels: [],
   replyingToMessage: null,
   isGameActive: false,
+  incomingGameInvite: null,
+  isWaitingForGameAcceptance: false,
   onlineUsers: [],
 
+  setIncomingGameInvite: (invite) => set({ incomingGameInvite: invite }),
+  setIsWaitingForGameAcceptance: (isWaiting) => set({ isWaitingForGameAcceptance: isWaiting }),
   setOnlineUsers: (users) => set({ onlineUsers: users }),
   setUserOnline: (userId, isOnline) =>
     set((state) => {

@@ -16,6 +16,7 @@ interface GameRoomProps {
 
 interface GameStateSync {
   gameType: string
+  activeGame?: 'selection' | 'would-you-rather' | 'truth-or-dare' | 'tic-tac-toe' | 'chess' | 'chess-puzzle' | 'ludo' | 'jigsaw'
   index?: number
   selection?: 'A' | 'B' | null
   todType?: 'truth' | 'dare' | null
@@ -495,8 +496,12 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       peer.signal(signal)
     }
 
-    const handleGameStateUpdated = ({ gameState }: { gameState: GameStateSync }) => {
-      if (gameState.gameType === 'would-you-rather') {
+    const handleGameStateUpdated = ({ gameState, senderId }: { gameState: GameStateSync; senderId?: string }) => {
+      if (senderId && senderId === myId) return
+
+      if (gameState.gameType === 'select-game' && gameState.activeGame) {
+        setActiveGame(gameState.activeGame)
+      } else if (gameState.gameType === 'would-you-rather') {
         if (gameState.index !== undefined) setWyrIndex(gameState.index)
         if (gameState.selection !== undefined) setOpponentWyrSelection(gameState.selection)
       } else if (gameState.gameType === 'truth-or-dare') {
@@ -504,7 +509,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
         if (gameState.todPrompt !== undefined) setTodPrompt(gameState.todPrompt)
       } else if (gameState.gameType === 'tic-tac-toe') {
         if (gameState.board !== undefined) setBoard(gameState.board)
-        if (gameState.isMyTurn !== undefined) setIsMyTurn(!gameState.isMyTurn)
+        if (gameState.isMyTurn !== undefined) setIsMyTurn(gameState.isMyTurn)
         if (gameState.mySymbol !== undefined) setMySymbol(gameState.mySymbol === 'X' ? 'O' : 'X')
       } else if (gameState.gameType === 'reset') {
         setActiveGame('selection')
@@ -755,7 +760,19 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
 
   const syncGameState = (payload: GameStateSync) => {
     if (socket) {
-      socket.emit('game-state-sync', { opponentId, gameState: payload })
+      socket.emit('game-state-sync', { conversationId, opponentId, gameState: payload })
+    }
+  }
+
+  const selectGame = (game: typeof activeGame) => {
+    setActiveGame(game)
+    syncGameState({ gameType: 'select-game', activeGame: game })
+    if (game === 'chess') resetChess()
+    if (game === 'chess-puzzle') startPuzzle(0)
+    if (game === 'ludo') {
+      setLudoRoll(0)
+      setLudoTokens([])
+      setVisualLudoTokens([])
     }
   }
 
@@ -838,7 +855,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     syncGameState({
       gameType: 'tic-tac-toe',
       board: newBoard,
-      isMyTurn: false,
+      isMyTurn: true,
       mySymbol: mySymbol,
     })
 
@@ -1223,10 +1240,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
               <div className="space-y-3">
                 {/* Chess option */}
                 <button
-                  onClick={() => {
-                    setActiveGame('chess')
-                    resetChess()
-                  }}
+                  onClick={() => selectGame('chess')}
                   className="w-full p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-amber-500/30 hover:bg-amber-500/[0.03] text-left transition-all duration-300 flex items-center justify-between group"
                 >
                   <div className="pr-4">
@@ -1240,10 +1254,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
 
                 {/* Chess Tactics Puzzles */}
                 <button
-                  onClick={() => {
-                    setActiveGame('chess-puzzle')
-                    startPuzzle(0)
-                  }}
+                  onClick={() => selectGame('chess-puzzle')}
                   className="w-full p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-cyan-500/30 hover:bg-cyan-500/[0.03] text-left transition-all duration-300 flex items-center justify-between group"
                 >
                   <div className="pr-4">
@@ -1257,12 +1268,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
 
                 {/* Ludo Board */}
                 <button
-                  onClick={() => {
-                    setActiveGame('ludo')
-                    setLudoRoll(0)
-                    setLudoTokens([])
-                    setVisualLudoTokens([])
-                  }}
+                  onClick={() => selectGame('ludo')}
                   className="w-full p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-orange-500/30 hover:bg-orange-500/[0.03] text-left transition-all duration-300 flex items-center justify-between group"
                 >
                   <div className="pr-4">
@@ -1276,9 +1282,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
 
                 {/* Jigsaw Puzzle */}
                 <button
-                  onClick={() => {
-                    setActiveGame('jigsaw')
-                  }}
+                  onClick={() => selectGame('jigsaw')}
                   className="w-full p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-pink-500/30 hover:bg-pink-500/[0.03] text-left transition-all duration-300 flex items-center justify-between group"
                 >
                   <div className="pr-4">
@@ -1292,7 +1296,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
 
                 {/* Would You Rather */}
                 <button
-                  onClick={() => setActiveGame('would-you-rather')}
+                  onClick={() => selectGame('would-you-rather')}
                   className="w-full p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-indigo-500/30 hover:bg-indigo-500/[0.03] text-left transition-all duration-300 flex items-center justify-between group"
                 >
                   <div className="pr-4">
@@ -1306,7 +1310,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
 
                 {/* Truth or Dare */}
                 <button
-                  onClick={() => setActiveGame('truth-or-dare')}
+                  onClick={() => selectGame('truth-or-dare')}
                   className="w-full p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-purple-500/30 hover:bg-purple-500/[0.03] text-left transition-all duration-300 flex items-center justify-between group"
                 >
                   <div className="pr-4">
@@ -1318,7 +1322,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
 
                 {/* Tic Tac Toe */}
                 <button
-                  onClick={() => setActiveGame('tic-tac-toe')}
+                  onClick={() => selectGame('tic-tac-toe')}
                   className="w-full p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-emerald-500/30 hover:bg-emerald-500/[0.03] text-left transition-all duration-300 flex items-center justify-between group"
                 >
                   <div className="pr-4">
