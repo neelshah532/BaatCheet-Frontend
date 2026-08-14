@@ -9,7 +9,7 @@ import webRTCService from '../../../services/webrtc'
 import { FiLoader, FiAlertCircle, FiRefreshCw, FiX } from 'react-icons/fi'
 
 const CallInterface = () => {
-  const { isInCall, callType, localStream, activeCallId, userInfo, callUsers, isCallInitiator, addCallUser, removeCallUser, updateCallUser } = useAppStore()
+  const { isInCall, callType, localStream, activeCallId, userInfo, callUsers, isCallInitiator, addCallUser, removeCallUser, updateCallUser, webRTCConfig } = useAppStore()
   const socket = useSocket()
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'slow' | 'connected' | 'failed'>('connecting')
 
@@ -120,7 +120,7 @@ const CallInterface = () => {
     }
 
     webrtcInitialized.current = true
-    webRTCService.initialize(socket, userInfo.id, localStream, activeCallId)
+    webRTCService.initialize(socket, userInfo.id, localStream, activeCallId, webRTCConfig?.iceServers)
     webRTCService.setOnStreamCallback(handleRemoteStream)
     webRTCService.setOnPeerDisconnectCallback(handlePeerDisconnect)
     webRTCService.setOnConnectionStateCallback(handleConnectionState)

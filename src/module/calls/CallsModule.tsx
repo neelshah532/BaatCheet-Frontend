@@ -23,10 +23,16 @@ const CallsModule = () => {
       if (data.roomId) {
         setActiveCallId(data.roomId)
       }
+      if (data.webRTCConfig) {
+        useAppStore.setState({ webRTCConfig: data.webRTCConfig })
+      }
     })
     socket.on('call-joined', (data) => {
       if (data.roomId) {
         setActiveCallId(data.roomId)
+      }
+      if (data.webRTCConfig) {
+        useAppStore.setState({ webRTCConfig: data.webRTCConfig })
       }
       if (data.participants && Array.isArray(data.participants)) {
         data.participants.forEach((participant: { id: string; firstName?: string; lastName?: string; email?: string; image?: string; color?: number }) => {
@@ -49,10 +55,14 @@ const CallsModule = () => {
     })
 
     socket.on('incoming-call', (data) => {
+      if (data.webRTCConfig) {
+        useAppStore.setState({ webRTCConfig: data.webRTCConfig })
+      }
       handleIncomingCall({
         callId: data.callId || data.roomId,
         caller: data.caller,
         callType: data.callType,
+        webRTCConfig: data.webRTCConfig,
       })
     })
 

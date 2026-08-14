@@ -127,10 +127,12 @@ export interface CallState {
   callUsers: CallUser[]
   localStream: MediaStream | null
   activeCallId: string | null
+  webRTCConfig?: { iceServers: RTCIceServer[] } | null
   incomingCall: {
     callId: string | null
     caller: CallUser | null
     callType: 'video' | 'audio' | null
+    webRTCConfig?: { iceServers: RTCIceServer[] } | null
   }
   isCallRinging: boolean
 
