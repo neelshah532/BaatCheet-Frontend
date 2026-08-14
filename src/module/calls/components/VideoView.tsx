@@ -12,7 +12,6 @@ interface VideoViewProps {
 
 const VideoView = ({ user, isSelf = false, size = 'medium' }: VideoViewProps) => {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const audioRef = useRef<HTMLAudioElement>(null)
   const [hasActiveVideo, setHasActiveVideo] = useState(false)
 
   const sizeClasses: Record<string, string> = {
@@ -25,32 +24,6 @@ const VideoView = ({ user, isSelf = false, size = 'medium' }: VideoViewProps) =>
   useEffect(() => {
     const stream = user.stream
 
-    // ─── Bind to <video> ──────────────────────────────────────────────────
-    if (videoRef.current) {
-      if (videoRef.current.srcObject !== stream) {
-        videoRef.current.srcObject = stream ?? null
-      }
-      videoRef.current.muted = isSelf
-      if (stream && stream.getTracks().length > 0) {
-        videoRef.current.play().catch((err: Error) => {
-          console.warn('[VideoView] video play() error:', err.message)
-        })
-      }
-    }
-
-    // ─── Bind to dedicated <audio> for remote participant ─────────────────
-    if (!isSelf && audioRef.current && stream && stream.getAudioTracks().length > 0) {
-      const el = audioRef.current
-      if (el.srcObject !== stream) {
-        el.srcObject = stream
-      }
-      el.muted = false
-      el.volume = 1.0
-      el.play().catch((err: Error) => {
-        console.warn('[AudioElement] play() blocked:', err.message)
-      })
-    }
-
     // ─── Live video track detection ───────────────────────────────────────
     const checkVideo = () => {
       if (!stream) {
@@ -59,20 +32,18 @@ const VideoView = ({ user, isSelf = false, size = 'medium' }: VideoViewProps) =>
       }
       const active = stream.getVideoTracks().some((t) => t.enabled && t.readyState === 'live')
       setHasActiveVideo(active)
+    }
 
-      if (videoRef.current && stream.getVideoTracks().length > 0) {
-        if (videoRef.current.srcObject !== stream) {
-          videoRef.current.srcObject = stream
-        }
-        videoRef.current.play().catch(() => {})
+    // ─── Bind stream to <video> element ──────────────────────────────────
+    if (videoRef.current) {
+      if (videoRef.current.srcObject !== stream) {
+        videoRef.current.srcObject = stream ?? null
       }
-
-      if (!isSelf && audioRef.current && stream.getAudioTracks().length > 0) {
-        if (audioRef.current.srcObject !== stream) {
-          audioRef.current.srcObject = stream
-        }
-        audioRef.current.muted = false
-        audioRef.current.play().catch(() => {})
+      videoRef.current.muted = isSelf
+      if (stream && stream.getTracks().length > 0) {
+        videoRef.current.play().catch((err: Error) => {
+          console.warn('[VideoView] video play() notice:', err.message)
+        })
       }
     }
 
@@ -106,27 +77,29 @@ const VideoView = ({ user, isSelf = false, size = 'medium' }: VideoViewProps) =>
 
   return (
     <div className={`relative overflow-hidden bg-black flex items-center justify-center ${sizeClasses[size]} ${size !== 'full' ? 'border border-white/10 backdrop-blur-sm' : ''}`}>
-      {/* Video is always in the DOM — opacity hides it but keeps audio running */}
+      {/* Video is always in the DOM — opacity hides it but keeps audio running seamlessly */}
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted={isSelf}
+        onLoadedMetadata={() => {
+          if (videoRef.current && user.stream) {
+            videoRef.current.play().catch(() => {})
+          }
+          if (user.stream) {
+            const active = user.stream.getVideoTracks().some((t) => t.enabled && t.readyState === 'live')
+            setHasActiveVideo(active)
+          }
+        }}
+        onCanPlay={() => {
+          if (user.stream) {
+            const active = user.stream.getVideoTracks().some((t) => t.enabled && t.readyState === 'live')
+            setHasActiveVideo(active)
+          }
+        }}
         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isSelf ? 'mirror' : ''} ${showPlaceholder ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
       />
-
-      {/* Dedicated audio element for remote — invisible but NOT display:none.
-          Browsers (Chrome/Safari) suspend audio on elements with display:none. */}
-      {!isSelf && (
-        <audio
-          ref={audioRef}
-          autoPlay
-          playsInline
-          // DO NOT set muted here — that would silence audio. The muted attr
-          // on <audio> can only be un-set programmatically AFTER mount.
-          style={{ position: 'absolute', width: '1px', height: '1px', opacity: 0, left: '-9999px' }}
-        />
-      )}
 
       {showPlaceholder && (
         <div className="absolute inset-0 flex flex-col items-center justify-center z-10" style={{ background: themeGradient, opacity: 0.85 }}>

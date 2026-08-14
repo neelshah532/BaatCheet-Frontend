@@ -13,7 +13,7 @@ const GameInviteDialog = () => {
 
   const handleAccept = () => {
     if (!socket || !incomingGameInvite) return
-    socket.emit('game:invite-accepted', { senderId: incomingGameInvite.senderId })
+    socket.emit('game:invite-accepted', { senderId: incomingGameInvite.senderId, timeControl: incomingGameInvite.timeControl })
     setIncomingGameInvite(null)
   }
 

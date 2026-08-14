@@ -21,6 +21,8 @@ class WebRTCService {
   private onStreamCallback: ((userId: string, stream: MediaStream) => void) | null = null
   private onPeerDisconnectCallback: ((userId: string) => void) | null = null
 
+  private iceServers: RTCIceServer[] = defaultIceServers
+
   setOnStreamCallback(callback: (userId: string, stream: MediaStream) => void) {
     this.onStreamCallback = callback
   }
@@ -29,7 +31,11 @@ class WebRTCService {
     this.onPeerDisconnectCallback = callback
   }
 
-  initialize(socket: Socket, userId: string, localStream: MediaStream, roomId: string) {
+  initialize(socket: Socket, userId: string, localStream: MediaStream, roomId: string, customIceServers?: RTCIceServer[]) {
+    if (customIceServers && customIceServers.length > 0) {
+      this.iceServers = customIceServers
+    }
+
     if (this.isInitialized && this.roomId === roomId) {
       // Just update callbacks if re-initializing same session
       return
@@ -91,7 +97,7 @@ class WebRTCService {
       initiator,
       trickle: true,
       stream: this.localStream!,
-      config: { iceServers: defaultIceServers },
+      config: { iceServers: this.iceServers },
     })
 
     this.peerConnections[remoteUserId] = peer

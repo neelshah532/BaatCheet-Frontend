@@ -24,15 +24,14 @@ const CallInterface = () => {
 
   const handleRemoteStream = useCallback(
     (userId: string, stream: MediaStream) => {
-      const refreshedStream = new MediaStream(stream.getTracks())
       console.log(`[WebRTC Diagnostic] handleRemoteStream called for ${userId}`, {
-        audioTracks: refreshedStream.getAudioTracks().length,
-        videoTracks: refreshedStream.getVideoTracks().length,
+        audioTracks: stream.getAudioTracks().length,
+        videoTracks: stream.getVideoTracks().length,
       })
       updateCallUser(userId, {
-        stream: refreshedStream,
-        video: refreshedStream.getVideoTracks().some((t) => t.enabled && t.readyState === 'live'),
-        audio: refreshedStream.getAudioTracks().some((t) => t.enabled),
+        stream,
+        video: stream.getVideoTracks().some((t) => t.enabled && t.readyState === 'live'),
+        audio: stream.getAudioTracks().some((t) => t.enabled),
       })
     },
     [updateCallUser]
@@ -87,9 +86,11 @@ const CallInterface = () => {
         video: callTypeRef.current === 'video',
       })
 
-      // Initiator creates the offer — receiver waits for webrtc-signal
-      if (isCallInitiatorRef.current) {
-        // Small delay to ensure WebRTC is initialized with the real activeCallId
+      // Deterministic mesh topology initiation:
+      // Initiator creates offer to everyone. Between non-initiator peers (e.g. B & C in a 3+ group call),
+      // the peer with the lexicographically higher userId initiates to prevent dual-offer collisions.
+      const shouldInitiate = isCallInitiatorRef.current || (userInfo?.id && userInfo.id > remoteId)
+      if (shouldInitiate) {
         setTimeout(() => webRTCService.connectToPeer(remoteId), 100)
       }
     }
