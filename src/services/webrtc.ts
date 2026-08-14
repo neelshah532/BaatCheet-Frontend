@@ -5,7 +5,18 @@ type PeerConnectionsMap = {
   [userId: string]: SimplePeer.Instance
 }
 
-const defaultIceServers = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }]
+const defaultIceServers: RTCIceServer[] = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun3.l.google.com:19302' },
+  { urls: 'stun:global.stun.twilio.com:3478' },
+  {
+    urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:443?transport=tcp'],
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
+]
 
 class WebRTCService {
   private peerConnections: PeerConnectionsMap = {}
@@ -20,6 +31,7 @@ class WebRTCService {
 
   private onStreamCallback: ((userId: string, stream: MediaStream) => void) | null = null
   private onPeerDisconnectCallback: ((userId: string) => void) | null = null
+  private onConnectionStateCallback: ((userId: string, state: string) => void) | null = null
 
   private iceServers: RTCIceServer[] = defaultIceServers
 
@@ -29,6 +41,10 @@ class WebRTCService {
 
   setOnPeerDisconnectCallback(callback: (userId: string) => void) {
     this.onPeerDisconnectCallback = callback
+  }
+
+  setOnConnectionStateCallback(callback: (userId: string, state: string) => void) {
+    this.onConnectionStateCallback = callback
   }
 
   updateLocalStream(stream: MediaStream) {
@@ -112,8 +128,14 @@ class WebRTCService {
     if (pc) {
       pc.onsignalingstatechange = () => console.log(`[WebRTC Diagnostic] Peer ${remoteUserId} signalingState:`, pc.signalingState)
       pc.onicegatheringstatechange = () => console.log(`[WebRTC Diagnostic] Peer ${remoteUserId} iceGatheringState:`, pc.iceGatheringState)
-      pc.oniceconnectionstatechange = () => console.log(`[WebRTC Diagnostic] Peer ${remoteUserId} iceConnectionState:`, pc.iceConnectionState)
-      pc.onconnectionstatechange = () => console.log(`[WebRTC Diagnostic] Peer ${remoteUserId} connectionState:`, pc.connectionState)
+      pc.oniceconnectionstatechange = () => {
+        console.log(`[WebRTC Diagnostic] Peer ${remoteUserId} iceConnectionState:`, pc.iceConnectionState)
+        this.onConnectionStateCallback?.(remoteUserId, pc.iceConnectionState)
+      }
+      pc.onconnectionstatechange = () => {
+        console.log(`[WebRTC Diagnostic] Peer ${remoteUserId} connectionState:`, pc.connectionState)
+        this.onConnectionStateCallback?.(remoteUserId, pc.connectionState)
+      }
     }
 
     peer.on('stream', (stream: MediaStream) => {

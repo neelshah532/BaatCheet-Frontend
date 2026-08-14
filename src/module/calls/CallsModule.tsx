@@ -24,14 +24,12 @@ const CallsModule = () => {
         setActiveCallId(data.roomId)
       }
     })
-
-    // When recipient joins call room, populate existing participants (Caller A)
     socket.on('call-joined', (data) => {
       if (data.roomId) {
         setActiveCallId(data.roomId)
       }
       if (data.participants && Array.isArray(data.participants)) {
-        data.participants.forEach((participant) => {
+        data.participants.forEach((participant: { id: string; firstName?: string; lastName?: string; email?: string; image?: string; color?: number }) => {
           if (!participant.id || participant.id === userInfo?.id) return
           addCallUser({
             id: participant.id,

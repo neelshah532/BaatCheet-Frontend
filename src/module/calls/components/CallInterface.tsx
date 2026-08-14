@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../../../store/store'
 import { useSocket } from '../../../hook/socketContext'
@@ -6,10 +6,12 @@ import { CallUser } from '../../../types'
 import VideoView from './VideoView'
 import CallControls from './CallControls'
 import webRTCService from '../../../services/webrtc'
+import { FiLoader, FiAlertCircle, FiRefreshCw, FiX } from 'react-icons/fi'
 
 const CallInterface = () => {
   const { isInCall, callType, localStream, activeCallId, userInfo, callUsers, isCallInitiator, addCallUser, removeCallUser, updateCallUser } = useAppStore()
   const socket = useSocket()
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'slow' | 'connected' | 'failed'>('connecting')
 
   // Always-fresh refs so callbacks never close over stale values
   const localStreamRef = useRef<MediaStream | null>(null)
@@ -21,6 +23,58 @@ const CallInterface = () => {
   isCallInitiatorRef.current = isCallInitiator
   callTypeRef.current = callType
   userIdRef.current = userInfo?.id
+
+  // Monitor connection state & manage 15s warning & 45s hard timeout
+  useEffect(() => {
+    if (!isInCall || callUsers.length === 0) {
+      setConnectionStatus('connecting')
+      return
+    }
+
+    const allConnected = callUsers.every((u) => u.connectionState === 'connected' || (u.stream && u.stream.getAudioTracks().length > 0))
+
+    if (allConnected) {
+      setConnectionStatus('connected')
+      return
+    }
+
+    const anyFailed = callUsers.some((u) => u.connectionState === 'failed')
+    if (anyFailed) {
+      setConnectionStatus('failed')
+      return
+    }
+
+    const slowTimer = setTimeout(() => {
+      setConnectionStatus((prev) => (prev === 'connecting' ? 'slow' : prev))
+    }, 15000)
+
+    const hardTimeoutTimer = setTimeout(() => {
+      setConnectionStatus((prev) => (prev !== 'connected' ? 'failed' : prev))
+    }, 45000)
+
+    return () => {
+      clearTimeout(slowTimer)
+      clearTimeout(hardTimeoutTimer)
+    }
+  }, [isInCall, callUsers])
+
+  const handleRetryCall = () => {
+    setConnectionStatus('connecting')
+    if (localStream && socket && activeCallId && userInfo) {
+      webRTCService.cleanup(false)
+      webRTCService.initialize(socket, userInfo.id, localStream, activeCallId)
+      callUsers.forEach((user) => {
+        webRTCService.connectToPeer(user.id)
+      })
+    }
+  }
+
+  const handleCancelCall = () => {
+    if (socket && activeCallId) {
+      socket.emit('end-call', { roomId: activeCallId })
+    }
+    useAppStore.getState().endCall()
+  }
 
   const handleRemoteStream = useCallback(
     (userId: string, stream: MediaStream) => {
@@ -39,6 +93,13 @@ const CallInterface = () => {
 
   const handlePeerDisconnect = useCallback((userId: string) => removeCallUser(userId), [removeCallUser])
 
+  const handleConnectionState = useCallback(
+    (userId: string, state: string) => {
+      updateCallUser(userId, { connectionState: state as CallUser['connectionState'] })
+    },
+    [updateCallUser]
+  )
+
   // ─── WebRTC Init ─────────────────────────────────────────────────────────────
   // Runs once when all prerequisites are available (isInCall + localStream + activeCallId).
   // Uses a ref so that when activeCallId changes (caller: temp→real roomId),
@@ -54,6 +115,7 @@ const CallInterface = () => {
       // Update callbacks in case references changed — no peer teardown
       webRTCService.setOnStreamCallback(handleRemoteStream)
       webRTCService.setOnPeerDisconnectCallback(handlePeerDisconnect)
+      webRTCService.setOnConnectionStateCallback(handleConnectionState)
       return
     }
 
@@ -61,6 +123,7 @@ const CallInterface = () => {
     webRTCService.initialize(socket, userInfo.id, localStream, activeCallId)
     webRTCService.setOnStreamCallback(handleRemoteStream)
     webRTCService.setOnPeerDisconnectCallback(handlePeerDisconnect)
+    webRTCService.setOnConnectionStateCallback(handleConnectionState)
     // Drain signals that arrived during state transition
     webRTCService.flushSignalQueue()
   })
@@ -164,6 +227,61 @@ const CallInterface = () => {
                 </motion.div>
               )}
             </div>
+          )}
+
+          {/* Connection Status Overlay Card (Connecting / Slow / Failed) */}
+          {callUsers.length > 0 && connectionStatus !== 'connected' && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="absolute z-50 flex flex-col items-center justify-center p-6 rounded-3xl bg-[#0F1015]/90 border border-indigo-500/30 backdrop-blur-2xl shadow-[0_24px_64px_rgba(0,0,0,0.9)] max-w-sm w-[90%] text-center text-white"
+            >
+              {connectionStatus === 'connecting' && (
+                <>
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 text-2xl mb-3 relative">
+                    <FiLoader className="animate-spin" />
+                  </div>
+                  <h3 className="text-base font-semibold text-white">Connecting Call</h3>
+                  <p className="text-xs text-white/60 font-light mt-1">Establishing encrypted WebRTC connection...</p>
+                </>
+              )}
+
+              {connectionStatus === 'slow' && (
+                <>
+                  <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-2xl mb-3 relative">
+                    <FiLoader className="animate-spin" />
+                  </div>
+                  <h3 className="text-base font-semibold text-white">Having Trouble Connecting...</h3>
+                  <p className="text-xs text-white/60 font-light mt-1">Traversing NAT firewalls across networks. Please wait a moment...</p>
+                </>
+              )}
+
+              {connectionStatus === 'failed' && (
+                <>
+                  <div className="w-14 h-14 rounded-2xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 text-2xl mb-3">
+                    <FiAlertCircle />
+                  </div>
+                  <h3 className="text-base font-semibold text-white">Connection Failed</h3>
+                  <p className="text-xs text-white/60 font-light mt-1">Unable to establish media stream across network firewalls.</p>
+
+                  <div className="flex items-center gap-3 mt-5 w-full">
+                    <button
+                      onClick={handleRetryCall}
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2"
+                    >
+                      <FiRefreshCw className="text-sm" /> Retry Call
+                    </button>
+                    <button
+                      onClick={handleCancelCall}
+                      className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white border border-white/10 text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <FiX className="text-sm" /> Cancel
+                    </button>
+                  </div>
+                </>
+              )}
+            </motion.div>
           )}
 
           <motion.div

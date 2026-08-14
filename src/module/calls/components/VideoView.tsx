@@ -136,8 +136,8 @@ const VideoView = ({ user, isSelf = false, size = 'medium' }: VideoViewProps) =>
       {/* Vignette */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none z-15" />
 
-      {/* Name badge */}
-      <div className="absolute bottom-4 left-4 right-4 flex items-end z-20">
+      {/* Name badge & Connection Status */}
+      <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between z-20">
         <div className="flex items-center space-x-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
           <span className="text-white text-sm font-medium tracking-wide">
             {user.firstName} {isSelf && '(You)'}
@@ -148,6 +148,19 @@ const VideoView = ({ user, isSelf = false, size = 'medium' }: VideoViewProps) =>
             </div>
           )}
         </div>
+
+        {!isSelf && (user.connectionState === 'connecting' || user.connectionState === 'checking' || !user.stream) && (
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-900/80 border border-indigo-500/40 rounded-full text-[11px] text-indigo-200 shadow-lg backdrop-blur-md animate-pulse">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
+            Connecting call...
+          </div>
+        )}
+
+        {!isSelf && user.connectionState === 'failed' && (
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-red-900/80 border border-red-500/40 rounded-full text-[11px] text-red-200 shadow-lg backdrop-blur-md">
+            Connection blocked
+          </div>
+        )}
       </div>
     </div>
   )

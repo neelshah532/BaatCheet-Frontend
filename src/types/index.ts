@@ -117,6 +117,7 @@ export interface CallUser {
   stream?: MediaStream
   audio: boolean
   video: boolean
+  connectionState?: 'new' | 'connecting' | 'connected' | 'disconnected' | 'failed' | 'closed'
 }
 
 export interface CallState {
