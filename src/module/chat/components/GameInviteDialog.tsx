@@ -39,7 +39,7 @@ const GameInviteDialog = () => {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -50, scale: 0.95 }}
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          className="fixed top-6 left-1/2 -translate-x-1/2 z-[120] w-[90%] max-w-md bg-[#0F1015]/95 border border-indigo-500/30 rounded-2xl p-4 shadow-[0_16px_48px_rgba(0,0,0,0.8)] backdrop-blur-2xl text-white"
+          className="fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-[120] w-[calc(100vw-32px)] max-w-md bg-[#0F1015]/95 border border-indigo-500/30 rounded-2xl p-3.5 sm:p-4 shadow-[0_16px_48px_rgba(0,0,0,0.9)] backdrop-blur-2xl text-white"
         >
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-xl text-white shadow-lg flex-shrink-0">
@@ -83,7 +83,7 @@ const GameInviteDialog = () => {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -50, scale: 0.95 }}
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          className="fixed top-6 left-1/2 -translate-x-1/2 z-[120] w-[90%] max-w-md bg-[#0F1015]/95 border border-purple-500/30 rounded-2xl p-4 shadow-[0_16px_48px_rgba(0,0,0,0.8)] backdrop-blur-2xl text-white"
+          className="fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-[120] w-[calc(100vw-32px)] max-w-md bg-[#0F1015]/95 border border-purple-500/30 rounded-2xl p-3.5 sm:p-4 shadow-[0_16px_48px_rgba(0,0,0,0.9)] backdrop-blur-2xl text-white"
         >
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-600 flex items-center justify-center text-xl text-white shadow-lg flex-shrink-0 relative">

@@ -324,8 +324,13 @@ const MessageBar = () => {
         {/* AI Smart Replies Container (Only visible when input is empty) */}
         <AnimatePresence>
           {smartReplies.length > 0 && message.trim() === '' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex flex-wrap gap-1.5 sm:gap-2 pb-2 items-center">
-              <span className="text-[10px] text-indigo-400 font-medium flex items-center gap-1 uppercase tracking-wider mr-1">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="flex items-center gap-1.5 sm:gap-2 pb-2 overflow-x-auto custom-scrollbar whitespace-nowrap"
+            >
+              <span className="text-[10px] text-indigo-400 font-medium flex items-center gap-1 uppercase tracking-wider mr-1 flex-shrink-0">
                 <HiSparkles className="text-xs" /> Smart Reply:
               </span>
               {smartReplies.map((reply, idx) => (
@@ -334,7 +339,7 @@ const MessageBar = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => handleSendMessage(reply)}
-                  className="px-3 py-1 sm:py-1.5 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 hover:border-indigo-500/40 text-[11px] sm:text-xs font-light text-white/90 transition-all duration-200"
+                  className="px-3 py-1 sm:py-1.5 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 hover:border-indigo-500/40 text-[11px] sm:text-xs font-light text-white/90 transition-all duration-200 flex-shrink-0"
                 >
                   {reply}
                 </motion.button>
