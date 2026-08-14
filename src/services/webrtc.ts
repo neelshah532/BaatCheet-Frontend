@@ -31,13 +31,18 @@ class WebRTCService {
     this.onPeerDisconnectCallback = callback
   }
 
+  updateLocalStream(stream: MediaStream) {
+    this.localStream = stream
+  }
+
   initialize(socket: Socket, userId: string, localStream: MediaStream, roomId: string, customIceServers?: RTCIceServer[]) {
     if (customIceServers && customIceServers.length > 0) {
       this.iceServers = customIceServers
     }
 
     if (this.isInitialized && this.roomId === roomId) {
-      // Just update callbacks if re-initializing same session
+      // Update localStream and callbacks if re-initializing same session
+      this.localStream = localStream
       return
     }
     // Clean up previous session if any

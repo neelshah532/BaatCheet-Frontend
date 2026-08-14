@@ -6,8 +6,10 @@ import CallInterface from './components/CallInterface'
 import { checkBrowserCompatibility } from '../../utils/mediaUtils'
 import { toast } from 'sonner'
 
+import webRTCService from '../../services/webrtc'
+
 const CallsModule = () => {
-  const { handleIncomingCall, resetCallState, setActiveCallId, addCallUser } = useAppStore()
+  const { handleIncomingCall, resetCallState, setActiveCallId, addCallUser, userInfo } = useAppStore()
   const socket = useSocket()
 
   useEffect(() => {
@@ -30,6 +32,7 @@ const CallsModule = () => {
       }
       if (data.participants && Array.isArray(data.participants)) {
         data.participants.forEach((participant) => {
+          if (!participant.id || participant.id === userInfo?.id) return
           addCallUser({
             id: participant.id,
             firstName: participant.firstName || 'User',
@@ -40,6 +43,9 @@ const CallsModule = () => {
             audio: true,
             video: data.isVideoEnabled || false,
           })
+          if (userInfo?.id && userInfo.id > participant.id) {
+            setTimeout(() => webRTCService.connectToPeer(participant.id), 150)
+          }
         })
       }
     })

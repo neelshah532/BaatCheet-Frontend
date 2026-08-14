@@ -196,6 +196,7 @@ export const createCallSlice: StateCreator<AppStore, [], [], CallState> = (set, 
     // Create a new MediaStream reference from the same tracks so React detects the change
     // (MediaStream is mutable, so mutating it in-place doesn\'t trigger re-renders)
     const refreshedStream = new MediaStream(localStream.getTracks())
+    webRTCService.updateLocalStream(refreshedStream)
     set({ localStream: refreshedStream, callType: isEnabled ? 'video' : get().callType })
   },
 
@@ -258,6 +259,7 @@ export const createCallSlice: StateCreator<AppStore, [], [], CallState> = (set, 
   },
 
   setLocalStream: (stream) => {
+    if (stream) webRTCService.updateLocalStream(stream)
     set({ localStream: stream })
   },
 
