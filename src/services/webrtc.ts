@@ -135,31 +135,18 @@ class WebRTCService {
       pc.onsignalingstatechange = () => console.log(`[WebRTC Diagnostic] Peer ${remoteUserId} signalingState:`, pc.signalingState)
       pc.onicegatheringstatechange = () => console.log(`[WebRTC Diagnostic] Peer ${remoteUserId} iceGatheringState:`, pc.iceGatheringState)
       pc.oniceconnectionstatechange = () => {
-        console.log(`[WebRTC Diagnostic] Peer ${remoteUserId} iceConnectionState:`, pc.iceConnectionState)
         this.onConnectionStateCallback?.(remoteUserId, pc.iceConnectionState)
       }
       pc.onconnectionstatechange = () => {
-        console.log(`[WebRTC Diagnostic] Peer ${remoteUserId} connectionState:`, pc.connectionState)
-        this.onConnectionStateCallback?.(remoteUserId, pc.connectionState)
+       this.onConnectionStateCallback?.(remoteUserId, pc.connectionState)
       }
     }
 
     peer.on('stream', (stream: MediaStream) => {
-      console.log(`[WebRTC Diagnostic] REMOTE STREAM RECEIVED from ${remoteUserId}:`, {
-        streamId: stream.id,
-        tracks: stream.getTracks().map((t) => ({ kind: t.kind, id: t.id, readyState: t.readyState, enabled: t.enabled })),
-      })
       if (this.onStreamCallback) this.onStreamCallback(remoteUserId, stream)
     })
 
     peer.on('track', (track: MediaStreamTrack, stream: MediaStream) => {
-      console.log(`[WebRTC Diagnostic] REMOTE TRACK RECEIVED from ${remoteUserId}:`, {
-        kind: track.kind,
-        id: track.id,
-        readyState: track.readyState,
-        enabled: track.enabled,
-        streamId: stream.id,
-      })
       if (this.onStreamCallback) this.onStreamCallback(remoteUserId, stream)
     })
 
