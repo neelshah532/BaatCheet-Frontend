@@ -138,7 +138,7 @@ class WebRTCService {
         this.onConnectionStateCallback?.(remoteUserId, pc.iceConnectionState)
       }
       pc.onconnectionstatechange = () => {
-       this.onConnectionStateCallback?.(remoteUserId, pc.connectionState)
+        this.onConnectionStateCallback?.(remoteUserId, pc.connectionState)
       }
     }
 
