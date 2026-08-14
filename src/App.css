@@ -3,10 +3,10 @@
 @tailwind utilities;
 
 #root {
-  /* max-width: 1280px; */
   margin: 0;
-  /* padding: 2rem; */
   text-align: center;
+  background-color: #08080c;
+  min-height: 100vh;
 }
 
 body::-webkit-scrollbar {
@@ -14,11 +14,11 @@ body::-webkit-scrollbar {
 }
 
 body::-webkit-scrollbar-track {
-  background: white;
+  background: #08080c;
 }
 
 body::-webkit-scrollbar-thumb {
-  background-color: #737373;
+  background-color: #2a2d3d;
   border-radius: 20px;
 }
 
