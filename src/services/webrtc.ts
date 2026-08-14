@@ -176,10 +176,6 @@ class WebRTCService {
 
     return peer
   }
-
-  /**
-   * Called by the call initiator when the other user joins the room.
-   */
   connectToPeer(remoteUserId: string) {
     if (this.peerConnections[remoteUserId]) {
       console.warn(`[WebRTC] Already connected to ${remoteUserId}`)
@@ -192,30 +188,18 @@ class WebRTCService {
     this.createPeer(true, remoteUserId)
   }
 
-  /**
-   * Called after localStream is ready to flush any queued signals
-   * (race: signal arrives before stream is ready)
-   */
   flushSignalQueue() {
     while (this.signalQueue.length > 0) {
       const { from, signal } = this.signalQueue.shift()!
       this.handleSignal(from, signal)
     }
   }
-
-  /** Toggle audio mute — track.enabled does NOT renegotiate, just mutes locally */
   toggleAudio(enabled: boolean) {
     this.localStream?.getAudioTracks().forEach((t) => {
       t.enabled = enabled
     })
   }
 
-  /**
-   * Toggle video.
-   * - If video track exists: enable/disable it (no renegotiation needed).
-   * - If no video track: acquire camera and add via RTCPeerConnection.addTrack
-   *   which triggers automatic renegotiation in modern browsers.
-   */
   async toggleVideo(enabled: boolean): Promise<void> {
     if (!this.localStream) return
 
@@ -251,7 +235,6 @@ class WebRTCService {
           }
         })
       )
-      console.log('[WebRTC] Video track added to all peers')
     }
   }
 
@@ -290,7 +273,6 @@ class WebRTCService {
     this.localStream = null
     this.roomId = null
     this.isInitialized = false
-    console.log('[WebRTC] Cleaned up')
   }
 }
 

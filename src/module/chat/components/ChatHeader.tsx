@@ -138,7 +138,7 @@ const ChatHeader = ({ onToggleGame, isGameActive }: ChatHeaderProps) => {
           {/* User Name & Status */}
           <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
             <h2 className="text-white text-sm sm:text-base font-semibold tracking-wide truncate">{name}</h2>
-            <div className="flex items-center gap-1.5 min-w-0">
+            <div className="flex max-sm:items-center gap-1.5 min-w-0">
               <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-white/30'}`} />
               <span className="text-[11px] sm:text-xs text-white/50 font-light truncate">{isOnline ? 'Online & Active' : 'Offline'}</span>
             </div>
