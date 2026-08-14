@@ -75,7 +75,7 @@ const ContactContainer = () => {
         </div>
       </div>
 
-      <div className="px-4 py-5 space-y-6 flex-1 overflow-y-auto custom-scrollbar pb-20">
+      <div className="px-4 py-5 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
         {/* Direct Messages */}
         <div>
           <div className="flex items-center justify-between px-2 mb-3">

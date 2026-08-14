@@ -204,10 +204,13 @@ const MessageContainer = () => {
     return message.content
   }
 
-  const renderTranslateDropdown = (message: Message) => {
+  const renderTranslateDropdown = (message: Message, isSentByMe: boolean) => {
     if (activeTranslateMenu !== message._id) return null
     return (
-      <div ref={translateMenuRef} className="absolute bottom-full mb-2 z-50 bg-[#0F1015]/95 border border-white/10 rounded-2xl p-2 shadow-2xl backdrop-blur-xl w-40">
+      <div
+        ref={translateMenuRef}
+        className={`absolute -top-52 ${isSentByMe ? 'right-0' : 'left-0'} z-[100] bg-[#0F1015]/95 border border-white/20 rounded-2xl p-2 shadow-2xl backdrop-blur-2xl w-40`}
+      >
         <div className="text-[9px] font-semibold text-indigo-400 uppercase tracking-wider px-2 pb-1 border-b border-white/[0.08] mb-1.5">Translate to:</div>
         <div className="space-y-0.5 max-h-48 overflow-y-auto custom-scrollbar">
           {languages.map((lang) => (
@@ -242,12 +245,14 @@ const MessageContainer = () => {
     setActiveReactionPicker(activeReactionPicker === msgId ? null : msgId)
   }
 
-  const renderReactionPicker = (message: Message) => {
+  const renderReactionPicker = (message: Message, isSentByMe: boolean) => {
     const emojis = ['❤️', '👍', '😂', '😮', '🔥', '🎉']
     return (
       <div
         ref={reactionMenuRef}
-        className="absolute bottom-full mb-2 z-50 bg-[#0F1015]/95 border border-white/10 rounded-full p-1.5 shadow-2xl backdrop-blur-xl flex gap-1 items-center"
+        className={`absolute -top-11 ${
+          isSentByMe ? 'right-0' : 'left-0'
+        } z-[100] bg-[#0F1015]/95 border border-white/20 rounded-full p-1.5 shadow-2xl backdrop-blur-2xl flex gap-1 items-center whitespace-nowrap`}
       >
         {emojis.map((emoji) => (
           <button key={emoji} onClick={() => handleEmojiSelect(message._id!, emoji)} className="hover:scale-125 transition-transform text-sm p-1 select-none">
@@ -258,7 +263,7 @@ const MessageContainer = () => {
     )
   }
 
-  const renderReactionsList = (message: Message) => {
+  const renderReactionsList = (message: Message, isSentByMe: boolean) => {
     if (!message.reactions || message.reactions.length === 0) return null
 
     const counts: Record<string, { count: number; users: string[] }> = {}
@@ -270,32 +275,39 @@ const MessageContainer = () => {
       counts[r.emoji].users.push(r.userId)
     })
 
+    const totalReactions = message.reactions.length
+    const myId = userInfo?.id || (userInfo as { _id?: string })?._id || ''
+    const reactedByMe = message.reactions.some((r) => r.userId === myId)
+
     return (
-      <div className="flex flex-wrap gap-1 mt-1.5 select-none">
-        {Object.entries(counts).map(([emoji, data]) => {
-          const reactedByMe = data.users.includes(userInfo?.id || '')
-          return (
-            <button
-              key={emoji}
-              onClick={() => handleEmojiSelect(message._id!, emoji)}
-              className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-medium transition-all ${
-                reactedByMe ? 'bg-indigo-500/20 border-indigo-500/35 text-indigo-300' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'
-              }`}
-            >
-              <span>{emoji}</span>
-              <span>{data.count}</span>
-            </button>
-          )
-        })}
+      <div
+        onClick={(e) => {
+          e.stopPropagation()
+          if (message._id) toggleReactionPicker(message._id)
+        }}
+        className={`absolute -bottom-2.5 ${isSentByMe ? 'right-2' : 'left-2'} z-20 flex items-center gap-1 bg-[#12151e] border ${
+          reactedByMe ? 'border-indigo-500/50 text-indigo-300' : 'border-white/15 text-white/90'
+        } rounded-full px-2 py-0.5 text-xs shadow-xl backdrop-blur-xl cursor-pointer hover:scale-110 transition-all select-none`}
+        title="Click to react"
+      >
+        <div className="flex items-center gap-0.5">
+          {Object.keys(counts).map((emoji) => (
+            <span key={emoji} className="text-xs leading-none">
+              {emoji}
+            </span>
+          ))}
+        </div>
+        {totalReactions > 1 && <span className="text-[10px] font-semibold text-white/70 leading-none">{totalReactions}</span>}
       </div>
     )
   }
 
   const renderChannelMessages = (message: Message) => {
     const isCurrentUser = typeof message.sender === 'object' && message.sender?._id === userInfo?.id
+    const hasReactions = !!message.reactions && message.reactions.length > 0
 
     return (
-      <div className={`group relative mt-4 flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
+      <div className={`group relative mt-4 ${hasReactions ? 'mb-2' : ''} flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'}`}>
         {typeof message.sender === 'object' && message.sender?._id !== userInfo?.id && (
           <div className="flex items-center gap-2 mb-1.5 px-1">
             <div className="relative">
@@ -326,16 +338,13 @@ const MessageContainer = () => {
             className={`absolute ${isCurrentUser ? 'right-full mr-2.5' : 'left-full ml-2.5'} top-1/2 -translate-y-1/2 opacity-45 md:opacity-25 md:group-hover:opacity-100 hover:!opacity-100 flex items-center gap-1 transition-all duration-200 z-10`}
           >
             {message.messageType === 'text' && message._id && (
-              <div className="relative">
-                <button
-                  onClick={() => toggleTranslateMenu(message._id!)}
-                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
-                  title="Translate message"
-                >
-                  <FaLanguage className="text-sm" />
-                </button>
-                {renderTranslateDropdown(message)}
-              </div>
+              <button
+                onClick={() => toggleTranslateMenu(message._id!)}
+                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
+                title="Translate message"
+              >
+                <FaLanguage className="text-sm" />
+              </button>
             )}
             <button
               onClick={() => setReplyingToMessage(message)}
@@ -345,26 +354,26 @@ const MessageContainer = () => {
               <FiCornerUpLeft className="text-xs" />
             </button>
             {message._id && (
-              <div className="relative">
-                <button
-                  onClick={() => toggleReactionPicker(message._id!)}
-                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
-                  title="React to message"
-                >
-                  <FiSmile className="text-xs" />
-                </button>
-                {activeReactionPicker === message._id && renderReactionPicker(message)}
-              </div>
+              <button
+                onClick={() => toggleReactionPicker(message._id!)}
+                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
+                title="React to message"
+              >
+                <FiSmile className="text-xs" />
+              </button>
             )}
           </div>
 
           <div
-            className={`px-4 py-3 rounded-2xl w-full break-words text-sm tracking-wide leading-relaxed shadow-sm ${
+            className={`px-4 py-3 rounded-2xl w-full break-words text-sm tracking-wide leading-relaxed shadow-sm relative ${
               isCurrentUser
                 ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-br-none border border-white/10'
                 : 'bg-white/[0.05] text-white/90 border border-white/10 rounded-bl-none backdrop-blur-md'
             }`}
           >
+            {activeReactionPicker === message._id && renderReactionPicker(message, isCurrentUser)}
+            {activeTranslateMenu === message._id && renderTranslateDropdown(message, isCurrentUser)}
+
             {renderReplyCard(message.replyTo)}
 
             {message.messageType === 'text' && renderTranslationText(message)}
@@ -399,12 +408,12 @@ const MessageContainer = () => {
                 </div>
               ))}
 
-            {renderReactionsList(message)}
-
             <div className={`text-[10px] mt-1 font-mono flex items-center justify-end gap-1 ${isCurrentUser ? 'text-white/60' : 'text-white/40'}`}>
               <span>{moment(message.timestamp).format('LT')}</span>
               {isCurrentUser && renderStatusTicks(message.status)}
             </div>
+
+            {renderReactionsList(message, isCurrentUser)}
           </div>
         </div>
       </div>
@@ -456,25 +465,23 @@ const MessageContainer = () => {
 
   const renderDMmessages = (message: Message) => {
     const isSentByMe = message.sender === userInfo?.id || (typeof message.sender === 'object' && message.sender?._id === userInfo?.id)
+    const hasReactions = !!message.reactions && message.reactions.length > 0
 
     return (
-      <div className={`group relative mt-3 flex flex-col ${isSentByMe ? 'items-end' : 'items-start'}`}>
+      <div className={`group relative mt-3 ${hasReactions ? 'mb-2' : ''} flex flex-col ${isSentByMe ? 'items-end' : 'items-start'}`}>
         <div className="relative flex items-center max-w-[80%] md:max-w-[60%]">
           {/* Action buttons */}
           <div
             className={`absolute ${isSentByMe ? 'right-full mr-2.5' : 'left-full ml-2.5'} top-1/2 -translate-y-1/2 opacity-45 md:opacity-25 md:group-hover:opacity-100 hover:!opacity-100 flex items-center gap-1 transition-all duration-200 z-10`}
           >
             {message.messageType === 'text' && message._id && (
-              <div className="relative">
-                <button
-                  onClick={() => toggleTranslateMenu(message._id!)}
-                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
-                  title="Translate message"
-                >
-                  <FaLanguage className="text-sm" />
-                </button>
-                {renderTranslateDropdown(message)}
-              </div>
+              <button
+                onClick={() => toggleTranslateMenu(message._id!)}
+                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
+                title="Translate message"
+              >
+                <FaLanguage className="text-sm" />
+              </button>
             )}
             <button
               onClick={() => setReplyingToMessage(message)}
@@ -484,26 +491,26 @@ const MessageContainer = () => {
               <FiCornerUpLeft className="text-xs" />
             </button>
             {message._id && (
-              <div className="relative">
-                <button
-                  onClick={() => toggleReactionPicker(message._id!)}
-                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
-                  title="React to message"
-                >
-                  <FiSmile className="text-xs" />
-                </button>
-                {activeReactionPicker === message._id && renderReactionPicker(message)}
-              </div>
+              <button
+                onClick={() => toggleReactionPicker(message._id!)}
+                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-all duration-200"
+                title="React to message"
+              >
+                <FiSmile className="text-xs" />
+              </button>
             )}
           </div>
 
           <div
-            className={`px-4 py-3 rounded-2xl w-full break-words text-sm tracking-wide leading-relaxed shadow-sm ${
+            className={`px-4 py-3 rounded-2xl w-full break-words text-sm tracking-wide leading-relaxed shadow-sm relative ${
               isSentByMe
                 ? 'bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-br-none border border-white/10'
                 : 'bg-white/[0.05] text-white/90 border border-white/10 rounded-bl-none backdrop-blur-md'
             }`}
           >
+            {activeReactionPicker === message._id && renderReactionPicker(message, isSentByMe)}
+            {activeTranslateMenu === message._id && renderTranslateDropdown(message, isSentByMe)}
+
             {renderReplyCard(message.replyTo)}
 
             {message.messageType === 'text' && renderTranslationText(message)}
@@ -538,12 +545,12 @@ const MessageContainer = () => {
                 </div>
               ))}
 
-            {renderReactionsList(message)}
-
             <div className={`text-[10px] mt-1 font-mono flex items-center justify-end gap-1 ${isSentByMe ? 'text-white/60' : 'text-white/40'}`}>
               <span>{moment(message.timestamp).format('LT')}</span>
               {isSentByMe && renderStatusTicks(message.status)}
             </div>
+
+            {renderReactionsList(message, isSentByMe)}
           </div>
         </div>
       </div>

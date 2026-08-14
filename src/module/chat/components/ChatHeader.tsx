@@ -89,27 +89,31 @@ const ChatHeader = ({ onToggleGame, isGameActive }: ChatHeaderProps) => {
           : 'Chat'
 
   return (
-    <div className="py-3 px-6 bg-[#0D0E12]/90 backdrop-blur-xl border-b border-white/[0.08] shadow-md relative z-30">
-      <div className="flex items-center justify-between max-w-screen-2xl mx-auto">
-        <div className="flex items-center gap-3">
+    <div className="py-2.5 sm:py-3 px-3 sm:px-6 bg-[#0D0E12]/90 backdrop-blur-xl border-b border-white/[0.08] shadow-md relative z-30 flex-shrink-0">
+      <div className="flex items-center justify-between max-w-screen-2xl mx-auto gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
           {/* Back button for mobile */}
-          <button onClick={closeChat} className="md:hidden p-2 -ml-2 rounded-xl text-white/50 hover:text-white hover:bg-white/5 transition-all duration-200" aria-label="Go Back">
+          <button
+            onClick={closeChat}
+            className="md:hidden p-1.5 -ml-1 rounded-xl text-white/60 hover:text-white hover:bg-white/5 transition-all duration-200 flex-shrink-0"
+            aria-label="Go Back"
+          >
             <FiArrowLeft size={18} />
           </button>
 
           {/* Avatar */}
-          <div className="relative flex items-center justify-center">
+          <div className="relative flex items-center justify-center flex-shrink-0">
             {selectedChatType === 'contact' ? (
               typeof selectedChatData !== 'string' && selectedChatData?.image ? (
                 <div
-                  className="w-11 h-11 rounded-full flex items-center justify-center border border-white/20 shadow-md overflow-hidden"
+                  className="w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border border-white/20 shadow-md overflow-hidden"
                   style={{ backgroundColor: colors[colorIndex] }}
                 >
                   <img src={`${import.meta.env.VITE_LOCAL_HOST}/${selectedChatData.image}`} alt="Avatar" className="w-full h-full object-cover" />
                 </div>
               ) : (
                 <div
-                  className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold text-white shadow-md border border-white/20"
+                  className="w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold text-white shadow-md border border-white/20"
                   style={{ backgroundColor: colors[colorIndex] }}
                 >
                   {typeof selectedChatData !== 'string' && selectedChatData?.firstName && selectedChatData?.lastName
@@ -118,31 +122,31 @@ const ChatHeader = ({ onToggleGame, isGameActive }: ChatHeaderProps) => {
                 </div>
               )
             ) : (
-              <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-lg font-bold text-white shadow-md border border-white/20">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-base sm:text-lg font-bold text-white shadow-md border border-white/20">
                 #
               </div>
             )}
 
             {/* Status dot */}
             <div
-              className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#0D0E12] ${
+              className={`absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border-2 border-[#0D0E12] ${
                 isOnline ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-white/20'
               }`}
             />
           </div>
 
           {/* User Name & Status */}
-          <div className="flex flex-col">
-            <h2 className="text-white text-base font-semibold tracking-wide">{name}</h2>
-            <div className="flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-white/30'}`} />
-              <span className="text-xs text-white/50 font-light">{isOnline ? 'Online & Active' : 'Offline'}</span>
+          <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
+            <h2 className="text-white text-sm sm:text-base font-semibold tracking-wide truncate">{name}</h2>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-white/30'}`} />
+              <span className="text-[11px] sm:text-xs text-white/50 font-light truncate">{isOnline ? 'Online & Active' : 'Offline'}</span>
             </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
           {/* Catch Me Up AI Button */}
           {selectedChatMessages.length > 0 && (
             <motion.button

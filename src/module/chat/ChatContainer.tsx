@@ -8,7 +8,7 @@ const ChatContainer = () => {
   const { isGameActive, setIsGameActive } = useAppStore()
 
   return (
-    <div className="fixed top-0 h-[100vh] w-full bg-[#080810] backdrop-blur-xl flex flex-col md:static md:flex-1">
+    <div className="fixed top-0 inset-x-0 h-[100dvh] w-full bg-[#080810] backdrop-blur-xl flex flex-col overflow-hidden md:static md:flex-1 md:h-full">
       <div className="relative h-full flex flex-col">
         {/* Gradient background effect */}
         <div className="fixed inset-0 -z-50 ">

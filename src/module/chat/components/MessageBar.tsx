@@ -319,12 +319,12 @@ const MessageBar = () => {
   const diffTokens = grammarSuggestion ? computeWordDiff(message, grammarSuggestion) : []
 
   return (
-    <div className="p-4 bg-[#0D0E12]/90 backdrop-blur-xl border-t border-white/[0.08] relative z-20">
+    <div className="p-2.5 sm:p-4 flex-shrink-0 bg-[#0D0E12]/90 backdrop-blur-xl border-t border-white/[0.08] relative z-20">
       <div className="max-w-screen-2xl mx-auto flex flex-col gap-2">
         {/* AI Smart Replies Container (Only visible when input is empty) */}
         <AnimatePresence>
           {smartReplies.length > 0 && message.trim() === '' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex flex-wrap gap-2 pb-2 items-center">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex flex-wrap gap-1.5 sm:gap-2 pb-2 items-center">
               <span className="text-[10px] text-indigo-400 font-medium flex items-center gap-1 uppercase tracking-wider mr-1">
                 <HiSparkles className="text-xs" /> Smart Reply:
               </span>
@@ -334,7 +334,7 @@ const MessageBar = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => handleSendMessage(reply)}
-                  className="px-3.5 py-1.5 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 hover:border-indigo-500/40 text-xs font-light text-white/90 transition-all duration-200"
+                  className="px-3 py-1 sm:py-1.5 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 hover:border-indigo-500/40 text-[11px] sm:text-xs font-light text-white/90 transition-all duration-200"
                 >
                   {reply}
                 </motion.button>
@@ -349,34 +349,34 @@ const MessageBar = () => {
             <motion.div
               initial={{ opacity: 0, y: 10, height: 0 }}
               animate={{ opacity: 1, y: 0, height: 'auto' }}
-              exit={{ opacity: 0, y: -10, height: 0 }}
-              className="overflow-hidden pb-1"
+              exit={{ opacity: 0, y: 10, height: 0 }}
+              className="overflow-hidden"
             >
-              <div className="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/25 px-4 py-2.5 rounded-xl text-xs backdrop-blur-md">
+              <div className="flex items-center justify-between bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-2.5 sm:p-3 text-xs backdrop-blur-md gap-2">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="p-1 rounded-lg bg-emerald-500/20 text-emerald-400 flex-shrink-0">
-                    <HiSparkles className="text-sm animate-pulse" />
+                  <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 flex-shrink-0">
+                    <HiOutlineSparkles className="text-sm" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="font-semibold text-emerald-400">AI Grammar Suggestion</span>
-                    <span className="text-white/80 flex flex-wrap items-center gap-1.5 mt-0.5 min-w-0 leading-normal font-sans">
-                      {diffTokens.map((token, index) => {
-                        if (token.type === 'removed') {
+                    <span className="text-[10px] font-semibold text-indigo-400 uppercase tracking-wider">Grammar Suggestion</span>
+                    <span className="text-white/80 font-light truncate">
+                      {diffTokens.map((token, idx) => {
+                        if (token.type === 'added') {
                           return (
-                            <span key={index} className="line-through text-red-400/90 bg-red-500/10 px-1 py-0.5 rounded font-light select-none">
+                            <span key={idx} className="text-emerald-400 font-semibold bg-emerald-500/20 px-1 rounded mx-0.5">
                               {token.text}
                             </span>
                           )
                         }
-                        if (token.type === 'added') {
+                        if (token.type === 'removed') {
                           return (
-                            <span key={index} className="text-emerald-300 font-medium bg-emerald-500/10 px-1 py-0.5 rounded shadow-sm">
+                            <span key={idx} className="line-through text-rose-400/80 mx-0.5">
                               {token.text}
                             </span>
                           )
                         }
                         return (
-                          <span key={index} className="text-white/60">
+                          <span key={idx} className="mx-0.5">
                             {token.text}
                           </span>
                         )
@@ -384,15 +384,15 @@ const MessageBar = () => {
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={() => {
                       setMessage(grammarSuggestion)
                       setGrammarSuggestion(null)
                     }}
-                    className="px-3 py-1.5 rounded-lg bg-emerald-500/25 hover:bg-emerald-500/40 text-emerald-300 hover:text-white text-[11px] font-semibold tracking-wide transition-all shadow-md active:scale-95"
+                    className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-emerald-500/25 hover:bg-emerald-500/40 text-emerald-300 hover:text-white text-[10px] sm:text-[11px] font-semibold tracking-wide transition-all shadow-md active:scale-95 whitespace-nowrap"
                   >
-                    Accept Change
+                    Accept
                   </button>
                   <button
                     onClick={() => {
@@ -430,7 +430,7 @@ const MessageBar = () => {
                     </span>
                   </div>
                 </div>
-                <button onClick={() => setReplyingToMessage(null)} className="p-1 text-white/40 hover:text-white rounded-lg transition-colors">
+                <button onClick={() => setReplyingToMessage(null)} className="p-1 text-white/40 hover:text-white rounded-lg transition-colors flex-shrink-0">
                   <FiX className="text-sm" />
                 </button>
               </div>
@@ -439,18 +439,18 @@ const MessageBar = () => {
         </AnimatePresence>
 
         {/* Input Controls Container */}
-        <div className="flex items-center gap-3">
-          <div className="flex-1 relative">
-            <div className="flex items-center bg-white/[0.04] border border-white/10 focus-within:border-indigo-500/50 rounded-2xl transition-all duration-300 shadow-inner px-3 py-1.5">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex-1 min-w-0 relative">
+            <div className="flex items-center bg-white/[0.04] border border-white/10 focus-within:border-indigo-500/50 rounded-2xl transition-all duration-300 shadow-inner px-2.5 sm:px-3 py-1 sm:py-1.5 min-w-0">
               <input
                 ref={inputRef}
                 type="text"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={isEnhancing ? 'AI is polishing your message...' : 'Type your message...'}
+                placeholder={isEnhancing ? 'AI is polishing...' : 'Type a message...'}
                 disabled={isEnhancing}
-                className="flex-1 px-3 py-2 bg-transparent text-white placeholder-white/40 focus:outline-none text-sm tracking-wide font-sans disabled:opacity-50"
+                className="min-w-0 flex-1 px-1.5 sm:px-3 py-1.5 sm:py-2 bg-transparent text-white placeholder-white/40 focus:outline-none text-xs sm:text-sm tracking-wide font-sans disabled:opacity-50"
               />
 
               {/* Grammar checking background indicator */}
@@ -458,25 +458,25 @@ const MessageBar = () => {
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ repeat: Infinity, duration: 1.8, ease: 'linear' }}
-                  className="p-2 text-indigo-400/70"
+                  className="p-1.5 sm:p-2 text-indigo-400/70 flex-shrink-0"
                   title="Checking grammar..."
                 >
-                  <HiOutlineSparkles className="text-lg" />
+                  <HiOutlineSparkles className="text-base sm:text-lg" />
                 </motion.div>
               )}
 
               {/* Grammarly-like Writing Assistant Button */}
-              <div className="relative" ref={aiMenuRef}>
+              <div className="relative flex-shrink-0" ref={aiMenuRef}>
                 <button
                   onClick={() => setShowAiMenu(!showAiMenu)}
-                  className={`p-2 rounded-xl border transition-all duration-200 flex items-center gap-1 ${
+                  className={`p-1.5 sm:p-2 rounded-xl border transition-all duration-200 flex items-center gap-1 ${
                     showAiMenu ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300' : 'bg-white/5 border-white/5 text-white/50 hover:text-indigo-400 hover:bg-indigo-500/10'
                   }`}
                   title="AI Writing Assistant"
                   disabled={isEnhancing}
                 >
-                  <HiOutlineSparkles className={`text-xl ${isEnhancing ? 'animate-spin' : ''}`} />
-                  <FaChevronDown className="text-[8px]" />
+                  <HiOutlineSparkles className={`text-base sm:text-xl ${isEnhancing ? 'animate-spin' : ''}`} />
+                  <FaChevronDown className="text-[7px] sm:text-[8px]" />
                 </button>
 
                 <AnimatePresence>
@@ -485,13 +485,13 @@ const MessageBar = () => {
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute bottom-full right-0 mb-3 z-50 w-64 rounded-2xl bg-[#0F1015]/95 border border-white/10 p-2.5 shadow-2xl backdrop-blur-xl"
+                      className="absolute bottom-full right-0 mb-3 z-50 w-56 sm:w-64 max-w-[calc(100vw-24px)] rounded-2xl bg-[#0F1015]/95 border border-white/10 p-2.5 shadow-2xl backdrop-blur-xl"
                     >
                       <div className="px-2 pb-2 mb-1.5 border-b border-white/[0.08] flex items-center justify-between">
                         <span className="text-[10px] font-semibold tracking-wider text-indigo-400 uppercase">Tone Assistant</span>
                         <span className="text-[8px] text-white/40">Select style to refine</span>
                       </div>
-                      <div className="space-y-0.5">
+                      <div className="space-y-0.5 max-h-48 overflow-y-auto custom-scrollbar">
                         {aiStyles.map((item) => (
                           <button
                             key={item.style}
@@ -508,19 +508,27 @@ const MessageBar = () => {
                 </AnimatePresence>
               </div>
 
-              <button className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-xl transition-colors ml-1" onClick={handleFileChange} title="Attach File">
-                <GrAttachment className="text-lg" />
+              <button
+                className="p-1.5 sm:p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-xl transition-colors ml-0.5 flex-shrink-0"
+                onClick={handleFileChange}
+                title="Attach File"
+              >
+                <GrAttachment className="text-base sm:text-lg" />
               </button>
               <input type="file" className="hidden" ref={fileRef} onChange={handleAttachmentChange} />
 
-              <div className="relative">
-                <button onClick={() => setShowEmoji(!showEmoji)} className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-xl transition-colors" title="Select Emoji">
-                  <RiEmojiStickerLine className="text-xl" />
+              <div className="relative flex-shrink-0">
+                <button
+                  onClick={() => setShowEmoji(!showEmoji)}
+                  className="p-1.5 sm:p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+                  title="Select Emoji"
+                >
+                  <RiEmojiStickerLine className="text-base sm:text-xl" />
                 </button>
 
                 {showEmoji && (
-                  <div className="absolute bottom-full right-0 mb-3 z-50 shadow-2xl rounded-2xl overflow-hidden border border-white/10" ref={emojiRef}>
-                    <EmojiPicker theme={Theme.DARK} height={380} width={340} onEmojiClick={handleEmoji} autoFocusSearch={false} />
+                  <div className="absolute bottom-full right-0 mb-3 z-50 shadow-2xl rounded-2xl overflow-hidden border border-white/10 max-w-[calc(100vw-24px)]" ref={emojiRef}>
+                    <EmojiPicker theme={Theme.DARK} height={320} width={300} onEmojiClick={handleEmoji} autoFocusSearch={false} />
                   </div>
                 )}
               </div>
@@ -532,9 +540,9 @@ const MessageBar = () => {
             whileTap={{ scale: 0.95 }}
             onClick={() => handleSendMessage()}
             disabled={!message.trim() || isEnhancing}
-            className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-lg hover:shadow-indigo-500/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-lg hover:shadow-indigo-500/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 flex-shrink-0"
           >
-            <IoSend className="text-lg ml-0.5" />
+            <IoSend className="text-base sm:text-lg ml-0.5" />
           </motion.button>
         </div>
       </div>

@@ -34,7 +34,7 @@ const ProfileInfo = () => {
   }, [userInfo])
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 h-16 flex items-center justify-between px-5 w-full border-t border-white/[0.08] bg-[#0D0E12]/95 backdrop-blur-xl z-20">
+    <div className="flex-shrink-0 h-16 flex items-center justify-between px-5 w-full border-t border-white/[0.08] bg-[#0D0E12] backdrop-blur-xl z-20">
       <div className="flex items-center gap-3 min-w-0">
         <div className="relative w-10 h-10 flex-shrink-0">
           {imagePreview ? (

@@ -95,7 +95,7 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen w-screen bg-[#08080C] flex items-center justify-center p-4 relative overflow-hidden font-sans select-none selection:bg-indigo-500/30 selection:text-white">
+    <div className="min-h-[100dvh] h-[100dvh] w-full bg-[#08080C] flex items-center justify-center p-4 relative overflow-y-auto font-sans select-none selection:bg-indigo-500/30 selection:text-white">
       {/* Background Depth Effect */}
       <div
         className="fixed inset-0 pointer-events-none"

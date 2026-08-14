@@ -55,7 +55,7 @@ const Chat = () => {
   )
 
   return (
-    <div className="h-screen w-screen bg-[#0B0C10] overflow-hidden flex flex-1 font-sans selection:bg-indigo-500/30 selection:text-white">
+    <div className="h-[100dvh] w-full bg-[#0B0C10] overflow-hidden flex flex-1 font-sans selection:bg-indigo-500/30 selection:text-white">
       {/* Subtle Depth Background */}
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,_#1A1C24_0%,_#0B0C10_60%)] opacity-80" />
 
