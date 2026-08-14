@@ -7,6 +7,7 @@
         <script>
             window.global = window;
             window.process = window.process || { env: {}, browser: true, nextTick: function(cb) { setTimeout(cb, 0); } };
+            window.util = window.util || { debuglog: function() { return function() {}; }, inherits: function(ctor, superCtor) { if (superCtor) { ctor.super_ = superCtor; Object.setPrototypeOf(ctor.prototype, superCtor.prototype); } } };
         </script>
         <title>BaatCheet</title>
     </head>

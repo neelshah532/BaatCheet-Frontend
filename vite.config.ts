@@ -14,14 +14,14 @@ export default defineConfig({
     alias: {
       process: 'process/browser',
       stream: 'stream-browserify',
-      util: 'util',
+      util: 'util/',
       events: 'events',
     },
   },
   optimizeDeps: {
     // Force Vite to pre-bundle simple-peer and its Node deps together
-    // This prevents "events.EventEmitter is not a constructor" and _readableState undefined at runtime
-    include: ['simple-peer', 'stream-browserify', 'events', 'process'],
+    // Include 'util' so Vite bundles the browser polyfill package instead of externalizing
+    include: ['simple-peer', 'stream-browserify', 'events', 'process', 'util'],
     esbuildOptions: {
       define: {
         global: 'globalThis',
