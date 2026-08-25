@@ -5,13 +5,30 @@ type PeerConnectionsMap = {
   [userId: string]: SimplePeer.Instance
 }
 
+const TURN_USERNAME = import.meta.env.VITE_TURN_SERVER_USERNAME || 'baat-cheet-frontend.metered.live'
+const TURN_CREDENTIAL = import.meta.env.VITE_TURN_SERVER_CREDENTIAL || '2knydVlh555LzDUfJ1nn19azinDFA_yiTF3f3G8kYe5VEJpu'
+
 const defaultIceServers: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:stun2.l.google.com:19302' },
   { urls: 'stun:stun3.l.google.com:19302' },
-  { urls: 'stun:stun.relay.metered.ca:80' },
+  { urls: `stun:${TURN_USERNAME}:80` },
+  { urls: `stun:${TURN_USERNAME}:443` },
   { urls: 'stun:global.stun.twilio.com:3478' },
+  {
+    urls: [
+      `turn:${TURN_USERNAME}:80?transport=udp`,
+      `turn:${TURN_USERNAME}:80?transport=tcp`,
+      `turn:${TURN_USERNAME}:443`,
+      `turns:${TURN_USERNAME}:443?transport=tcp`,
+      `turn:${TURN_USERNAME}:3478?transport=udp`,
+      `turn:${TURN_USERNAME}:3478?transport=tcp`,
+    ],
+    username: TURN_USERNAME,
+    credential: TURN_CREDENTIAL,
+  },
+  // Community OpenRelay Fallback
   {
     urls: [
       'turn:global.relay.metered.ca:80?transport=udp',
