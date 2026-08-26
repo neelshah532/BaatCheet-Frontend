@@ -10,7 +10,12 @@ interface GameSelectionMenuProps {
 
 const GameSelectionMenu = ({ selectedTimeControl, onSelectTimeControl, onSelectGame }: GameSelectionMenuProps) => {
   return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col justify-between overflow-y-auto custom-scrollbar p-1">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="flex-1 flex flex-col justify-between overflow-y-auto custom-scrollbar p-1"
+    >
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-1">
           <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-semibold tracking-wider uppercase">
@@ -95,9 +100,7 @@ const GameSelectionMenu = ({ selectedTimeControl, onSelectTimeControl, onSelectG
               <span className="text-[9px] font-bold tracking-widest uppercase text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">Speed Race</span>
             </div>
             <h4 className="text-sm font-semibold text-white group-hover:text-purple-300 transition-colors">15-Tile Sliding Puzzle</h4>
-            <p className="text-[11px] text-slate-400 leading-relaxed mt-1">
-              Slide tiles into the empty space in a real-time multiplayer race to arrange numbers 1 to 15!
-            </p>
+            <p className="text-[11px] text-slate-400 leading-relaxed mt-1">Slide tiles into the empty space in a real-time multiplayer race to arrange numbers 1 to 15!</p>
           </div>
           <div className="mt-4 flex items-center justify-end text-xs font-semibold text-purple-400 group-hover:translate-x-1 transition-transform gap-1">
             Play Puzzle <FiArrowRight />
@@ -117,9 +120,7 @@ const GameSelectionMenu = ({ selectedTimeControl, onSelectTimeControl, onSelectG
               <span className="text-[9px] font-bold tracking-widest uppercase text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-full">IQ Training</span>
             </div>
             <h4 className="text-sm font-semibold text-white group-hover:text-cyan-300 transition-colors">Chess Tactics Puzzles</h4>
-            <p className="text-[11px] text-slate-400 leading-relaxed mt-1">
-              Solve tactical find-the-best-move puzzles to test your intelligence and sharpen strategy.
-            </p>
+            <p className="text-[11px] text-slate-400 leading-relaxed mt-1">Solve tactical find-the-best-move puzzles to test your intelligence and sharpen strategy.</p>
           </div>
           <div className="mt-4 flex items-center justify-end text-xs font-semibold text-cyan-400 group-hover:translate-x-1 transition-transform gap-1">
             Solve Tactics <FiArrowRight />
@@ -139,9 +140,7 @@ const GameSelectionMenu = ({ selectedTimeControl, onSelectTimeControl, onSelectG
               <span className="text-[9px] font-bold tracking-widest uppercase text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full">Bonding</span>
             </div>
             <h4 className="text-sm font-semibold text-white group-hover:text-rose-300 transition-colors">Would You Rather?</h4>
-            <p className="text-[11px] text-slate-400 leading-relaxed mt-1">
-              Choose between two spicy dilemmas. Answers reveal simultaneously when both submit!
-            </p>
+            <p className="text-[11px] text-slate-400 leading-relaxed mt-1">Choose between two spicy dilemmas. Answers reveal simultaneously when both submit!</p>
           </div>
           <div className="mt-4 flex items-center justify-end text-xs font-semibold text-rose-400 group-hover:translate-x-1 transition-transform gap-1">
             Pick Dilemmas <FiArrowRight />
@@ -161,9 +160,7 @@ const GameSelectionMenu = ({ selectedTimeControl, onSelectTimeControl, onSelectG
               <span className="text-[9px] font-bold tracking-widest uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Classic</span>
             </div>
             <h4 className="text-sm font-semibold text-white group-hover:text-emerald-300 transition-colors">Tic Tac Toe</h4>
-            <p className="text-[11px] text-slate-400 leading-relaxed mt-1">
-              The classic grid game with instantaneous live turn synchronisation and score counter.
-            </p>
+            <p className="text-[11px] text-slate-400 leading-relaxed mt-1">The classic grid game with instantaneous live turn synchronisation and score counter.</p>
           </div>
           <div className="mt-4 flex items-center justify-end text-xs font-semibold text-emerald-400 group-hover:translate-x-1 transition-transform gap-1">
             Play 3x3 <FiArrowRight />
@@ -175,4 +172,3 @@ const GameSelectionMenu = ({ selectedTimeControl, onSelectTimeControl, onSelectG
 }
 
 export default GameSelectionMenu
-

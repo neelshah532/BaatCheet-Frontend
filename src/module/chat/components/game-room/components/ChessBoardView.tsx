@@ -192,15 +192,18 @@ const ChessBoardView = ({
   }
 
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.99 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col justify-between h-full min-h-0 overflow-y-auto lg:overflow-visible custom-scrollbar">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.99 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0 }}
+      className="flex-1 flex flex-col justify-between h-full min-h-0 overflow-y-auto lg:overflow-visible custom-scrollbar"
+    >
       {/* Header bar */}
       <div className="flex items-center justify-between border-b border-white/[0.08] pb-2.5 mb-2 px-1">
         <div className="flex items-center gap-2.5">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
           <h4 className="text-xs sm:text-sm font-bold text-white tracking-tight">Chess Master</h4>
-          <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-semibold border border-amber-500/30">
-            {selectedTimeControl.label}
-          </span>
+          <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-semibold border border-amber-500/30">{selectedTimeControl.label}</span>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -229,9 +232,7 @@ const ChessBoardView = ({
           {/* Top Player Info Bar */}
           <div
             className={`w-full flex items-center justify-between rounded-xl p-2 mb-1.5 transition-all duration-300 ${
-              isTopUserTurn
-                ? 'bg-slate-800/90 border border-indigo-500/40 shadow-[0_0_16px_rgba(99,102,241,0.2)]'
-                : 'bg-slate-900/60 border border-white/10'
+              isTopUserTurn ? 'bg-slate-800/90 border border-indigo-500/40 shadow-[0_0_16px_rgba(99,102,241,0.2)]' : 'bg-slate-900/60 border border-white/10'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -279,10 +280,16 @@ const ChessBoardView = ({
               <div className="absolute top-10 left-1/2 -translate-x-1/2 z-40 p-3 bg-indigo-950/95 border border-indigo-500/50 rounded-2xl flex items-center justify-between gap-4 w-[90%] shadow-2xl backdrop-blur-md">
                 <span className="text-xs text-white font-medium">Partner offered a draw.</span>
                 <div className="flex gap-2">
-                  <button onClick={acceptDraw} className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-md transition-colors cursor-pointer">
+                  <button
+                    onClick={acceptDraw}
+                    className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-md transition-colors cursor-pointer"
+                  >
                     Accept
                   </button>
-                  <button onClick={declineDraw} className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg shadow-md transition-colors cursor-pointer">
+                  <button
+                    onClick={declineDraw}
+                    className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg shadow-md transition-colors cursor-pointer"
+                  >
                     Decline
                   </button>
                 </div>
@@ -336,9 +343,7 @@ const ChessBoardView = ({
           {/* Bottom Player Info Bar */}
           <div
             className={`w-full flex items-center justify-between rounded-xl p-2 mt-1.5 transition-all duration-300 ${
-              isBottomUserTurn
-                ? 'bg-slate-800/90 border border-indigo-500/40 shadow-[0_0_16px_rgba(99,102,241,0.2)]'
-                : 'bg-slate-900/60 border border-white/10'
+              isBottomUserTurn ? 'bg-slate-800/90 border border-indigo-500/40 shadow-[0_0_16px_rgba(99,102,241,0.2)]' : 'bg-slate-900/60 border border-white/10'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -401,7 +406,10 @@ const ChessBoardView = ({
             <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2">
               <span className="text-xs font-semibold text-slate-300">Move History</span>
               {previewFen && (
-                <button onClick={() => setPreviewFen(null)} className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/40 cursor-pointer">
+                <button
+                  onClick={() => setPreviewFen(null)}
+                  className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/40 cursor-pointer"
+                >
                   Live 🔴
                 </button>
               )}
@@ -448,4 +456,3 @@ const ChessBoardView = ({
 }
 
 export default ChessBoardView
-

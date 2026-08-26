@@ -31,9 +31,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   const socket = useSocket()
   const { selectedChatData, userInfo } = useAppStore()
   const myId = normalizeId(userInfo?.id || (userInfo as { _id?: string })?._id)
-  const opponentId = normalizeId(
-    typeof selectedChatData === 'object' ? selectedChatData?._id || (selectedChatData as { id?: string })?.id : selectedChatData
-  )
+  const opponentId = normalizeId(typeof selectedChatData === 'object' ? selectedChatData?._id || (selectedChatData as { id?: string })?.id : selectedChatData)
   const conversationId = [myId, opponentId].sort().join('-')
 
   // Responsive mobile tab
@@ -902,10 +900,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     return styles
   }
 
-  const partnerName =
-    typeof selectedChatData === 'object' && selectedChatData?.firstName
-      ? `${selectedChatData.firstName} ${selectedChatData.lastName || ''}`.trim()
-      : 'Partner'
+  const partnerName = typeof selectedChatData === 'object' && selectedChatData?.firstName ? `${selectedChatData.firstName} ${selectedChatData.lastName || ''}`.trim() : 'Partner'
 
   const myInitial = userInfo?.firstName ? userInfo.firstName[0].toUpperCase() : 'Y'
   const partnerInitial = typeof selectedChatData === 'object' && selectedChatData?.firstName ? selectedChatData.firstName[0].toUpperCase() : 'P'
@@ -961,9 +956,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
           <button
             onClick={() => setIsVideoFloatingOpen(!isVideoFloatingOpen)}
             className={`px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-              isVideoFloatingOpen
-                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
-                : 'bg-white/5 text-slate-400 hover:text-white border-white/10 hover:bg-white/10'
+              isVideoFloatingOpen ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-white/5 text-slate-400 hover:text-white border-white/10 hover:bg-white/10'
             }`}
             title="Toggle Floating Video Call"
           >
@@ -1024,13 +1017,9 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
                   {isCameraOn && localStream ? (
                     <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover scale-x-[-1]" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow-md">
-                      {myInitial}
-                    </div>
+                    <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow-md">{myInitial}</div>
                   )}
-                  <span className="absolute bottom-1 left-1 px-1.5 py-0.2 text-[8px] font-bold text-white bg-black/70 rounded backdrop-blur-sm">
-                    You
-                  </span>
+                  <span className="absolute bottom-1 left-1 px-1.5 py-0.2 text-[8px] font-bold text-white bg-black/70 rounded backdrop-blur-sm">You</span>
                 </div>
 
                 {/* Partner Stream Tile */}
