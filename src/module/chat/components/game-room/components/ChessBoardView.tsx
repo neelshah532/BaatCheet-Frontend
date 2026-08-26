@@ -244,9 +244,7 @@ const ChessBoardView = ({
           {/* Top Player Info Bar */}
           <div
             className={`w-full flex items-center justify-between rounded-xl px-2.5 py-1.5 mb-1.5 transition-all duration-300 backdrop-blur-md ${
-              isTopUserTurn
-                ? 'bg-indigo-500/10 border border-indigo-500/30 shadow-[0_0_16px_rgba(99,102,241,0.15)]'
-                : 'bg-white/[0.03] border border-white/[0.07]'
+              isTopUserTurn ? 'bg-indigo-500/10 border border-indigo-500/30 shadow-[0_0_16px_rgba(99,102,241,0.15)]' : 'bg-white/[0.03] border border-white/[0.07]'
             }`}
           >
             <div className="flex items-center gap-2 min-w-0">
@@ -355,9 +353,7 @@ const ChessBoardView = ({
           {/* Bottom Player Info Bar */}
           <div
             className={`w-full flex items-center justify-between rounded-xl px-2.5 py-1.5 mt-1.5 transition-all duration-300 backdrop-blur-md ${
-              isBottomUserTurn
-                ? 'bg-indigo-500/10 border border-indigo-500/30 shadow-[0_0_16px_rgba(99,102,241,0.15)]'
-                : 'bg-white/[0.03] border border-white/[0.07]'
+              isBottomUserTurn ? 'bg-indigo-500/10 border border-indigo-500/30 shadow-[0_0_16px_rgba(99,102,241,0.15)]' : 'bg-white/[0.03] border border-white/[0.07]'
             }`}
           >
             <div className="flex items-center gap-2">

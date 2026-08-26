@@ -77,9 +77,7 @@ const EmptyChatContainer = () => {
               className={`group bg-white/[0.02] border border-white/[0.07] p-3.5 rounded-2xl transition-all duration-300 backdrop-blur-md cursor-default ${feat.accent}`}
             >
               <div className="flex items-center gap-2.5 mb-1.5">
-                <div className="p-1.5 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center">
-                  {feat.icon}
-                </div>
+                <div className="p-1.5 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center">{feat.icon}</div>
                 <h3 className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors">{feat.title}</h3>
               </div>
               <p className="text-[11px] text-slate-400 leading-relaxed font-normal pl-0.5">{feat.desc}</p>
