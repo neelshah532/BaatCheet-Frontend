@@ -153,6 +153,11 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   const [slidingActiveTurn, setSlidingActiveTurn] = useState<string>('')
   const isMySlidingTurn = normalizeId(slidingActiveTurn) === myId
 
+  // Chat notification toast & unread states
+  const [latestChatNotification, setLatestChatNotification] = useState<{ senderName: string; text: string; id: string } | null>(null)
+  const chatNotifTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [lastReadMessageCount, setLastReadMessageCount] = useState(0)
+
   // Mini Chat & Floating Emojis states
   const [gameMessages, setGameMessages] = useState<ChatMessage[]>([])
   const [miniChatInput, setMiniChatInput] = useState('')
@@ -418,6 +423,13 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
           },
         ]
       })
+
+      // Non-intrusive floating toast preview when player is focusing on the game board
+      if (chatNotifTimeoutRef.current) clearTimeout(chatNotifTimeoutRef.current)
+      setLatestChatNotification({ senderName: partnerName, text: data.message, id: String(Date.now()) })
+      chatNotifTimeoutRef.current = setTimeout(() => {
+        setLatestChatNotification(null)
+      }, 4000)
     }
 
     const handleGameReactionReceived = (data: { emoji: string; senderId?: string; reactionId?: string }) => {
@@ -965,14 +977,56 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   const myInitial = userInfo?.firstName ? userInfo.firstName[0].toUpperCase() : 'Y'
   const partnerInitial = typeof selectedChatData === 'object' && selectedChatData?.firstName ? selectedChatData.firstName[0].toUpperCase() : 'P'
 
+  const handleSwitchToChat = () => {
+    setMobileTab('chat')
+    setLastReadMessageCount(gameMessages.length)
+    setLatestChatNotification(null)
+  }
+
+  const unreadCount = mobileTab === 'chat' ? 0 : Math.max(0, gameMessages.length - lastReadMessageCount)
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed inset-0 sm:inset-3 md:inset-5 z-[100] bg-[#0A0B10]/98 border border-white/10 rounded-none sm:rounded-3xl shadow-[0_32px_128px_rgba(0,0,0,0.95)] backdrop-blur-3xl p-2.5 sm:p-4 md:p-5 flex flex-col overflow-hidden select-none text-white"
+      className="fixed inset-0 sm:inset-3 md:inset-5 z-[100] bg-[#0A0B10]/98 border border-white/10 rounded-none sm:rounded-3xl shadow-[0_32px_128px_rgba(0,0,0,0.95)] backdrop-blur-3xl p-2.5 sm:p-4 md:p-5 flex flex-col overflow-hidden select-none text-white relative"
     >
+      {/* Non-intrusive Floating In-Game Chat Notification Toast */}
+      <AnimatePresence>
+        {latestChatNotification && mobileTab === 'game' && (
+          <motion.div
+            initial={{ opacity: 0, y: -25, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -25, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            onClick={handleSwitchToChat}
+            className="absolute top-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-[#0D0E15]/95 border border-indigo-500/40 shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-2xl cursor-pointer hover:bg-slate-800/95 transition-all max-w-[90%] sm:max-w-sm"
+          >
+            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0">
+              {partnerInitial}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-bold text-indigo-300 truncate">{latestChatNotification.senderName}</span>
+                <span className="text-[9px] text-slate-400 font-medium">Tap to reply 💬</span>
+              </div>
+              <p className="text-[11px] text-white truncate font-normal -mt-0.5">{latestChatNotification.text}</p>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setLatestChatNotification(null)
+              }}
+              className="text-slate-400 hover:text-white p-1 cursor-pointer"
+            >
+              <FiX className="text-xs" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Top Header Bar */}
       <div className="flex items-center justify-between px-2 sm:px-3 py-2 border-b border-white/[0.08] mb-3 gap-2">
         {/* Left: Brand / Title */}
@@ -993,20 +1047,29 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
         <div className="flex lg:hidden items-center bg-white/[0.06] p-1 rounded-xl border border-white/10 text-xs">
           <button
             onClick={() => setMobileTab('game')}
-            className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+            className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer relative ${
               mobileTab === 'game' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
             <FiGrid className="text-xs" /> Game
+            {isBottomUserTurn && mobileTab === 'chat' && activeGame !== 'selection' && (
+              <span className="px-1.5 py-0.2 rounded-full bg-emerald-500 text-white text-[9px] font-bold animate-pulse">
+                ⚡ Turn
+              </span>
+            )}
           </button>
           <button
-            onClick={() => setMobileTab('chat')}
-            className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+            onClick={handleSwitchToChat}
+            className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer relative ${
               mobileTab === 'chat' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
             <FiMessageSquare className="text-xs" /> Chat
-            {gameMessages.length > 0 && <span className="text-[9px] bg-purple-500 text-white px-1.5 py-0.2 rounded-full font-mono">{gameMessages.length}</span>}
+            {unreadCount > 0 && (
+              <span className="text-[9px] bg-purple-500 text-white px-1.5 py-0.2 rounded-full font-mono font-bold animate-pulse">
+                {unreadCount}
+              </span>
+            )}
           </button>
         </div>
 
@@ -1215,7 +1278,31 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
         <GameOverModal gameResult={gameResult} myId={myId} isSpectator={isSpectator} onRematch={handleLudoRematch} onExitGame={handleExitGame} />
 
         {/* Mini-Chat Panel & Live Reactions */}
-        <div className={`h-full ${mobileTab === 'chat' ? 'flex flex-1' : 'hidden lg:flex'}`}>
+        <div className={`h-full flex-col ${mobileTab === 'chat' ? 'flex flex-1' : 'hidden lg:flex'}`}>
+          {/* Turn Arrival Alert Banner when user is inside Chat tab on mobile */}
+          <AnimatePresence>
+            {isBottomUserTurn && mobileTab === 'chat' && activeGame !== 'selection' && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                onClick={() => setMobileTab('game')}
+                className="mb-2 p-2.5 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-indigo-950/90 to-purple-950/90 border border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.25)] backdrop-blur-xl flex items-center justify-between gap-2 cursor-pointer hover:border-emerald-400 transition-all flex-shrink-0"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-base animate-bounce">⚡</span>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-emerald-300">It's Your Turn!</span>
+                    <span className="text-[10px] text-slate-300">Partner made a move. Clock is ticking!</span>
+                  </div>
+                </div>
+                <button className="py-1 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md flex items-center gap-1 cursor-pointer">
+                  <FiGrid className="text-xs" /> View Board
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <GameMiniChat
             gameMessages={gameMessages}
             miniChatInput={miniChatInput}
