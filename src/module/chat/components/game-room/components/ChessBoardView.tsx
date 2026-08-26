@@ -1,6 +1,6 @@
-import { Dispatch, SetStateAction, RefObject } from 'react'
-import { motion } from 'framer-motion'
-import { FiFlag, FiLayers, FiAward, FiVolume2, FiVolumeX, FiChevronLeft } from 'react-icons/fi'
+import { useState, Dispatch, SetStateAction, RefObject } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { FiFlag, FiLayers, FiAward, FiVolume2, FiVolumeX, FiChevronLeft, FiX } from 'react-icons/fi'
 import { Chessboard } from 'react-chessboard'
 import { Square, Chess } from 'chess.js'
 import { TIME_CONTROL_PRESETS, CHESS_PUZZLES } from '../constants/game-data'
@@ -103,6 +103,8 @@ const ChessBoardView = ({
   startPuzzle,
   handlePuzzlePieceDrop,
 }: ChessBoardViewProps) => {
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+
   if (activeGame === 'chess-puzzle') {
     return (
       <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col justify-between h-full min-h-0">
@@ -198,12 +200,14 @@ const ChessBoardView = ({
       initial={{ opacity: 0, scale: 0.99 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0 }}
-      className="flex-1 flex flex-col justify-between h-full min-h-0 overflow-y-auto lg:overflow-visible custom-scrollbar"
+      className="flex-1 flex flex-col justify-between h-full min-h-0 overflow-y-auto lg:overflow-visible custom-scrollbar relative"
     >
       {/* Sleek Minimal Sub-Header */}
       <div className="flex items-center justify-between pb-1.5 mb-1 px-1 border-b border-white/[0.06] flex-shrink-0">
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-bold border border-amber-500/30">{selectedTimeControl.label}</span>
+          <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-bold border border-amber-500/30">
+            {selectedTimeControl.label}
+          </span>
           <button
             onClick={() => {
               const nextMuted = !soundMuted
@@ -217,12 +221,22 @@ const ChessBoardView = ({
           </button>
         </div>
 
-        <button
-          onClick={onExitGame}
-          className="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-medium border border-white/10 transition-all cursor-pointer flex items-center gap-1"
-        >
-          <FiChevronLeft className="text-xs" /> Menu
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+            className={`px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 ${
+              isHistoryOpen ? 'bg-indigo-600 text-white border-indigo-500 shadow-md' : 'bg-white/5 text-slate-300 hover:text-white border-white/10'
+            }`}
+          >
+            📜 Moves {moveHistoryList.length > 0 && <span className="text-[10px] opacity-75 font-mono">({Math.ceil(moveHistoryList.length / 2)})</span>}
+          </button>
+          <button
+            onClick={onExitGame}
+            className="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-medium border border-white/10 transition-all cursor-pointer flex items-center gap-1"
+          >
+            <FiChevronLeft className="text-xs" /> Menu
+          </button>
+        </div>
       </div>
 
       {/* Main Grid: Left Board + Right Move List & Controls */}
@@ -390,9 +404,8 @@ const ChessBoardView = ({
           </div>
         </div>
 
-        {/* Right Column: Move List */}
+        {/* Right Column: Move List on Large Screens */}
         <div className="lg:col-span-4 flex flex-col gap-2 h-full max-h-[380px] min-h-0 hidden lg:flex">
-          {/* Move History Panel */}
           <div className="flex-1 bg-slate-900/60 border border-white/10 rounded-2xl p-3 flex flex-col min-h-0 overflow-hidden shadow-inner">
             <div className="flex items-center justify-between border-b border-white/10 pb-1.5 mb-1.5">
               <span className="text-xs font-semibold text-slate-300">Move History</span>
@@ -442,6 +455,80 @@ const ChessBoardView = ({
           </div>
         </div>
       </div>
+
+      {/* Move History Drawer Popover on demand */}
+      <AnimatePresence>
+        {isHistoryOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            className="absolute inset-x-2 bottom-2 top-12 z-50 bg-[#0D0E15]/95 border border-indigo-500/30 rounded-2xl p-3 shadow-2xl backdrop-blur-2xl flex flex-col"
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                📜 Full Move Notation {moveHistoryList.length > 0 && <span className="text-indigo-400 font-mono">({Math.ceil(moveHistoryList.length / 2)} moves)</span>}
+              </span>
+              <div className="flex items-center gap-2">
+                {previewFen && (
+                  <button
+                    onClick={() => setPreviewFen(null)}
+                    className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/40 cursor-pointer"
+                  >
+                    Live 🔴
+                  </button>
+                )}
+                <button onClick={() => setIsHistoryOpen(false)} className="p-1 text-slate-400 hover:text-white cursor-pointer">
+                  <FiX className="text-sm" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto custom-scrollbar my-2 space-y-1 text-xs">
+              {moveHistoryList.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-xs text-slate-500 italic">No moves made yet</div>
+              ) : (
+                Array.from({ length: Math.ceil(moveHistoryList.length / 2) }).map((_, i) => {
+                  const whiteMove = moveHistoryList[i * 2]
+                  const blackMove = moveHistoryList[i * 2 + 1]
+                  return (
+                    <div key={i} className="grid grid-cols-12 gap-1 py-1.5 px-2 rounded-xl bg-white/[0.02] hover:bg-white/5 transition-colors">
+                      <span className="col-span-2 text-slate-500 font-mono text-[10px]">{i + 1}.</span>
+                      <button
+                        onClick={() => setPreviewFen(whiteMove.resultingState)}
+                        className={`col-span-5 text-left font-mono font-medium rounded px-2 py-0.5 cursor-pointer ${
+                          previewFen === whiteMove.resultingState ? 'bg-amber-500/30 text-amber-300 font-bold' : 'text-slate-300 hover:text-white'
+                        }`}
+                      >
+                        {whiteMove.action}
+                      </button>
+                      {blackMove && (
+                        <button
+                          onClick={() => setPreviewFen(blackMove.resultingState)}
+                          className={`col-span-5 text-left font-mono font-medium rounded px-2 py-0.5 cursor-pointer ${
+                            previewFen === blackMove.resultingState ? 'bg-amber-500/30 text-amber-300 font-bold' : 'text-slate-300 hover:text-white'
+                          }`}
+                        >
+                          {blackMove.action}
+                        </button>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-white/10 flex justify-end">
+              <button
+                onClick={() => setIsHistoryOpen(false)}
+                className="py-1.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer active:scale-95"
+              >
+                Back to Board
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

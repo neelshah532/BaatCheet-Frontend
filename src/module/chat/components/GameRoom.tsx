@@ -153,8 +153,10 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   const [slidingActiveTurn, setSlidingActiveTurn] = useState<string>('')
   const isMySlidingTurn = normalizeId(slidingActiveTurn) === myId
 
-  // Chat notification toast & unread states
+  // Chat notification toast, quick-reply & unread states
   const [latestChatNotification, setLatestChatNotification] = useState<{ senderName: string; text: string; id: string } | null>(null)
+  const [isReplyingInToast, setIsReplyingInToast] = useState(false)
+  const [toastReplyText, setToastReplyText] = useState('')
   const chatNotifTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [lastReadMessageCount, setLastReadMessageCount] = useState(0)
 
@@ -503,6 +505,26 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     ])
     socket.emit('game-chat-message', { conversationId, senderId: myId, message: text, msgId })
     setMiniChatInput('')
+  }
+
+  const handleSendToastReply = () => {
+    if (!toastReplyText.trim() || !socket) return
+    const text = toastReplyText.trim()
+    const msgId = `${myId}-${Date.now()}`
+    setGameMessages((prev) => [
+      ...prev,
+      {
+        id: msgId,
+        senderId: myId || 'self',
+        text,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ])
+    socket.emit('game-chat-message', { conversationId, senderId: myId, message: text, msgId })
+    playSoundCue('move')
+    setToastReplyText('')
+    setIsReplyingInToast(false)
+    setLatestChatNotification(null)
   }
 
   const triggerReaction = (emoji: string) => {
@@ -993,7 +1015,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
       className="fixed inset-0 sm:inset-3 md:inset-5 z-[100] bg-[#0A0B10]/98 border border-white/10 rounded-none sm:rounded-3xl shadow-[0_32px_128px_rgba(0,0,0,0.95)] backdrop-blur-3xl p-2.5 sm:p-4 md:p-5 flex flex-col overflow-hidden select-none text-white relative"
     >
-      {/* Non-intrusive Floating In-Game Chat Notification Toast */}
+      {/* 2026 Dynamic Island / Quick-Reply Floating Capsule */}
       <AnimatePresence>
         {latestChatNotification && mobileTab === 'game' && (
           <motion.div
@@ -1001,28 +1023,73 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -25, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            onClick={handleSwitchToChat}
-            className="absolute top-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-[#0D0E15]/95 border border-indigo-500/40 shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-2xl cursor-pointer hover:bg-slate-800/95 transition-all max-w-[90%] sm:max-w-sm"
+            className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-[#0D0E15]/95 border border-indigo-500/40 shadow-[0_16px_48px_rgba(0,0,0,0.9)] backdrop-blur-2xl rounded-2xl p-2.5 max-w-[92%] sm:max-w-md w-full text-white"
           >
-            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0">
-              {partnerInitial}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] font-bold text-indigo-300 truncate">{latestChatNotification.senderName}</span>
-                <span className="text-[9px] text-slate-400 font-medium">Tap to reply 💬</span>
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                {partnerInitial}
               </div>
-              <p className="text-[11px] text-white truncate font-normal -mt-0.5">{latestChatNotification.text}</p>
+              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setIsReplyingInToast(!isReplyingInToast)}>
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[11px] font-bold text-indigo-300 truncate">{latestChatNotification.senderName}</span>
+                  <span className="text-[9px] text-slate-400 font-medium">💬 {isReplyingInToast ? 'Close Reply' : 'Quick Reply'}</span>
+                </div>
+                <p className="text-xs text-white truncate font-normal">{latestChatNotification.text}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setLatestChatNotification(null)
+                  setIsReplyingInToast(false)
+                }}
+                className="text-slate-400 hover:text-white p-1 cursor-pointer"
+              >
+                <FiX className="text-xs" />
+              </button>
             </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setLatestChatNotification(null)
-              }}
-              className="text-slate-400 hover:text-white p-1 cursor-pointer"
-            >
-              <FiX className="text-xs" />
-            </button>
+
+            {/* Direct Quick-Reply Input Area */}
+            {isReplyingInToast && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-2 pt-2 border-t border-white/10 flex flex-col gap-1.5">
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="Type quick reply..."
+                    value={toastReplyText}
+                    onChange={(e) => setToastReplyText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSendToastReply()
+                    }}
+                    className="flex-1 bg-white/5 border border-white/15 text-white rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 placeholder:text-slate-500"
+                  />
+                  <button
+                    onClick={handleSendToastReply}
+                    className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md cursor-pointer active:scale-95 flex items-center gap-1"
+                  >
+                    Send
+                  </button>
+                </div>
+                {/* Quick Emoji Taps */}
+                <div className="flex items-center justify-between px-1">
+                  {['❤️', '😂', '🔥', '👍', '🎉', '😮'].map((em) => (
+                    <button
+                      key={em}
+                      onClick={() => {
+                        triggerReaction(em)
+                        setLatestChatNotification(null)
+                        setIsReplyingInToast(false)
+                      }}
+                      className="hover:scale-125 transition-transform text-sm cursor-pointer p-0.5"
+                    >
+                      {em}
+                    </button>
+                  ))}
+                  <button onClick={handleSwitchToChat} className="text-[10px] text-indigo-400 hover:underline font-semibold cursor-pointer">
+                    Open Full Chat ➔
+                  </button>
+                </div>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -1093,21 +1160,24 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
         </div>
       </div>
 
-      {/* Floating 2-User Video Stream Widget (Docked or Floating Overlay) */}
+      {/* Freely Draggable Floating 2-User Video Stream Widget (PiP) */}
       <AnimatePresence>
         {isVideoFloatingOpen && (
           <motion.div
+            drag
+            dragMomentum={false}
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className={`absolute top-16 right-4 z-40 bg-slate-950/90 border border-white/15 p-2 rounded-2xl shadow-2xl backdrop-blur-2xl flex flex-col gap-1.5 transition-all ${
+            className={`absolute top-16 right-4 z-40 bg-slate-950/90 border border-white/15 p-2 rounded-2xl shadow-2xl backdrop-blur-2xl flex flex-col gap-1.5 cursor-grab active:cursor-grabbing select-none touch-none ${
               isVideoMinimized ? 'w-auto' : 'w-auto'
             }`}
           >
             <div className="flex items-center justify-between px-1 pb-1 border-b border-white/10 gap-3">
-              <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live Call
+              <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live PiP
+                <span className="text-[8px] text-slate-500 font-normal">⠿ Move</span>
               </span>
               <div className="flex items-center gap-1">
                 <button
