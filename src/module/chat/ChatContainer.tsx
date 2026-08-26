@@ -29,12 +29,11 @@ const ChatContainer = () => {
 
         {/* Content */}
         <div className="relative z-10 flex flex-col h-full">
-          <ChatHeader onToggleGame={() => setIsGameActive(!isGameActive)} isGameActive={isGameActive} />
-
           {isGameActive ? (
             <GameRoom onClose={() => setIsGameActive(false)} />
           ) : (
             <>
+              <ChatHeader onToggleGame={() => setIsGameActive(!isGameActive)} isGameActive={isGameActive} />
               <MessageContainer />
               <MessageBar />
             </>

@@ -470,7 +470,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       socket.off('game-reaction-received', handleGameReactionReceived)
       socket.off('message:reactionToggled', handleReactionToggled)
     }
-  }, [socket, myId, myChessColor])
+  }, [socket, myId, myChessColor, partnerName])
 
   // Auto-scroll chat
   useEffect(() => {
@@ -1272,27 +1272,22 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
         <GameOverModal gameResult={gameResult} myId={myId} isSpectator={isSpectator} onRematch={handleLudoRematch} onExitGame={handleExitGame} />
 
         {/* Mini-Chat Panel & Live Reactions */}
-        <div className={`h-full flex-col ${mobileTab === 'chat' ? 'flex flex-1' : 'hidden lg:flex'}`}>
-          {/* Turn Arrival Alert Banner when user is inside Chat tab on mobile */}
+        <div className={`h-full flex-col min-h-0 ${mobileTab === 'chat' ? 'flex flex-1' : 'hidden lg:flex'}`}>
+          {/* Turn Arrival Alert Strip when user is inside Chat tab */}
           <AnimatePresence>
             {isBottomUserTurn && mobileTab === 'chat' && activeGame !== 'selection' && (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
+                initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
+                exit={{ opacity: 0, y: -6 }}
                 onClick={() => setMobileTab('game')}
-                className="mb-2 p-2.5 rounded-2xl bg-gradient-to-r from-emerald-950/90 via-indigo-950/90 to-purple-950/90 border border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.25)] backdrop-blur-xl flex items-center justify-between gap-2 cursor-pointer hover:border-emerald-400 transition-all flex-shrink-0"
+                className="mb-2 py-1.5 px-3 rounded-full bg-emerald-500/15 border border-emerald-500/35 text-emerald-300 text-xs font-semibold flex items-center justify-between gap-2 cursor-pointer hover:bg-emerald-500/25 transition-all shadow-md flex-shrink-0"
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-base animate-bounce">⚡</span>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-emerald-300">It's Your Turn!</span>
-                    <span className="text-[10px] text-slate-300">Partner made a move. Clock is ticking!</span>
-                  </div>
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="text-xs animate-bounce">⚡</span>
+                  <span className="truncate text-[11px]">Partner moved • Your turn!</span>
                 </div>
-                <button className="py-1 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md flex items-center gap-1 cursor-pointer">
-                  <FiGrid className="text-xs" /> View Board
-                </button>
+                <span className="text-[11px] font-bold text-white bg-emerald-600/80 px-2.5 py-0.5 rounded-full flex items-center gap-1 flex-shrink-0">Play Move ➔</span>
               </motion.div>
             )}
           </AnimatePresence>

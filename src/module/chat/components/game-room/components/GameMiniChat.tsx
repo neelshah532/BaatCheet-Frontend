@@ -33,7 +33,7 @@ const GameMiniChat = ({
   chatEndRef,
 }: GameMiniChatProps) => {
   return (
-    <div className="w-full lg:w-80 bg-slate-900/60 border border-white/10 rounded-3xl p-3.5 flex flex-col justify-between flex-shrink-0 backdrop-blur-2xl h-full relative overflow-hidden shadow-2xl">
+    <div className="w-full lg:w-80 bg-slate-900/60 border border-white/10 rounded-2xl sm:rounded-3xl p-3 sm:p-4 flex flex-col justify-between flex-shrink-0 backdrop-blur-2xl h-full relative overflow-hidden shadow-2xl min-h-0">
       {/* Floating Emojis Particle Animation Layer */}
       <AnimatePresence>
         {floatingEmojis.map((item) => (
@@ -51,7 +51,8 @@ const GameMiniChat = ({
         ))}
       </AnimatePresence>
 
-      <div className="border-b border-white/[0.08] pb-2.5 mb-2 flex items-center justify-between px-1">
+      {/* Desktop Sub-Header Only */}
+      <div className="hidden lg:flex border-b border-white/[0.08] pb-2.5 mb-2 items-center justify-between px-1 flex-shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
           <span className="text-[11px] text-indigo-300 font-bold tracking-wider uppercase">Live Chat & Reactions</span>
@@ -59,12 +60,13 @@ const GameMiniChat = ({
         <span className="text-[10px] text-slate-500 font-medium">{gameMessages.length} msgs</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-2.5 my-1 min-h-[140px]">
+      {/* Scrollable Message List */}
+      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 space-y-2.5 my-1">
         {gameMessages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center py-6 px-4">
             <span className="text-2xl mb-1 opacity-50">💬</span>
             <span className="text-xs text-slate-400 font-medium">No messages yet</span>
-            <span className="text-[10px] text-slate-500 mt-0.5">Send a reaction or cheer during the match!</span>
+            <span className="text-[10px] text-slate-500 mt-0.5">Send a quick message or cheer during the game!</span>
           </div>
         ) : (
           gameMessages.map((msg) => {
@@ -73,7 +75,7 @@ const GameMiniChat = ({
             return (
               <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                 <div
-                  className={`px-3 py-2 rounded-2xl max-w-[88%] text-xs break-words leading-relaxed shadow-sm ${
+                  className={`px-3 py-1.5 sm:py-2 rounded-2xl max-w-[85%] text-xs break-words leading-relaxed shadow-sm ${
                     isSystem
                       ? 'bg-white/5 text-slate-400 text-center italic border border-white/5 text-[10px] mx-auto'
                       : isMe
@@ -127,14 +129,15 @@ const GameMiniChat = ({
         <div ref={chatEndRef} />
       </div>
 
-      <div className="space-y-2 mt-2 pt-2 border-t border-white/[0.06]">
+      {/* Input & Reactions Bottom Bar */}
+      <div className="space-y-1.5 mt-auto pt-2 border-t border-white/[0.08] flex-shrink-0">
         {/* Emoji reaction bar */}
-        <div className="flex items-center justify-around bg-white/[0.03] border border-white/[0.06] rounded-2xl py-1.5 px-2 shadow-inner">
+        <div className="flex items-center justify-around bg-white/[0.03] border border-white/[0.06] rounded-xl py-1 px-2 shadow-inner">
           {['❤️', '😂', '😮', '😢', '🎉', '🔥'].map((emoji) => (
             <button
               key={emoji}
               onClick={() => onTriggerReaction(emoji)}
-              className="hover:scale-125 hover:-translate-y-0.5 active:scale-95 transition-all p-1 text-base select-none cursor-pointer"
+              className="hover:scale-125 hover:-translate-y-0.5 active:scale-95 transition-all p-1 text-sm sm:text-base select-none cursor-pointer"
             >
               {emoji}
             </button>
@@ -145,7 +148,7 @@ const GameMiniChat = ({
         <div className="flex items-center gap-1.5">
           <input
             type="text"
-            placeholder="Send quick chat..."
+            placeholder="Send message..."
             value={miniChatInput}
             onChange={(e) => setMiniChatInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && onSendGameMessage()}
