@@ -357,9 +357,7 @@ const ChessBoardView = ({
             }`}
           >
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-[10px] font-semibold text-white">
-                You
-              </div>
+              <div className="w-6 h-6 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-[10px] font-semibold text-white">You</div>
               <div className="flex flex-col">
                 <span className="text-[11px] font-medium text-white">You</span>
                 <div className="flex items-center gap-1 text-[9px] text-slate-400">

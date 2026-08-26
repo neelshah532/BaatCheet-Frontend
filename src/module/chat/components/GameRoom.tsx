@@ -1119,9 +1119,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
             }`}
           >
             <FiGrid className="text-xs" /> Board
-            {isBottomUserTurn && mobileTab === 'chat' && activeGame !== 'selection' && (
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            )}
+            {isBottomUserTurn && mobileTab === 'chat' && activeGame !== 'selection' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
           </button>
           <button
             onClick={handleSwitchToChat}
@@ -1357,9 +1355,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   <span className="truncate text-[11px] text-slate-200">Your turn</span>
                 </div>
-                <span className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 flex-shrink-0">
-                  View Board ➔
-                </span>
+                <span className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 flex-shrink-0">View Board ➔</span>
               </motion.div>
             )}
           </AnimatePresence>

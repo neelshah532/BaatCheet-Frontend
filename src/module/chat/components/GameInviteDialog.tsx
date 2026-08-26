@@ -29,9 +29,7 @@ const GameInviteDialog = () => {
     setIsWaitingForGameAcceptance(false)
   }
 
-  const senderName = incomingGameInvite?.sender?.firstName
-    ? `${incomingGameInvite.sender.firstName} ${incomingGameInvite.sender.lastName || ''}`.trim()
-    : 'Partner'
+  const senderName = incomingGameInvite?.sender?.firstName ? `${incomingGameInvite.sender.firstName} ${incomingGameInvite.sender.lastName || ''}`.trim() : 'Partner'
 
   return (
     <AnimatePresence>
@@ -57,13 +55,9 @@ const GameInviteDialog = () => {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
-                      Game Invite
-                    </span>
+                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Game Invite</span>
                   </div>
-                  <h4 className="text-sm font-semibold text-white mt-0.5 truncate">
-                    {senderName}
-                  </h4>
+                  <h4 className="text-sm font-semibold text-white mt-0.5 truncate">{senderName}</h4>
                   <p className="text-xs text-slate-400 font-normal mt-0.5">Invited you to play a live match</p>
                 </div>
               </div>
@@ -107,9 +101,7 @@ const GameInviteDialog = () => {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
-                    Waiting for response
-                  </span>
+                  <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Waiting for response</span>
                   <h4 className="text-sm font-semibold text-white mt-0.5 truncate">Invitation Sent</h4>
                   <p className="text-xs text-slate-400 font-normal mt-0.5 truncate">Waiting for {opponentName} to accept...</p>
                 </div>
