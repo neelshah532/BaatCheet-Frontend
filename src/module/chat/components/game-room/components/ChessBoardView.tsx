@@ -192,12 +192,15 @@ const ChessBoardView = ({
   }
 
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col justify-between h-full">
+    <motion.div initial={{ opacity: 0, scale: 0.99 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col justify-between h-full min-h-0 overflow-y-auto lg:overflow-visible custom-scrollbar">
       {/* Header bar */}
-      <div className="flex items-center justify-between border-b border-white/[0.05] pb-3 mb-2">
-        <div className="flex items-center gap-3">
-          <h4 className="text-sm font-semibold text-white">Chess (Live Master)</h4>
-          <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-medium border border-amber-500/30">{selectedTimeControl.label}</span>
+      <div className="flex items-center justify-between border-b border-white/[0.08] pb-2.5 mb-2 px-1">
+        <div className="flex items-center gap-2.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
+          <h4 className="text-xs sm:text-sm font-bold text-white tracking-tight">Chess Master</h4>
+          <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-semibold border border-amber-500/30">
+            {selectedTimeControl.label}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -206,31 +209,40 @@ const ChessBoardView = ({
               setSoundMuted(nextMuted)
               localStorage.setItem('chess_muted', String(nextMuted))
             }}
-            className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 text-xs border border-white/5 transition-all"
+            className="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs border border-white/10 transition-all cursor-pointer"
           >
-            {soundMuted ? '🔇 Muted' : '🔊 Sound On'}
+            {soundMuted ? '🔇 Muted' : '🔊 Audio'}
           </button>
-          <button onClick={onExitGame} className="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs border border-white/5 transition-all">
-            Exit Game
+          <button
+            onClick={onExitGame}
+            className="px-3 py-1 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-medium border border-white/10 transition-all cursor-pointer"
+          >
+            Exit to Menu
           </button>
         </div>
       </div>
 
       {/* Main Grid: Left Board + Right Move List & Controls */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 items-center justify-center min-h-0">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-center justify-center min-h-0">
         {/* Board Container Column */}
-        <div className="lg:col-span-8 flex flex-col items-center justify-center max-w-[440px] mx-auto w-full relative">
+        <div className="lg:col-span-8 flex flex-col items-center justify-center max-w-[420px] mx-auto w-full relative">
           {/* Top Player Info Bar */}
-          <div className="w-full flex items-center justify-between bg-slate-900/80 border border-white/10 rounded-xl p-2 mb-2 shadow-md">
+          <div
+            className={`w-full flex items-center justify-between rounded-xl p-2 mb-1.5 transition-all duration-300 ${
+              isTopUserTurn
+                ? 'bg-slate-800/90 border border-indigo-500/40 shadow-[0_0_16px_rgba(99,102,241,0.2)]'
+                : 'bg-slate-900/60 border border-white/10'
+            }`}
+          >
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white border border-white/20">
+              <div className="w-7 h-7 rounded-full bg-indigo-600/80 flex items-center justify-center text-xs font-bold text-white border border-white/20">
                 {typeof selectedChatData !== 'string' && selectedChatData?.firstName ? selectedChatData.firstName[0].toUpperCase() : 'P'}
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-semibold text-white truncate max-w-[100px]">
+                <span className="text-xs font-semibold text-white truncate max-w-[120px]">
                   {typeof selectedChatData !== 'string' && selectedChatData?.firstName ? selectedChatData.firstName : 'Partner'}
                 </span>
-                <div className="flex items-center gap-1 text-[10px] text-white/50">
+                <div className="flex items-center gap-1 text-[10px] text-slate-400">
                   <span>{topCaptured.map((p) => pieceSymbolMap[p] || p).join('')}</span>
                   {topAdvantage > 0 && <span className="text-amber-400 font-bold">+{topAdvantage}</span>}
                 </div>
@@ -240,12 +252,12 @@ const ChessBoardView = ({
             {/* Top Clock */}
             {selectedTimeControl.initialSeconds > 0 && (
               <div
-                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                className={`px-3 py-1 rounded-xl text-xs font-mono font-bold transition-all ${
                   isTopUserTurn
                     ? topRemainingMs < 10000
-                      ? 'bg-rose-950/90 text-rose-400 border-2 border-rose-500 animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.5)]'
-                      : 'bg-amber-500/20 text-amber-300 border-2 border-amber-400/80 shadow-[0_0_10px_rgba(245,158,11,0.3)]'
-                    : 'bg-black/40 text-white/50 border border-white/10'
+                      ? 'bg-rose-950/90 text-rose-300 border border-rose-500 animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.5)]'
+                      : 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/80 shadow-[0_0_10px_rgba(99,102,241,0.3)]'
+                    : 'bg-black/40 text-slate-400 border border-white/10'
                 }`}
               >
                 ⏱ {formatClockTime(topRemainingMs)}
@@ -254,23 +266,23 @@ const ChessBoardView = ({
           </div>
 
           {/* Chessboard Area */}
-          <div className="relative w-full aspect-square shadow-2xl rounded-2xl overflow-hidden border border-white/20">
+          <div className="relative w-full max-w-[min(100%,400px,46vh)] aspect-square shadow-2xl rounded-2xl overflow-hidden border border-white/20">
             {/* Check alert badge */}
             {chessInstanceRef.current && chessInstanceRef.current.inCheck() && !chessInstanceRef.current.isCheckmate() && (
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded-full bg-rose-500/90 border border-rose-400 text-[10px] font-bold text-white shadow-lg animate-bounce">
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded-full bg-rose-600 border border-rose-400 text-[10px] font-bold text-white shadow-lg animate-bounce">
                 ⚠️ CHECK!
               </div>
             )}
 
             {/* Draw offer prompt */}
             {drawOfferReceived && (
-              <div className="absolute top-12 left-1/2 -translate-x-1/2 z-40 p-3 bg-indigo-950/95 border border-indigo-500/50 rounded-2xl flex items-center justify-between gap-4 w-[90%] shadow-2xl backdrop-blur-md">
-                <span className="text-xs text-white">Partner offered a draw.</span>
+              <div className="absolute top-10 left-1/2 -translate-x-1/2 z-40 p-3 bg-indigo-950/95 border border-indigo-500/50 rounded-2xl flex items-center justify-between gap-4 w-[90%] shadow-2xl backdrop-blur-md">
+                <span className="text-xs text-white font-medium">Partner offered a draw.</span>
                 <div className="flex gap-2">
-                  <button onClick={acceptDraw} className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-md transition-colors">
+                  <button onClick={acceptDraw} className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-md transition-colors cursor-pointer">
                     Accept
                   </button>
-                  <button onClick={declineDraw} className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg shadow-md transition-colors">
+                  <button onClick={declineDraw} className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg shadow-md transition-colors cursor-pointer">
                     Decline
                   </button>
                 </div>
@@ -279,19 +291,19 @@ const ChessBoardView = ({
 
             {/* Pawn Promotion Popover */}
             {pendingPromotion && (
-              <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 animate-fade-in">
-                <span className="text-sm font-bold text-amber-400 uppercase tracking-widest">Select Promotion Piece</span>
-                <div className="flex gap-3 bg-slate-900/90 p-3 rounded-2xl border border-white/20 shadow-2xl">
+              <div className="absolute inset-0 z-50 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center gap-4 animate-fade-in">
+                <span className="text-xs font-bold text-amber-400 uppercase tracking-widest">Select Promotion Piece</span>
+                <div className="flex gap-2 bg-slate-900/90 p-3 rounded-2xl border border-white/20 shadow-2xl">
                   {[
-                    { char: 'q', label: '♛ Queen' },
-                    { char: 'r', label: '♜ Rook' },
-                    { char: 'b', label: '♝ Bishop' },
-                    { char: 'n', label: '♞ Knight' },
+                    { char: 'q', label: '♛' },
+                    { char: 'r', label: '♜' },
+                    { char: 'b', label: '♝' },
+                    { char: 'n', label: '♞' },
                   ].map((piece) => (
                     <button
                       key={piece.char}
                       onClick={() => executeChessMove(pendingPromotion.from, pendingPromotion.to, piece.char)}
-                      className="px-4 py-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 border border-amber-500/40 text-amber-200 text-xl font-bold transition-all transform hover:scale-110"
+                      className="w-12 h-12 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 border border-amber-500/40 text-amber-200 text-2xl font-bold transition-all transform hover:scale-110 flex items-center justify-center cursor-pointer"
                     >
                       {piece.label}
                     </button>
@@ -308,26 +320,32 @@ const ChessBoardView = ({
                 onPieceClick={handlePieceClick}
                 customSquareStyles={getCustomSquareStyles(optionSquares)}
                 boardOrientation={boardOrientation}
-                arePiecesDraggable={!isSpectator && !previewFen}
+                arePiecesDraggable={!isSpectator && !previewFen && isBottomUserTurn}
                 animationDuration={200}
                 showBoardNotation={true}
                 customBoardStyle={{
                   borderRadius: '12px',
                   boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
                 }}
-                customDarkSquareStyle={{ backgroundColor: '#312e81' }}
-                customLightSquareStyle={{ backgroundColor: '#e0e7ff' }}
+                customDarkSquareStyle={{ backgroundColor: '#2F354D' }}
+                customLightSquareStyle={{ backgroundColor: '#E8ECEF' }}
               />
             </motion.div>
           </div>
 
           {/* Bottom Player Info Bar */}
-          <div className="w-full flex items-center justify-between bg-slate-900/80 border border-white/10 rounded-xl p-2 mt-2 shadow-md">
+          <div
+            className={`w-full flex items-center justify-between rounded-xl p-2 mt-1.5 transition-all duration-300 ${
+              isBottomUserTurn
+                ? 'bg-slate-800/90 border border-indigo-500/40 shadow-[0_0_16px_rgba(99,102,241,0.2)]'
+                : 'bg-slate-900/60 border border-white/10'
+            }`}
+          >
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center text-xs font-bold text-white border border-white/20">You</div>
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-white">You</span>
-                <div className="flex items-center gap-1 text-[10px] text-white/50">
+                <div className="flex items-center gap-1 text-[10px] text-slate-400">
                   <span>{bottomCaptured.map((p) => pieceSymbolMap[p] || p).join('')}</span>
                   {bottomAdvantage > 0 && <span className="text-amber-400 font-bold">+{bottomAdvantage}</span>}
                 </div>
@@ -337,12 +355,12 @@ const ChessBoardView = ({
             {/* Bottom Clock */}
             {selectedTimeControl.initialSeconds > 0 && (
               <div
-                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                className={`px-3 py-1 rounded-xl text-xs font-mono font-bold transition-all ${
                   isBottomUserTurn
                     ? bottomRemainingMs < 10000
-                      ? 'bg-rose-950/90 text-rose-400 border-2 border-rose-500 animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.5)]'
-                      : 'bg-amber-500/20 text-amber-300 border-2 border-amber-400/80 shadow-[0_0_10px_rgba(245,158,11,0.3)]'
-                    : 'bg-black/40 text-white/50 border border-white/10'
+                      ? 'bg-rose-950/90 text-rose-300 border border-rose-500 animate-pulse shadow-[0_0_12px_rgba(244,63,94,0.5)]'
+                      : 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/80 shadow-[0_0_10px_rgba(99,102,241,0.3)]'
+                    : 'bg-black/40 text-slate-400 border border-white/10'
                 }`}
               >
                 ⏱ {formatClockTime(bottomRemainingMs)}
@@ -352,27 +370,27 @@ const ChessBoardView = ({
         </div>
 
         {/* Right Column: Controls + Move List */}
-        <div className="lg:col-span-4 flex flex-col gap-3 h-full max-h-[480px]">
+        <div className="lg:col-span-4 flex flex-col gap-2.5 h-full max-h-[440px]">
           {/* Action Bar */}
           <div className="grid grid-cols-3 gap-2">
             <button
               onClick={() => setBoardOrientation((b) => (b === 'white' ? 'black' : 'white'))}
-              className="py-2 px-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 border border-white/10 text-[10px] font-semibold transition-all flex items-center justify-center gap-1"
+              className="py-2 px-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 border border-white/10 text-[10px] font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
               title="Flip Board View"
             >
-              <FiRotateCcw className="text-xs" /> Flip Board
+              <FiRotateCcw className="text-xs" /> Flip
             </button>
             <button
               onClick={proposeDraw}
               disabled={!!gameResult || isSpectator}
-              className="py-2 px-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-40 text-white/80 border border-white/10 text-[10px] font-semibold transition-all flex items-center justify-center gap-1"
+              className="py-2 px-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-40 text-white/80 border border-white/10 text-[10px] font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
             >
-              <FiLayers className="text-xs" /> Offer Draw
+              <FiLayers className="text-xs" /> Draw
             </button>
             <button
               onClick={resignGame}
               disabled={!!gameResult || isSpectator}
-              className="py-2 px-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 disabled:opacity-40 text-rose-400 border border-rose-500/30 text-[10px] font-semibold transition-all flex items-center justify-center gap-1"
+              className="py-2 px-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 disabled:opacity-40 text-rose-400 border border-rose-500/30 text-[10px] font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
             >
               <FiFlag className="text-xs" /> Resign
             </button>
@@ -381,10 +399,10 @@ const ChessBoardView = ({
           {/* Move History Panel */}
           <div className="flex-1 bg-slate-900/60 border border-white/10 rounded-2xl p-3 flex flex-col min-h-0 overflow-hidden shadow-inner">
             <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2">
-              <span className="text-xs font-semibold text-white/80">Move Notation History</span>
+              <span className="text-xs font-semibold text-slate-300">Move History</span>
               {previewFen && (
-                <button onClick={() => setPreviewFen(null)} className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/40">
-                  Live Position 🔴
+                <button onClick={() => setPreviewFen(null)} className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/40 cursor-pointer">
+                  Live 🔴
                 </button>
               )}
             </div>
@@ -397,12 +415,12 @@ const ChessBoardView = ({
                   const whiteMove = moveHistoryList[i * 2]
                   const blackMove = moveHistoryList[i * 2 + 1]
                   return (
-                    <div key={i} className="grid grid-cols-12 gap-1 py-1 px-2 rounded hover:bg-white/5 transition-colors">
-                      <span className="col-span-3 text-white/40 font-mono text-[10px]">{i + 1}.</span>
+                    <div key={i} className="grid grid-cols-12 gap-1 py-1 px-2 rounded-lg hover:bg-white/5 transition-colors">
+                      <span className="col-span-3 text-slate-500 font-mono text-[10px]">{i + 1}.</span>
                       <button
                         onClick={() => setPreviewFen(whiteMove.resultingState)}
-                        className={`col-span-4 text-left font-mono font-medium rounded px-1 ${
-                          previewFen === whiteMove.resultingState ? 'bg-amber-500/30 text-amber-300 font-bold' : 'text-white/80 hover:text-white'
+                        className={`col-span-4 text-left font-mono font-medium rounded px-1 cursor-pointer ${
+                          previewFen === whiteMove.resultingState ? 'bg-amber-500/30 text-amber-300 font-bold' : 'text-slate-300 hover:text-white'
                         }`}
                       >
                         {whiteMove.action}
@@ -410,8 +428,8 @@ const ChessBoardView = ({
                       {blackMove && (
                         <button
                           onClick={() => setPreviewFen(blackMove.resultingState)}
-                          className={`col-span-5 text-left font-mono font-medium rounded px-1 ${
-                            previewFen === blackMove.resultingState ? 'bg-amber-500/30 text-amber-300 font-bold' : 'text-white/80 hover:text-white'
+                          className={`col-span-5 text-left font-mono font-medium rounded px-1 cursor-pointer ${
+                            previewFen === blackMove.resultingState ? 'bg-amber-500/30 text-amber-300 font-bold' : 'text-slate-300 hover:text-white'
                           }`}
                         >
                           {blackMove.action}
@@ -430,3 +448,4 @@ const ChessBoardView = ({
 }
 
 export default ChessBoardView
+

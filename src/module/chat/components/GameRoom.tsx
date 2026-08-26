@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FiVideoOff } from 'react-icons/fi'
+import { FiVideo, FiVideoOff, FiX, FiMessageSquare, FiGrid, FiMinimize2, FiMaximize2 } from 'react-icons/fi'
 import { useAppStore } from '../../../store/store'
 import { useSocket } from '../../../hook/socketContext'
 import SimplePeer from 'simple-peer'
 import { Chess, Square } from 'chess.js'
+import { toast } from 'sonner'
 
 import { GameRoomProps, GameStateSync, ChatMessage, FloatingEmoji, GameSessionState } from './game-room/types/game.types'
 import { TIME_CONTROL_PRESETS, CHESS_PUZZLES, WOULD_YOU_RATHER_QUESTIONS, TRUTH_OR_DARE_CARDS } from './game-room/constants/game-data'
@@ -18,25 +19,58 @@ import CasualGamesView from './game-room/components/CasualGamesView'
 import GameOverModal from './game-room/components/GameOverModal'
 import GameMiniChat from './game-room/components/GameMiniChat'
 
+const normalizeId = (id: unknown): string => {
+  if (!id) return ''
+  if (typeof id === 'object' && id !== null) {
+    return ((id as { _id?: string; id?: string })._id || (id as { id?: string }).id || '').toString()
+  }
+  return String(id)
+}
+
 const GameRoom = ({ onClose }: GameRoomProps) => {
   const socket = useSocket()
   const { selectedChatData, userInfo } = useAppStore()
-  const myId = userInfo?.id || (userInfo as { _id?: string })?._id || ''
-  const opponentId = typeof selectedChatData === 'object' ? selectedChatData._id || (selectedChatData as { id?: string }).id || '' : selectedChatData || ''
+  const myId = normalizeId(userInfo?.id || (userInfo as { _id?: string })?._id)
+  const opponentId = normalizeId(
+    typeof selectedChatData === 'object' ? selectedChatData?._id || (selectedChatData as { id?: string })?.id : selectedChatData
+  )
   const conversationId = [myId, opponentId].sort().join('-')
 
+  // Responsive mobile tab
+  const [mobileTab, setMobileTab] = useState<'game' | 'chat'>('game')
+
+  // Socket room join & listen for mutual room reset/close
   useEffect(() => {
-    if (socket && conversationId) {
+    if (!socket || !conversationId) return
+
+    socket.emit('game:join-room', { conversationId })
+    const handleConnect = () => {
       socket.emit('game:join-room', { conversationId })
-      const handleConnect = () => {
-        socket.emit('game:join-room', { conversationId })
-      }
-      socket.on('connect', handleConnect)
-      return () => {
-        socket.off('connect', handleConnect)
+    }
+
+    const handleGameRoomClosed = (data: { closedBy: string; conversationId: string }) => {
+      if (data.conversationId === conversationId) {
+        toast.info('Game room was closed by partner.')
+        onClose()
       }
     }
-  }, [socket, conversationId])
+
+    socket.on('connect', handleConnect)
+    socket.on('game:room-closed', handleGameRoomClosed)
+
+    return () => {
+      socket.off('connect', handleConnect)
+      socket.off('game:room-closed', handleGameRoomClosed)
+    }
+  }, [socket, conversationId, onClose])
+
+  // Clean exit handler that notifies partner and resets the room for both users
+  const handleCloseGameRoom = () => {
+    if (socket && conversationId) {
+      socket.emit('game:close-room', { conversationId })
+    }
+    onClose()
+  }
 
   // Camera & WebRTC streams states
   const localVideoRef = useRef<HTMLVideoElement>(null)
@@ -44,6 +78,8 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null)
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null)
   const [isCameraOn, setIsCameraOn] = useState(true)
+  const [isVideoFloatingOpen, setIsVideoFloatingOpen] = useState(true)
+  const [isVideoMinimized, setIsVideoMinimized] = useState(false)
   const peerRef = useRef<SimplePeer.Instance | null>(null)
 
   // Game configuration states
@@ -97,7 +133,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   const [currentTurnUserId, setCurrentTurnUserId] = useState<string>('')
 
   const myChessColor = serverPlayerColor || (myId && opponentId && myId < opponentId ? 'w' : 'b')
-  const isMyChessTurn = currentTurnUserId ? currentTurnUserId === myId : chessInstanceRef.current.turn() === myChessColor
+  const isMyChessTurn = currentTurnUserId ? normalizeId(currentTurnUserId) === myId : chessInstanceRef.current.turn() === myChessColor
 
   // Chess puzzles states
   const [currentPuzzleIdx, setCurrentPuzzleIdx] = useState(0)
@@ -111,13 +147,13 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       .map(() => Array(7).fill(null))
   )
   const [c4ActiveTurn, setC4ActiveTurn] = useState<string>('')
-  const isMyC4Turn = c4ActiveTurn === myId
+  const isMyC4Turn = normalizeId(c4ActiveTurn) === myId
 
   // 6. Sliding Tile Puzzle Game States
   const [slidingTiles, setSlidingTiles] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0])
   const [slidingMoveCount, setSlidingMoveCount] = useState<number>(0)
   const [slidingActiveTurn, setSlidingActiveTurn] = useState<string>('')
-  const isMySlidingTurn = slidingActiveTurn === myId
+  const isMySlidingTurn = normalizeId(slidingActiveTurn) === myId
 
   // Mini Chat & Floating Emojis states
   const [gameMessages, setGameMessages] = useState<ChatMessage[]>([])
@@ -129,8 +165,10 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   useEffect(() => {
     if (serverPlayerColor) {
       setBoardOrientation(serverPlayerColor === 'w' ? 'white' : 'black')
+    } else if (myId && opponentId) {
+      setBoardOrientation(myId < opponentId ? 'white' : 'black')
     }
-  }, [serverPlayerColor])
+  }, [serverPlayerColor, myId, opponentId])
 
   // Live timer interval
   useEffect(() => {
@@ -138,13 +176,13 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
 
     const interval = setInterval(() => {
       setClocks((prev) => {
-        const current = prev[currentTurnUserId]
-        if (!current || current.remainingMs <= 0) return prev
+        const activeClock = prev[currentTurnUserId]
+        if (!activeClock || activeClock.remainingMs <= 0) return prev
         return {
           ...prev,
           [currentTurnUserId]: {
-            ...current,
-            remainingMs: Math.max(0, current.remainingMs - 100),
+            ...activeClock,
+            remainingMs: Math.max(0, activeClock.remainingMs - 100),
           },
         }
       })
@@ -153,8 +191,10 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     return () => clearInterval(interval)
   }, [currentTurnUserId, clocks])
 
-  // Camera setup
+  // Media streams setup for in-game video
   useEffect(() => {
+    let streamInstance: MediaStream | null = null
+
     if (!isCameraOn) {
       if (localStream) {
         localStream.getTracks().forEach((t) => t.stop())
@@ -164,300 +204,257 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     }
 
     navigator.mediaDevices
-      .getUserMedia({ video: true, audio: false })
+      .getUserMedia({ video: true, audio: true })
       .then((stream) => {
+        streamInstance = stream
         setLocalStream(stream)
         if (localVideoRef.current) localVideoRef.current.srcObject = stream
       })
       .catch((err) => {
         console.warn('Camera access denied or unavailable:', err)
-        setCameraError('Camera disabled')
       })
 
     return () => {
-      if (localStream) localStream.getTracks().forEach((t) => t.stop())
+      if (streamInstance) streamInstance.getTracks().forEach((t) => t.stop())
     }
   }, [isCameraOn])
 
-  // Socket setup
+  // Keep local and remote video elements updated with streams
   useEffect(() => {
-    if (!socket || !myId) return
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream
+    }
+  }, [localStream])
+
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream
+    }
+  }, [remoteStream])
+
+  // WebRTC peer connection for 2-player video in GameRoom
+  useEffect(() => {
+    if (!socket || !myId || !opponentId || !localStream || !isCameraOn) return
+
+    const isInitiator = myId > opponentId
+    let peer: SimplePeer.Instance | null = null
+
+    try {
+      peer = new SimplePeer({
+        initiator: isInitiator,
+        trickle: false,
+        stream: localStream,
+      })
+
+      peer.on('signal', (signalData) => {
+        socket.emit('game-signal', { signal: signalData, opponentId, conversationId })
+      })
+
+      peer.on('stream', (stream) => {
+        setRemoteStream(stream)
+      })
+
+      peer.on('error', (err) => {
+        console.warn('Game WebRTC peer error:', err)
+      })
+
+      peerRef.current = peer
+    } catch (err) {
+      console.warn('Failed to initialize SimplePeer in GameRoom:', err)
+    }
 
     const handleGameSignal = (data: { signal: SimplePeer.SignalData; from: string }) => {
-      if (peerRef.current) {
-        peerRef.current.signal(data.signal)
-      } else if (data.signal.type === 'offer') {
-        const peer = new SimplePeer({ initiator: false, trickled: false, stream: localStream || undefined })
-        peer.on('signal', (signalData) => {
-          socket.emit('game-signal', { signal: signalData, to: data.from, conversationId })
-        })
-        peer.on('stream', (stream) => {
-          setRemoteStream(stream)
-          if (remoteVideoRef.current) remoteVideoRef.current.srcObject = stream
-        })
-        peer.signal(data.signal)
-        peerRef.current = peer
-      }
-    }
-
-    const handleGameStateUpdated = (data: { gameState: GameStateSync }) => {
-      const gs = data.gameState
-      if (gs.activeGame) setActiveGame(gs.activeGame)
-      if (gs.selection !== undefined) setOpponentWyrSelection(gs.selection)
-      if (gs.todPrompt !== undefined) setTodPrompt(gs.todPrompt)
-      if (gs.todType !== undefined) setTodType(gs.todType)
-      if (gs.board) {
-        setBoard(gs.board)
-        setIsMyTurn(!isMyTurn)
-      }
-    }
-
-    const handleGameState = (session: GameSessionState) => {
-      if (session.players) {
-        setGameSessionPlayers(session.players.map((p) => p.userId))
-      }
-      const myPlayer = session.players?.find((p) => p.userId === myId)
-      if (myPlayer) {
-        setServerPlayerColor(myPlayer.color as 'w' | 'b')
-      }
-      if (session.currentTurn) {
-        setCurrentTurnUserId(session.currentTurn)
-      }
-
-      if (session.gameType === 'chess') {
-        if (activeGame !== 'chess') {
-          setActiveGame('chess')
-        }
-        chessInstanceRef.current.load(session.state.fen || '')
-        setChessFen(session.state.fen || '')
-        if (session.clocks) setClocks(session.clocks)
-        if (session.moveHistory) setMoveHistoryList(session.moveHistory)
-        if (session.result?.reason) {
-          setGameResult(session.result)
-        }
-      } else if (session.gameType === 'connect-four') {
-        if (activeGame !== 'connect-four') {
-          setActiveGame('connect-four')
-        }
-        if (session.state.grid) setC4Grid(session.state.grid)
-        setC4ActiveTurn(session.currentTurn)
-        if (session.result?.reason) {
-          setGameResult(session.result)
-        }
-      } else if (session.gameType === 'sliding-puzzle' || session.gameType === 'puzzle' || session.gameType === '2048') {
-        if (activeGame !== 'sliding-puzzle') {
-          setActiveGame('sliding-puzzle')
-        }
-        if (session.state.tiles) setSlidingTiles(session.state.tiles)
-        if (session.state.moveCount !== undefined) setSlidingMoveCount(session.state.moveCount)
-        setSlidingActiveTurn(session.currentTurn)
-        if (session.result?.reason) {
-          setGameResult(session.result)
-        }
-      }
-    }
-
-    const handleChessMoveAccepted = (session: GameSessionState) => {
-      const prevFen = chessInstanceRef.current.fen()
-      chessInstanceRef.current.load(session.state.fen || '')
-      setChessFen(session.state.fen || '')
-      setSelectedChessSlot(null)
-      setMoveFrom(null)
-      setOptionSquares({})
-      setPendingPromotion(null)
-
-      if (session.clocks) setClocks(session.clocks)
-      if (session.moveHistory) setMoveHistoryList(session.moveHistory)
-
-      if (session.currentTurn) {
-        setCurrentTurnUserId(session.currentTurn)
-      }
-      if (session.result?.reason) {
-        setGameResult(session.result)
-        playSoundCue('end')
-      } else if (chessInstanceRef.current.inCheck()) {
-        playSoundCue('check')
-      } else if (prevFen !== session.state.fen) {
-        const prevCount = prevFen.split(' ')[0].replace(/[^a-zA-Z]/g, '').length
-        const nextCount = (session.state.fen || '').split(' ')[0].replace(/[^a-zA-Z]/g, '').length
-        if (nextCount < prevCount) {
-          playSoundCue('capture')
-        } else {
-          playSoundCue('move')
-        }
-      }
-    }
-
-    const handleChessMoveRejected = () => {
-      setIsShaking(true)
-      if (chessFen) {
+      const fromId = normalizeId(data.from)
+      if (fromId === opponentId && peerRef.current) {
         try {
-          chessInstanceRef.current.load(chessFen)
+          peerRef.current.signal(data.signal)
         } catch (err) {
-          console.warn('Failed to reload FEN:', err)
+          console.warn('Error handling game signal:', err)
         }
       }
-      setSelectedChessSlot(null)
-      setMoveFrom(null)
-      setOptionSquares({})
-      setTimeout(() => setIsShaking(false), 500)
-    }
-
-    const handleC4MoveAccepted = (session: GameSessionState) => {
-      if (session.state.grid) setC4Grid(session.state.grid)
-      setC4ActiveTurn(session.currentTurn)
-      if (session.result?.reason) {
-        setGameResult(session.result)
-      }
-    }
-
-    const handleSlidingMoveAccepted = (session: GameSessionState) => {
-      if (session.state.tiles) setSlidingTiles(session.state.tiles)
-      if (session.state.moveCount !== undefined) setSlidingMoveCount(session.state.moveCount)
-      setSlidingActiveTurn(session.currentTurn)
-      if (session.result?.reason) {
-        setGameResult(session.result)
-      }
-    }
-
-    const handleGameResult = (result: { winnerId: string | null; reason: string; _id?: string }) => {
-      setGameResult(result)
-      const isWinner = result.winnerId && result.winnerId === userInfo.id
-      const text = isWinner ? `🏆 You won! (${result.reason})` : result.winnerId ? `🎖 Partner won! (${result.reason})` : `🤝 Draw! (${result.reason})`
-      setGameMessages((prev) => [
-        ...prev,
-        {
-          id: String(Date.now()),
-          senderId: 'system',
-          text,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          eventMessageId: result._id,
-        },
-      ])
-    }
-
-    const handleDrawOffered = () => {
-      setDrawOfferReceived(true)
-    }
-
-    const handleDrawDeclined = () => {
-      setDrawOfferReceived(false)
-      setGameMessages((prev) => [
-        ...prev,
-        {
-          id: String(Date.now()),
-          senderId: 'system',
-          text: 'Draw offer was declined.',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ])
-    }
-
-    const handleGameChatReceived = ({ senderId, message }: { senderId: string; message: string }) => {
-      if (senderId !== myId) {
-        setGameMessages((prev) => [
-          ...prev,
-          {
-            id: String(Date.now()),
-            senderId: opponentId,
-            text: message,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          },
-        ])
-      }
-    }
-
-    const handleGameReactionReceived = ({ emoji }: { emoji: string }) => {
-      setFloatingEmojis((prev) => [...prev, { id: Date.now() + Math.random(), emoji, x: 10 + Math.random() * 80 }])
-    }
-
-    const handleMessageReactionUpdated = ({ messageId, reactions }: { messageId: string; reactions: { userId: string; emoji: string }[] }) => {
-      setGameEventReactions((prev) => ({ ...prev, [messageId]: reactions }))
     }
 
     socket.on('game-signal-received', handleGameSignal)
-    socket.on('game-state-updated', handleGameStateUpdated)
-    socket.on('game:state', handleGameState)
-    socket.on('chess:moveAccepted', handleChessMoveAccepted)
-    socket.on('chess:moveRejected', handleChessMoveRejected)
-    socket.on('c4:moveAccepted', handleC4MoveAccepted)
-    socket.on('sliding:moveAccepted', handleSlidingMoveAccepted)
-    socket.on('game:result', handleGameResult)
-    socket.on('game:drawOffered', handleDrawOffered)
-    socket.on('game:drawDeclined', handleDrawDeclined)
-    socket.on('game-chat-received', handleGameChatReceived)
-    socket.on('game-reaction-received', handleGameReactionReceived)
-    socket.on('message:reactionUpdated', handleMessageReactionUpdated)
-
-    socket.emit('join-game', { opponentId })
 
     return () => {
       socket.off('game-signal-received', handleGameSignal)
-      socket.off('game-state-updated', handleGameStateUpdated)
-      socket.off('game:state', handleGameState)
+      if (peer) {
+        peer.destroy()
+        peerRef.current = null
+      }
+    }
+  }, [socket, myId, opponentId, localStream, isCameraOn, conversationId])
+
+  // Socket state & real-time sync listeners
+  useEffect(() => {
+    if (!socket) return
+
+    const handleGameState = (data: { gameState: GameStateSync; senderId: string }) => {
+      const { gameState, senderId } = data
+      if (normalizeId(senderId) === myId) return
+
+      if (gameState.gameType === 'select-game') {
+        setActiveGame(gameState.activeGame)
+        setGameResult(null)
+      } else if (gameState.gameType === 'wyr-sync') {
+        if (gameState.index !== undefined) setWyrIndex(gameState.index)
+        if (gameState.selection !== undefined) setOpponentWyrSelection(gameState.selection)
+      } else if (gameState.gameType === 'tod-sync') {
+        if (gameState.type !== undefined) setTodType(gameState.type)
+        if (gameState.prompt !== undefined) setTodPrompt(gameState.prompt)
+      } else if (gameState.gameType === 'ttt-sync') {
+        if (gameState.board !== undefined) setBoard(gameState.board)
+        if (gameState.isMyTurn !== undefined) setIsMyTurn(!gameState.isMyTurn)
+        if (gameState.score !== undefined) setScore(gameState.score)
+      } else if (gameState.gameType === 'chess-draw-offer') {
+        setDrawOfferReceived(true)
+      } else if (gameState.gameType === 'chess-draw-accept') {
+        setGameResult({ winnerId: null, reason: 'Agreement' })
+        playSoundCue('end')
+      } else if (gameState.gameType === 'chess-resign') {
+        setGameResult({ winnerId: myId, reason: 'Resignation' })
+        playSoundCue('end')
+      } else if (gameState.gameType === 'connect-four-sync') {
+        if (gameState.grid) setC4Grid(gameState.grid)
+        if (gameState.currentTurn) setC4ActiveTurn(gameState.currentTurn)
+        if (gameState.result) setGameResult(gameState.result)
+      } else if (gameState.gameType === 'sliding-puzzle-sync') {
+        if (gameState.tiles) setSlidingTiles(gameState.tiles)
+        if (gameState.moveCount !== undefined) setSlidingMoveCount(gameState.moveCount)
+        if (gameState.currentTurn) setSlidingActiveTurn(gameState.currentTurn)
+        if (gameState.result) setGameResult(gameState.result)
+      }
+    }
+
+    const handleSessionCreated = (session: GameSessionState) => {
+      setGameSessionPlayers(session.players.map((p) => normalizeId(p.userId)))
+      const me = session.players.find((p) => normalizeId(p.userId) === myId)
+      if (me) setServerPlayerColor(me.color)
+
+      if (session.currentTurn) setCurrentTurnUserId(normalizeId(session.currentTurn))
+      if (session.clocks) setClocks(session.clocks)
+
+      if (session.gameType === 'chess') {
+        setActiveGame('chess')
+        if (session.state?.fen) {
+          chessInstanceRef.current.load(session.state.fen)
+          setChessFen(session.state.fen)
+        }
+        if (session.moveHistory) setMoveHistoryList(session.moveHistory)
+      } else if (session.gameType === 'connect-four') {
+        setActiveGame('connect-four')
+        if (session.state?.grid) setC4Grid(session.state.grid)
+        if (session.currentTurn) setC4ActiveTurn(normalizeId(session.currentTurn))
+      } else if (session.gameType === 'sliding-puzzle') {
+        setActiveGame('sliding-puzzle')
+        if (session.state?.tiles) setSlidingTiles(session.state.tiles)
+        if (session.state?.moveCount) setSlidingMoveCount(session.state.moveCount)
+        if (session.currentTurn) setSlidingActiveTurn(normalizeId(session.currentTurn))
+      }
+      setGameResult(null)
+    }
+
+    const handleChessMoveAccepted = (data: {
+      fen: string
+      action: string
+      playerId: string
+      resultingState: string
+      currentTurn: string
+      clocks: Record<string, { remainingMs: number; lastMoveTimestamp: Date | string | null }>
+      moveHistory: { playerId: string; action: string; resultingState: string }[]
+    }) => {
+      try {
+        chessInstanceRef.current.load(data.fen)
+        setChessFen(data.fen)
+      } catch (err) {
+        console.warn('Failed to load FEN into chess instance:', err)
+      }
+      setCurrentTurnUserId(normalizeId(data.currentTurn))
+      if (data.clocks) setClocks(data.clocks)
+      if (data.moveHistory) setMoveHistoryList(data.moveHistory)
+      setPreviewFen(null)
+
+      if (normalizeId(data.playerId) === myId) {
+        playSoundCue('move')
+      } else {
+        playSoundCue('notify')
+      }
+    }
+
+    const handleChessMoveRejected = (data: { reason: string }) => {
+      setIsShaking(true)
+      setTimeout(() => setIsShaking(false), 500)
+      console.warn('Move rejected:', data.reason)
+    }
+
+    const handleGameEnded = (data: { winnerId: string | null; reason: string; session: GameSessionState }) => {
+      setGameResult({ winnerId: data.winnerId ? normalizeId(data.winnerId) : null, reason: data.reason })
+      playSoundCue('end')
+    }
+
+    const handleGameChatReceived = (data: { senderId: string; message: string; messageId?: string }) => {
+      if (normalizeId(data.senderId) === myId) return
+      setGameMessages((prev) => [
+        ...prev,
+        {
+          id: String(Date.now() + Math.random()),
+          senderId: data.senderId,
+          text: data.message,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          eventMessageId: data.messageId,
+        },
+      ])
+    }
+
+    const handleGameReactionReceived = (data: { emoji: string; senderId?: string }) => {
+      if (data.senderId && normalizeId(data.senderId) === myId) return
+      const id = Date.now() + Math.random()
+      setFloatingEmojis((prev) => [...prev, { id, emoji: data.emoji, x: 20 + Math.random() * 60 }])
+      setTimeout(() => {
+        setFloatingEmojis((prev) => prev.filter((item) => item.id !== id))
+      }, 2500)
+    }
+
+    const handleReactionToggled = (data: { messageId: string; reactions: { userId: string; emoji: string }[] }) => {
+      setGameEventReactions((prev) => ({
+        ...prev,
+        [data.messageId]: data.reactions,
+      }))
+    }
+
+    socket.on('game-state-updated', handleGameState)
+    socket.on('game:session-created', handleSessionCreated)
+    socket.on('chess:moveAccepted', handleChessMoveAccepted)
+    socket.on('chess:moveRejected', handleChessMoveRejected)
+    socket.on('game:ended', handleGameEnded)
+    socket.on('game-chat-received', handleGameChatReceived)
+    socket.on('game-reaction-received', handleGameReactionReceived)
+    socket.on('message:reactionToggled', handleReactionToggled)
+
+    return () => {
+      socket.off('game-state-updated', handleGameState)
+      socket.off('game:session-created', handleSessionCreated)
       socket.off('chess:moveAccepted', handleChessMoveAccepted)
       socket.off('chess:moveRejected', handleChessMoveRejected)
-      socket.off('c4:moveAccepted', handleC4MoveAccepted)
-      socket.off('sliding:moveAccepted', handleSlidingMoveAccepted)
-      socket.off('game:result', handleGameResult)
-      socket.off('game:drawOffered', handleDrawOffered)
-      socket.off('game:drawDeclined', handleDrawDeclined)
+      socket.off('game:ended', handleGameEnded)
       socket.off('game-chat-received', handleGameChatReceived)
       socket.off('game-reaction-received', handleGameReactionReceived)
-      socket.off('message:reactionUpdated', handleMessageReactionUpdated)
+      socket.off('message:reactionToggled', handleReactionToggled)
     }
-  }, [socket, myId, localStream, opponentId, activeGame])
+  }, [socket, myId, myChessColor])
 
+  // Auto-scroll chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [gameMessages])
 
-  useEffect(() => {
-    if (socket && conversationId && (activeGame === 'chess' || activeGame === 'connect-four' || activeGame === 'sliding-puzzle')) {
-      socket.emit('game:initiate', {
-        conversationId,
-        gameType: activeGame,
-        opponentId,
-        timeControl: activeGame === 'chess' ? { initialSeconds: selectedTimeControl.initialSeconds, incrementSeconds: selectedTimeControl.incrementSeconds } : undefined,
-      })
-    }
-  }, [socket, conversationId, activeGame, opponentId, selectedTimeControl])
-
   const syncGameState = (payload: GameStateSync) => {
     if (socket) {
-      socket.emit('game-state-sync', { conversationId, opponentId, gameState: payload })
-    }
-  }
-
-  const selectGame = (game: typeof activeGame) => {
-    setActiveGame(game)
-    syncGameState({ gameType: 'select-game', activeGame: game })
-    if (game === 'chess') resetChess()
-    if (game === 'chess-puzzle') startPuzzle(0)
-    if (game === 'connect-four') {
-      setC4Grid(
-        Array(6)
-          .fill(null)
-          .map(() => Array(7).fill(null))
-      )
-    }
-    if (game === 'sliding-puzzle') {
-      setSlidingTiles([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0])
-      setSlidingMoveCount(0)
-    }
-  }
-
-  const handleC4Drop = (colIndex: number) => {
-    if (!isMyC4Turn || gameResult || isSpectator) return
-    if (socket) {
-      socket.emit('c4:dropDisc', { conversationId, col: colIndex })
-    }
-  }
-
-  const handleSlidingTileClick = (tileIndex: number) => {
-    if (!isMySlidingTurn || gameResult || isSpectator) return
-    if (socket) {
-      socket.emit('sliding:moveTile', { conversationId, tileIndex })
+      socket.emit('game-state-sync', {
+        conversationId,
+        opponentId,
+        gameState: payload,
+      })
     }
   }
 
@@ -479,9 +476,13 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   }
 
   const triggerReaction = (emoji: string) => {
-    setFloatingEmojis((prev) => [...prev, { id: Date.now() + Math.random(), emoji, x: 10 + Math.random() * 80 }])
+    const id = Date.now() + Math.random()
+    setFloatingEmojis((prev) => [...prev, { id, emoji, x: 15 + Math.random() * 70 }])
+    setTimeout(() => {
+      setFloatingEmojis((prev) => prev.filter((item) => item.id !== id))
+    }, 2500)
     if (socket) {
-      socket.emit('game-reaction', { conversationId, emoji })
+      socket.emit('game-reaction', { conversationId, opponentId, emoji, senderId: myId })
     }
   }
 
@@ -491,10 +492,10 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     setActiveGameReactionPicker(null)
   }
 
-  // Casual games action handlers
-  const handleWyrSelect = (choice: 'A' | 'B') => {
-    setWyrSelection(choice)
-    syncGameState({ gameType: 'would-you-rather', selection: choice, index: wyrIndex })
+  // 1. "Would You Rather" Logic
+  const handleWyrSelect = (option: 'A' | 'B') => {
+    setWyrSelection(option)
+    syncGameState({ gameType: 'wyr-sync', index: wyrIndex, selection: option })
   }
 
   const handleNextWyr = () => {
@@ -502,18 +503,54 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     setWyrIndex(nextIdx)
     setWyrSelection(null)
     setOpponentWyrSelection(null)
-    syncGameState({ gameType: 'would-you-rather', index: nextIdx, selection: null })
+    syncGameState({ gameType: 'wyr-sync', index: nextIdx, selection: null })
   }
 
+  // 2. "Truth or Dare" Logic
   const drawTod = (type: 'truth' | 'dare') => {
     const cards = TRUTH_OR_DARE_CARDS[type]
     const randomCard = cards[Math.floor(Math.random() * cards.length)]
     setTodType(type)
     setTodPrompt(randomCard)
-    syncGameState({ gameType: 'truth-or-dare', todType: type, todPrompt: randomCard })
+    syncGameState({ gameType: 'tod-sync', type, prompt: randomCard })
   }
 
-  const checkWinner = (b: (string | null)[]) => {
+  // 3. "Tic Tac Toe" Logic
+  const handleCellClick = (index: number) => {
+    if (!isMyTurn || board[index] || checkWinner(board)) return
+    const newBoard = [...board]
+    newBoard[index] = mySymbol
+    setBoard(newBoard)
+    setIsMyTurn(false)
+
+    const winner = checkWinner(newBoard)
+    let newScore = { ...score }
+    if (winner === mySymbol) {
+      newScore = { ...score, self: score.self + 1 }
+      setScore(newScore)
+    }
+
+    syncGameState({
+      gameType: 'ttt-sync',
+      board: newBoard,
+      isMyTurn: false,
+      score: newScore,
+    })
+  }
+
+  const resetTicTacToe = () => {
+    const freshBoard = Array(9).fill(null)
+    setBoard(freshBoard)
+    setIsMyTurn(true)
+    syncGameState({
+      gameType: 'ttt-sync',
+      board: freshBoard,
+      isMyTurn: true,
+      score,
+    })
+  }
+
+  const checkWinner = (squares: (string | null)[]) => {
     const lines = [
       [0, 1, 2],
       [3, 4, 5],
@@ -524,147 +561,258 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       [0, 4, 8],
       [2, 4, 6],
     ]
-    for (let i = 0; i < lines.length; i++) {
-      const [a, bIdx, c] = lines[i]
-      if (b[a] && b[a] === b[bIdx] && b[a] === b[c]) {
-        return b[a]
+    for (const [a, b, c] of lines) {
+      if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+        return squares[a]
       }
     }
     return null
   }
 
-  const handleCellClick = (index: number) => {
-    if (!isMyTurn || board[index] !== null || checkWinner(board)) return
-    const newBoard = [...board]
-    newBoard[index] = mySymbol
-    setBoard(newBoard)
-    setIsMyTurn(false)
-    syncGameState({ gameType: 'tic-tac-toe', board: newBoard })
-
-    const winner = checkWinner(newBoard)
-    if (winner) {
-      setScore((prev) => ({ ...prev, self: prev.self + 1 }))
-    }
-  }
-
-  const resetTicTacToe = () => {
-    const emptyBoard = Array(9).fill(null)
-    setBoard(emptyBoard)
-    setIsMyTurn(true)
-    syncGameState({ gameType: 'tic-tac-toe', board: emptyBoard })
-  }
-
-  // Chess handlers
-  const resetChess = () => {
-    chessInstanceRef.current.reset()
-    setChessFen(chessInstanceRef.current.fen())
-    setSelectedChessSlot(null)
+  // 4. "Chess" & "Chess Tactics Puzzles" Logic
+  const executeChessMove = (from: string, to: string, promotionPiece?: string) => {
+    if (!socket) return false
+    const timeSpentMs = 0
+    socket.emit('chess:proposeMove', {
+      conversationId,
+      move: { from, to, promotion: promotionPiece || 'q' },
+      timeSpentMs,
+    })
     setMoveFrom(null)
+    setSelectedChessSlot(null)
     setOptionSquares({})
     setPendingPromotion(null)
-    setPreviewFen(null)
-    setDrawOfferReceived(false)
-    setGameResult(null)
-  }
-
-  const executeChessMove = (from: string, to: string, promotion?: string) => {
-    if (!isMyChessTurn || isSpectator || !!previewFen || !!gameResult) return false
-    try {
-      const move = chessInstanceRef.current.move({ from, to, promotion: promotion || 'q' })
-      if (move) {
-        setChessFen(chessInstanceRef.current.fen())
-        setPendingPromotion(null)
-        setMoveFrom(null)
-        setOptionSquares({})
-        if (socket) {
-          socket.emit('chess:proposeMove', { conversationId, from, to, promotion })
-        }
-        return true
-      }
-    } catch (err) {
-      console.warn('Invalid chess move:', err)
-    }
-    return false
-  }
-
-  const getMoveOptions = (square: Square) => {
-    const moves = chessInstanceRef.current.moves({ square, verbose: true })
-    if (moves.length === 0) {
-      setOptionSquares({})
-      return false
-    }
-
-    const newSquares: Record<string, { background: string; borderRadius?: string }> = {}
-    moves.forEach((move) => {
-      newSquares[move.to] = {
-        background: chessInstanceRef.current.get(move.to as Square) ? 'rgba(239, 68, 68, 0.4)' : 'radial-gradient(circle, rgba(99,102,241,0.8) 25%, transparent 25%)',
-        borderRadius: '50%',
-      }
-    })
-    newSquares[square] = { background: 'rgba(245, 158, 11, 0.4)' }
-    setOptionSquares(newSquares)
     return true
   }
 
-  const handleSquareClick = (square: Square) => {
-    if (!isMyChessTurn || isSpectator || !!previewFen || !!gameResult) return
-    if (!moveFrom) {
-      const hasMoves = getMoveOptions(square)
-      if (hasMoves) setMoveFrom(square)
-    } else {
-      const moves = chessInstanceRef.current.moves({ square: moveFrom as Square, verbose: true })
-      const foundMove = moves.find((m) => m.to === square)
-
-      if (!foundMove) {
-        const hasMoves = getMoveOptions(square)
-        setMoveFrom(hasMoves ? square : null)
-      } else {
-        if (foundMove.promotion) {
-          setPendingPromotion({ from: moveFrom, to: square })
-        } else {
-          executeChessMove(moveFrom, square)
-        }
-      }
-    }
-  }
-
-  const handlePieceClick = (_piece: string, square: Square) => {
-    handleSquareClick(square)
-  }
-
   const handleChessPieceDrop = (sourceSquare: Square, targetSquare: Square) => {
-    if (!isMyChessTurn || isSpectator || !!previewFen || !!gameResult) return false
-    const moves = chessInstanceRef.current.moves({ square: sourceSquare, verbose: true })
-    const foundMove = moves.find((m) => m.to === targetSquare)
+    if (isSpectator || previewFen || !isMyChessTurn) return false
 
-    if (foundMove && foundMove.promotion) {
+    const piece = chessInstanceRef.current.get(sourceSquare)
+    const isPawn = piece && piece.type === 'p'
+    const isPromotion = isPawn && ((piece.color === 'w' && targetSquare[1] === '8') || (piece.color === 'b' && targetSquare[1] === '1'))
+
+    if (isPromotion) {
       setPendingPromotion({ from: sourceSquare, to: targetSquare })
-      return false
+      return true
     }
+
     return executeChessMove(sourceSquare, targetSquare)
   }
 
+  const handlePieceClick = (piece: string, square: Square) => {
+    if (isSpectator || previewFen || !isMyChessTurn) return
+    const pieceColor = piece[0]
+    if (pieceColor !== myChessColor) return
+
+    setMoveFrom(square)
+    setSelectedChessSlot(square)
+
+    const moves = chessInstanceRef.current.moves({ square, verbose: true })
+    const newOptionSquares: Record<string, { background: string; borderRadius?: string }> = {}
+
+    moves.forEach((move) => {
+      newOptionSquares[move.to] = {
+        background:
+          chessInstanceRef.current.get(move.to as Square) && chessInstanceRef.current.get(move.to as Square)?.color !== pieceColor
+            ? 'radial-gradient(circle, rgba(239,68,68,0.7) 85%, transparent 85%)'
+            : 'radial-gradient(circle, rgba(16,185,129,0.7) 25%, transparent 25%)',
+        borderRadius: '50%',
+      }
+    })
+    setOptionSquares(newOptionSquares)
+  }
+
+  const handleSquareClick = (square: Square) => {
+    if (isSpectator || previewFen || !isMyChessTurn) return
+
+    if (!moveFrom) {
+      const piece = chessInstanceRef.current.get(square)
+      if (piece && piece.color === myChessColor) {
+        handlePieceClick(`${piece.color}${piece.type.toUpperCase()}`, square)
+      }
+      return
+    }
+
+    const piece = chessInstanceRef.current.get(moveFrom as Square)
+    const isPawn = piece && piece.type === 'p'
+    const isPromotion = isPawn && ((piece.color === 'w' && square[1] === '8') || (piece.color === 'b' && square[1] === '1'))
+
+    if (isPromotion) {
+      setPendingPromotion({ from: moveFrom, to: square })
+      return
+    }
+
+    executeChessMove(moveFrom, square)
+  }
+
   const proposeDraw = () => {
-    if (socket) socket.emit('game:proposeDraw', { conversationId })
+    if (isSpectator || gameResult) return
+    syncGameState({ gameType: 'chess-draw-offer' })
   }
 
   const acceptDraw = () => {
-    if (socket) socket.emit('game:acceptDraw', { conversationId })
+    syncGameState({ gameType: 'chess-draw-accept' })
+    setGameResult({ winnerId: null, reason: 'Agreement' })
     setDrawOfferReceived(false)
+    playSoundCue('end')
   }
 
   const declineDraw = () => {
-    if (socket) socket.emit('game:declineDraw', { conversationId })
     setDrawOfferReceived(false)
   }
 
   const resignGame = () => {
-    if (socket) socket.emit('game:resign', { conversationId })
+    if (isSpectator || gameResult) return
+    syncGameState({ gameType: 'chess-resign' })
+    setGameResult({ winnerId: opponentId, reason: 'Resignation' })
+    playSoundCue('end')
+  }
+
+  // 5. Connect Four Handlers
+  const handleC4Drop = (colIndex: number) => {
+    if (!isMyC4Turn || isSpectator || !!gameResult) return
+    const newGrid = c4Grid.map((row) => [...row])
+    let placedRow = -1
+    for (let r = 5; r >= 0; r--) {
+      if (!newGrid[r][colIndex]) {
+        newGrid[r][colIndex] = myId === (conversationId.split('-')[0] || '') ? 'R' : 'Y'
+        placedRow = r
+        break
+      }
+    }
+    if (placedRow === -1) return
+
+    setC4Grid(newGrid)
+    const nextTurn = opponentId
+    setC4ActiveTurn(nextTurn)
+
+    const checkC4Winner = (grid: (string | null)[][]) => {
+      const R = 6
+      const C = 7
+      for (let r = 0; r < R; r++) {
+        for (let c = 0; c < C; c++) {
+          const val = grid[r][c]
+          if (!val) continue
+          if (c + 3 < C && val === grid[r][c + 1] && val === grid[r][c + 2] && val === grid[r][c + 3]) return val
+          if (r + 3 < R && val === grid[r + 1][c] && val === grid[r + 2][c] && val === grid[r + 3][c]) return val
+          if (r + 3 < R && c + 3 < C && val === grid[r + 1][c + 1] && val === grid[r + 2][c + 2] && val === grid[r + 3][c + 3]) return val
+          if (r - 3 >= 0 && c + 3 < C && val === grid[r - 1][c + 1] && val === grid[r - 2][c + 2] && val === grid[r - 3][c + 3]) return val
+        }
+      }
+      return null
+    }
+
+    const winnerVal = checkC4Winner(newGrid)
+    let result: { winnerId: string | null; reason: string } | null = null
+    if (winnerVal) {
+      result = { winnerId: myId, reason: '4 In A Row!' }
+      setGameResult(result)
+      playSoundCue('end')
+    }
+
+    syncGameState({
+      gameType: 'connect-four-sync',
+      grid: newGrid,
+      currentTurn: nextTurn,
+      result: result || undefined,
+    })
+  }
+
+  // 6. Sliding Tile Puzzle Handlers
+  const handleSlidingTileClick = (tileIndex: number) => {
+    if (!isMySlidingTurn || isSpectator || !!gameResult) return
+    const emptyIndex = slidingTiles.indexOf(0)
+    const row = Math.floor(tileIndex / 4)
+    const col = tileIndex % 4
+    const emptyRow = Math.floor(emptyIndex / 4)
+    const emptyCol = emptyIndex % 4
+
+    const isAdjacent = (Math.abs(row - emptyRow) === 1 && col === emptyCol) || (Math.abs(col - emptyCol) === 1 && row === emptyRow)
+    if (!isAdjacent) return
+
+    const nextTiles = [...slidingTiles]
+    nextTiles[emptyIndex] = nextTiles[tileIndex]
+    nextTiles[tileIndex] = 0
+
+    const nextMoves = slidingMoveCount + 1
+    setSlidingTiles(nextTiles)
+    setSlidingMoveCount(nextMoves)
+
+    const isSolved = nextTiles.slice(0, 15).every((val, i) => val === i + 1) && nextTiles[15] === 0
+    let result: { winnerId: string | null; reason: string } | null = null
+    if (isSolved) {
+      result = { winnerId: myId, reason: `Solved in ${nextMoves} moves!` }
+      setGameResult(result)
+      playSoundCue('end')
+    }
+
+    const nextTurn = opponentId
+    setSlidingActiveTurn(nextTurn)
+
+    syncGameState({
+      gameType: 'sliding-puzzle-sync',
+      tiles: nextTiles,
+      moveCount: nextMoves,
+      currentTurn: nextTurn,
+      result: result || undefined,
+    })
+  }
+
+  // Game Selection switch
+  const selectGame = (game: typeof activeGame) => {
+    setActiveGame(game)
+    setGameResult(null)
+
+    if (game === 'chess') {
+      chessInstanceRef.current = new Chess()
+      setChessFen(chessInstanceRef.current.fen())
+      setMoveHistoryList([])
+      if (socket) {
+        socket.emit('game:create-session', {
+          conversationId,
+          gameType: 'chess',
+          timeControl: selectedTimeControl,
+        })
+      }
+    } else if (game === 'connect-four') {
+      const initGrid = Array(6)
+        .fill(null)
+        .map(() => Array(7).fill(null))
+      setC4Grid(initGrid)
+      setC4ActiveTurn(myId)
+      if (socket) {
+        socket.emit('game:create-session', {
+          conversationId,
+          gameType: 'connect-four',
+        })
+      }
+    } else if (game === 'sliding-puzzle') {
+      const shuffled = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0].sort(() => Math.random() - 0.5)
+      setSlidingTiles(shuffled)
+      setSlidingMoveCount(0)
+      setSlidingActiveTurn(myId)
+      if (socket) {
+        socket.emit('game:create-session', {
+          conversationId,
+          gameType: 'sliding-puzzle',
+        })
+      }
+    } else {
+      syncGameState({ gameType: 'select-game', activeGame: game })
+    }
   }
 
   const handleExitGame = () => {
-    if (activeGame === 'selection') {
-      onClose()
+    if (activeGame === 'chess' || activeGame === 'connect-four' || activeGame === 'sliding-puzzle') {
+      setActiveGame('selection')
+      setGameResult(null)
+      if (socket) {
+        socket.emit('game:create-session', {
+          conversationId,
+          gameType: 'selection',
+        })
+      }
     } else {
       setActiveGame('selection')
       setGameResult(null)
@@ -754,158 +902,288 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     return styles
   }
 
+  const partnerName =
+    typeof selectedChatData === 'object' && selectedChatData?.firstName
+      ? `${selectedChatData.firstName} ${selectedChatData.lastName || ''}`.trim()
+      : 'Partner'
+
+  const myInitial = userInfo?.firstName ? userInfo.firstName[0].toUpperCase() : 'Y'
+  const partnerInitial = typeof selectedChatData === 'object' && selectedChatData?.firstName ? selectedChatData.firstName[0].toUpperCase() : 'P'
+
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.96 }}
+      initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.96 }}
-      className="fixed inset-4 sm:inset-10 z-[100] bg-[#0F1015]/95 border border-indigo-500/20 rounded-3xl shadow-[0_32px_128px_rgba(0,0,0,0.9)] backdrop-blur-2xl p-4 sm:p-6 flex flex-col lg:flex-row gap-4 overflow-hidden select-none text-white"
+      exit={{ opacity: 0, scale: 0.98 }}
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      className="fixed inset-0 sm:inset-3 md:inset-5 z-[100] bg-[#0A0B10]/98 border border-white/10 rounded-none sm:rounded-3xl shadow-[0_32px_128px_rgba(0,0,0,0.95)] backdrop-blur-3xl p-2.5 sm:p-4 md:p-5 flex flex-col overflow-hidden select-none text-white"
     >
-      {/* Camera PiP Video Container (Top Overlay / Side Panel) */}
-      {isCameraOn && (
-        <div className="absolute top-4 right-4 z-40 flex items-center gap-2 bg-black/40 border border-white/10 p-1.5 rounded-2xl backdrop-blur-md shadow-xl">
-          <div className="relative w-20 h-14 bg-slate-900 rounded-xl overflow-hidden border border-white/20">
-            <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover scale-x-[-1]" />
-            <span className="absolute bottom-1 left-1 px-1.5 py-0.5 text-[7px] font-bold text-white bg-black/60 rounded">You</span>
+      {/* Top Header Bar */}
+      <div className="flex items-center justify-between px-2 sm:px-3 py-2 border-b border-white/[0.08] mb-3 gap-2">
+        {/* Left: Brand / Title */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white text-sm shadow-md shadow-indigo-600/30 font-bold">
+            🎮
           </div>
-
-          {remoteStream && (
-            <div className="relative w-20 h-14 bg-slate-900 rounded-xl overflow-hidden border border-white/20">
-              <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
-              <span className="absolute bottom-1 left-1 px-1.5 py-0.5 text-[7px] font-bold text-white bg-black/60 rounded">Partner</span>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs sm:text-sm font-bold text-white tracking-tight">BaatCheet Arena</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             </div>
-          )}
+            <span className="text-[10px] text-slate-400 block -mt-0.5">Playing with {partnerName}</span>
+          </div>
+        </div>
 
+        {/* Center: Mobile Segmented Switcher (Visible on < lg) */}
+        <div className="flex lg:hidden items-center bg-white/[0.06] p-1 rounded-xl border border-white/10 text-xs">
           <button
-            onClick={() => setIsCameraOn(false)}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all text-xs"
-            title="Turn Camera Off"
+            onClick={() => setMobileTab('game')}
+            className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+              mobileTab === 'game' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
           >
-            <FiVideoOff />
+            <FiGrid className="text-xs" /> Game
+          </button>
+          <button
+            onClick={() => setMobileTab('chat')}
+            className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+              mobileTab === 'chat' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <FiMessageSquare className="text-xs" /> Chat
+            {gameMessages.length > 0 && <span className="text-[9px] bg-purple-500 text-white px-1.5 py-0.2 rounded-full font-mono">{gameMessages.length}</span>}
           </button>
         </div>
-      )}
 
-      {/* Main Game Dashboard Area */}
-      <div className="flex-1 bg-white/[0.01] border border-white/[0.05] rounded-3xl p-5 shadow-2xl backdrop-blur-xl flex flex-col overflow-y-auto custom-scrollbar relative">
-        <AnimatePresence mode="wait">
-          {activeGame === 'selection' && <GameSelectionMenu selectedTimeControl={selectedTimeControl} onSelectTimeControl={setSelectedTimeControl} onSelectGame={selectGame} />}
+        {/* Right: Video Controls + Exit Button */}
+        <div className="flex items-center gap-2">
+          {/* Toggle Video Floating Widget */}
+          <button
+            onClick={() => setIsVideoFloatingOpen(!isVideoFloatingOpen)}
+            className={`px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+              isVideoFloatingOpen
+                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                : 'bg-white/5 text-slate-400 hover:text-white border-white/10 hover:bg-white/10'
+            }`}
+            title="Toggle Floating Video Call"
+          >
+            {isVideoFloatingOpen ? <FiVideo className="text-sm" /> : <FiVideoOff className="text-sm" />}
+            <span className="hidden sm:inline">{isVideoFloatingOpen ? 'Video Live' : 'Video Off'}</span>
+          </button>
 
-          {(activeGame === 'chess' || activeGame === 'chess-puzzle') && (
-            <ChessBoardView
-              activeGame={activeGame}
-              selectedTimeControl={selectedTimeControl}
-              soundMuted={soundMuted}
-              setSoundMuted={setSoundMuted}
-              onExitGame={handleExitGame}
-              selectedChatData={selectedChatData}
-              topCaptured={topCaptured}
-              topAdvantage={topAdvantage}
-              topRemainingMs={topRemainingMs}
-              isTopUserTurn={isTopUserTurn}
-              bottomCaptured={bottomCaptured}
-              bottomAdvantage={bottomAdvantage}
-              bottomRemainingMs={bottomRemainingMs}
-              isBottomUserTurn={isBottomUserTurn}
-              chessInstanceRef={chessInstanceRef}
-              previewFen={previewFen}
-              chessFen={chessFen}
-              isShaking={isShaking}
-              drawOfferReceived={drawOfferReceived}
-              acceptDraw={acceptDraw}
-              declineDraw={declineDraw}
-              pendingPromotion={pendingPromotion}
-              executeChessMove={executeChessMove}
-              handleChessPieceDrop={handleChessPieceDrop}
-              handleSquareClick={handleSquareClick}
-              handlePieceClick={handlePieceClick}
-              getCustomSquareStyles={getCustomSquareStyles}
-              optionSquares={optionSquares}
-              boardOrientation={boardOrientation}
-              setBoardOrientation={setBoardOrientation}
-              isSpectator={isSpectator}
-              gameResult={gameResult}
-              proposeDraw={proposeDraw}
-              resignGame={resignGame}
-              moveHistoryList={moveHistoryList}
-              setPreviewFen={setPreviewFen}
-              currentPuzzleIdx={currentPuzzleIdx}
-              puzzleStatus={puzzleStatus}
-              puzzleHint={puzzleHint}
-              setPuzzleHint={setPuzzleHint}
-              startPuzzle={startPuzzle}
-              handlePuzzlePieceDrop={handlePuzzlePieceDrop}
-            />
-          )}
-
-          {activeGame === 'connect-four' && (
-            <ConnectFourView
-              c4Grid={c4Grid}
-              isMyC4Turn={isMyC4Turn}
-              gameResult={gameResult}
-              isSpectator={isSpectator}
-              myId={myId}
-              onDropDisc={handleC4Drop}
-              onExitGame={handleExitGame}
-            />
-          )}
-
-          {activeGame === 'sliding-puzzle' && (
-            <SlidingPuzzleView
-              slidingTiles={slidingTiles}
-              slidingMoveCount={slidingMoveCount}
-              isMySlidingTurn={isMySlidingTurn}
-              gameResult={gameResult}
-              isSpectator={isSpectator}
-              myId={myId}
-              onTileClick={handleSlidingTileClick}
-              onExitGame={handleExitGame}
-            />
-          )}
-
-          {(activeGame === 'would-you-rather' || activeGame === 'truth-or-dare' || activeGame === 'tic-tac-toe') && (
-            <CasualGamesView
-              activeGame={activeGame}
-              wyrIndex={wyrIndex}
-              wyrSelection={wyrSelection}
-              opponentWyrSelection={opponentWyrSelection}
-              onWyrSelect={handleWyrSelect}
-              onNextWyr={handleNextWyr}
-              todType={todType}
-              todPrompt={todPrompt}
-              onDrawTod={drawTod}
-              onClearTod={() => setTodPrompt(null)}
-              board={board}
-              isMyTurn={isMyTurn}
-              mySymbol={mySymbol}
-              score={score}
-              onCellClick={handleCellClick}
-              onResetTicTacToe={resetTicTacToe}
-              checkWinner={checkWinner}
-              onExitGame={handleExitGame}
-            />
-          )}
-        </AnimatePresence>
+          {/* Prominent Close Room Button */}
+          <button
+            onClick={handleCloseGameRoom}
+            className="p-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 hover:text-rose-200 border border-rose-500/30 transition-all flex items-center gap-1 text-xs font-bold cursor-pointer active:scale-95 shadow-md shadow-rose-500/10"
+            title="Close Game Room (Resets match for both players)"
+          >
+            <FiX className="text-base" />
+            <span className="hidden sm:inline">Close Room</span>
+          </button>
+        </div>
       </div>
 
-      {/* Game Over Modal */}
-      <GameOverModal gameResult={gameResult} myId={myId} isSpectator={isSpectator} onRematch={handleLudoRematch} onExitGame={handleExitGame} />
+      {/* Floating 2-User Video Stream Widget (Docked or Floating Overlay) */}
+      <AnimatePresence>
+        {isVideoFloatingOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className={`absolute top-16 right-4 z-40 bg-slate-950/90 border border-white/15 p-2 rounded-2xl shadow-2xl backdrop-blur-2xl flex flex-col gap-1.5 transition-all ${
+              isVideoMinimized ? 'w-auto' : 'w-auto'
+            }`}
+          >
+            <div className="flex items-center justify-between px-1 pb-1 border-b border-white/10 gap-3">
+              <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live Call
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setIsCameraOn(!isCameraOn)}
+                  className="p-1 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 text-xs transition-colors cursor-pointer"
+                  title={isCameraOn ? 'Turn Camera Off' : 'Turn Camera On'}
+                >
+                  {isCameraOn ? <FiVideo className="text-[10px]" /> : <FiVideoOff className="text-[10px] text-rose-400" />}
+                </button>
+                <button
+                  onClick={() => setIsVideoMinimized(!isVideoMinimized)}
+                  className="p-1 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 text-xs transition-colors cursor-pointer"
+                  title={isVideoMinimized ? 'Expand Videos' : 'Minimize'}
+                >
+                  {isVideoMinimized ? <FiMaximize2 className="text-[10px]" /> : <FiMinimize2 className="text-[10px]" />}
+                </button>
+              </div>
+            </div>
 
-      {/* Mini-Chat Panel & Live Reactions */}
-      <GameMiniChat
-        gameMessages={gameMessages}
-        miniChatInput={miniChatInput}
-        setMiniChatInput={setMiniChatInput}
-        onSendGameMessage={handleSendGameMessage}
-        floatingEmojis={floatingEmojis}
-        onTriggerReaction={triggerReaction}
-        gameEventReactions={gameEventReactions}
-        activeGameReactionPicker={activeGameReactionPicker}
-        setActiveGameReactionPicker={setActiveGameReactionPicker}
-        onGameEventReaction={handleGameEventReaction}
-        myId={myId}
-        chatEndRef={chatEndRef}
-      />
+            {!isVideoMinimized && (
+              <div className="flex items-center gap-2">
+                {/* You Stream Tile */}
+                <div className="relative w-24 sm:w-28 h-16 sm:h-20 bg-slate-900 rounded-xl overflow-hidden border border-white/15 shadow-inner flex items-center justify-center">
+                  {isCameraOn && localStream ? (
+                    <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover scale-x-[-1]" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow-md">
+                      {myInitial}
+                    </div>
+                  )}
+                  <span className="absolute bottom-1 left-1 px-1.5 py-0.2 text-[8px] font-bold text-white bg-black/70 rounded backdrop-blur-sm">
+                    You
+                  </span>
+                </div>
+
+                {/* Partner Stream Tile */}
+                <div className="relative w-24 sm:w-28 h-16 sm:h-20 bg-slate-900 rounded-xl overflow-hidden border border-white/15 shadow-inner flex items-center justify-center">
+                  {remoteStream ? (
+                    <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-md animate-pulse">
+                        {partnerInitial}
+                      </div>
+                      <span className="text-[8px] text-slate-400 mt-1 font-medium">Connecting...</span>
+                    </div>
+                  )}
+                  <span className="absolute bottom-1 left-1 px-1.5 py-0.2 text-[8px] font-bold text-white bg-black/70 rounded backdrop-blur-sm truncate max-w-[70px]">
+                    {partnerName.split(' ')[0]}
+                  </span>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Content Area: Responsive Split or Tab View */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3.5 overflow-hidden relative">
+        {/* Game Dashboard Container */}
+        <div
+          className={`flex-1 bg-white/[0.02] border border-white/[0.08] rounded-3xl p-3.5 sm:p-5 shadow-2xl backdrop-blur-2xl flex flex-col overflow-y-auto custom-scrollbar relative ${
+            mobileTab === 'game' ? 'flex' : 'hidden lg:flex'
+          }`}
+        >
+          <AnimatePresence mode="wait">
+            {activeGame === 'selection' && <GameSelectionMenu selectedTimeControl={selectedTimeControl} onSelectTimeControl={setSelectedTimeControl} onSelectGame={selectGame} />}
+
+            {(activeGame === 'chess' || activeGame === 'chess-puzzle') && (
+              <ChessBoardView
+                activeGame={activeGame}
+                selectedTimeControl={selectedTimeControl}
+                soundMuted={soundMuted}
+                setSoundMuted={setSoundMuted}
+                onExitGame={handleExitGame}
+                selectedChatData={selectedChatData}
+                topCaptured={topCaptured}
+                topAdvantage={topAdvantage}
+                topRemainingMs={topRemainingMs}
+                isTopUserTurn={isTopUserTurn}
+                bottomCaptured={bottomCaptured}
+                bottomAdvantage={bottomAdvantage}
+                bottomRemainingMs={bottomRemainingMs}
+                isBottomUserTurn={isBottomUserTurn}
+                chessInstanceRef={chessInstanceRef}
+                previewFen={previewFen}
+                chessFen={chessFen}
+                isShaking={isShaking}
+                drawOfferReceived={drawOfferReceived}
+                acceptDraw={acceptDraw}
+                declineDraw={declineDraw}
+                pendingPromotion={pendingPromotion}
+                executeChessMove={executeChessMove}
+                handleChessPieceDrop={handleChessPieceDrop}
+                handleSquareClick={handleSquareClick}
+                handlePieceClick={handlePieceClick}
+                getCustomSquareStyles={getCustomSquareStyles}
+                optionSquares={optionSquares}
+                boardOrientation={boardOrientation}
+                setBoardOrientation={setBoardOrientation}
+                isSpectator={isSpectator}
+                gameResult={gameResult}
+                proposeDraw={proposeDraw}
+                resignGame={resignGame}
+                moveHistoryList={moveHistoryList}
+                setPreviewFen={setPreviewFen}
+                currentPuzzleIdx={currentPuzzleIdx}
+                puzzleStatus={puzzleStatus}
+                puzzleHint={puzzleHint}
+                setPuzzleHint={setPuzzleHint}
+                startPuzzle={startPuzzle}
+                handlePuzzlePieceDrop={handlePuzzlePieceDrop}
+              />
+            )}
+
+            {activeGame === 'connect-four' && (
+              <ConnectFourView
+                c4Grid={c4Grid}
+                isMyC4Turn={isMyC4Turn}
+                gameResult={gameResult}
+                isSpectator={isSpectator}
+                myId={myId}
+                onDropDisc={handleC4Drop}
+                onExitGame={handleExitGame}
+              />
+            )}
+
+            {activeGame === 'sliding-puzzle' && (
+              <SlidingPuzzleView
+                slidingTiles={slidingTiles}
+                slidingMoveCount={slidingMoveCount}
+                isMySlidingTurn={isMySlidingTurn}
+                gameResult={gameResult}
+                isSpectator={isSpectator}
+                myId={myId}
+                onTileClick={handleSlidingTileClick}
+                onExitGame={handleExitGame}
+              />
+            )}
+
+            {(activeGame === 'would-you-rather' || activeGame === 'truth-or-dare' || activeGame === 'tic-tac-toe') && (
+              <CasualGamesView
+                activeGame={activeGame}
+                wyrIndex={wyrIndex}
+                wyrSelection={wyrSelection}
+                opponentWyrSelection={opponentWyrSelection}
+                onWyrSelect={handleWyrSelect}
+                onNextWyr={handleNextWyr}
+                todType={todType}
+                todPrompt={todPrompt}
+                onDrawTod={drawTod}
+                onClearTod={() => setTodPrompt(null)}
+                board={board}
+                isMyTurn={isMyTurn}
+                mySymbol={mySymbol}
+                score={score}
+                onCellClick={handleCellClick}
+                onResetTicTacToe={resetTicTacToe}
+                checkWinner={checkWinner}
+                onExitGame={handleExitGame}
+              />
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Game Over Modal */}
+        <GameOverModal gameResult={gameResult} myId={myId} isSpectator={isSpectator} onRematch={handleLudoRematch} onExitGame={handleExitGame} />
+
+        {/* Mini-Chat Panel & Live Reactions */}
+        <div className={`h-full ${mobileTab === 'chat' ? 'flex flex-1' : 'hidden lg:flex'}`}>
+          <GameMiniChat
+            gameMessages={gameMessages}
+            miniChatInput={miniChatInput}
+            setMiniChatInput={setMiniChatInput}
+            onSendGameMessage={handleSendGameMessage}
+            floatingEmojis={floatingEmojis}
+            onTriggerReaction={triggerReaction}
+            gameEventReactions={gameEventReactions}
+            activeGameReactionPicker={activeGameReactionPicker}
+            setActiveGameReactionPicker={setActiveGameReactionPicker}
+            onGameEventReaction={handleGameEventReaction}
+            myId={myId}
+            chatEndRef={chatEndRef}
+          />
+        </div>
+      </div>
     </motion.div>
   )
 }
