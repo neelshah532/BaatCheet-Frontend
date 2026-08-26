@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction, RefObject } from 'react'
 import { motion } from 'framer-motion'
-import { FiRotateCcw, FiFlag, FiLayers, FiHelpCircle, FiAward } from 'react-icons/fi'
+import { FiFlag, FiLayers, FiHelpCircle, FiAward } from 'react-icons/fi'
 import { Chessboard } from 'react-chessboard'
 import { Square, Chess } from 'chess.js'
 import { TIME_CONTROL_PRESETS, CHESS_PUZZLES } from '../constants/game-data'
@@ -36,7 +36,6 @@ interface ChessBoardViewProps {
   getCustomSquareStyles: (currentOptions: Record<string, { background: string; borderRadius?: string }>) => Record<string, { background: string; borderRadius?: string }>
   optionSquares: Record<string, { background: string; borderRadius?: string }>
   boardOrientation: 'white' | 'black'
-  setBoardOrientation: Dispatch<SetStateAction<'white' | 'black'>>
   isSpectator: boolean
   gameResult: { winnerId: string | null; reason: string; _id?: string } | null
   proposeDraw: () => void
@@ -95,7 +94,6 @@ const ChessBoardView = ({
   getCustomSquareStyles,
   optionSquares,
   boardOrientation,
-  setBoardOrientation,
   isSpectator,
   gameResult,
   proposeDraw,
@@ -377,27 +375,20 @@ const ChessBoardView = ({
         {/* Right Column: Controls + Move List */}
         <div className="lg:col-span-4 flex flex-col gap-2.5 h-full max-h-[440px]">
           {/* Action Bar */}
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => setBoardOrientation((b) => (b === 'white' ? 'black' : 'white'))}
-              className="py-2 px-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 border border-white/10 text-[10px] font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
-              title="Flip Board View"
-            >
-              <FiRotateCcw className="text-xs" /> Flip
-            </button>
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={proposeDraw}
               disabled={!!gameResult || isSpectator}
-              className="py-2 px-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-40 text-white/80 border border-white/10 text-[10px] font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+              className="py-2 px-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-40 text-white/80 border border-white/10 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
             >
-              <FiLayers className="text-xs" /> Draw
+              <FiLayers className="text-xs text-amber-400" /> Offer Draw
             </button>
             <button
               onClick={resignGame}
               disabled={!!gameResult || isSpectator}
-              className="py-2 px-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 disabled:opacity-40 text-rose-400 border border-rose-500/30 text-[10px] font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+              className="py-2 px-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 disabled:opacity-40 text-rose-400 border border-rose-500/30 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
             >
-              <FiFlag className="text-xs" /> Resign
+              <FiFlag className="text-xs text-rose-400" /> Resign
             </button>
           </div>
 

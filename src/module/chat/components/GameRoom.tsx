@@ -353,26 +353,33 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     }
 
     const handleChessMoveAccepted = (data: {
-      fen: string
-      action: string
-      playerId: string
-      resultingState: string
-      currentTurn: string
-      clocks: Record<string, { remainingMs: number; lastMoveTimestamp: Date | string | null }>
-      moveHistory: { playerId: string; action: string; resultingState: string }[]
+      fen?: string
+      state?: { fen?: string }
+      action?: string
+      playerId?: string
+      resultingState?: string
+      currentTurn?: string
+      clocks?: Record<string, { remainingMs: number; lastMoveTimestamp: Date | string | null }>
+      moveHistory?: { playerId: string; action: string; resultingState: string }[]
     }) => {
-      try {
-        chessInstanceRef.current.load(data.fen)
-        setChessFen(data.fen)
-      } catch (err) {
-        console.warn('Failed to load FEN into chess instance:', err)
+      const fen = data.state?.fen || data.fen || data.resultingState
+      if (fen) {
+        try {
+          chessInstanceRef.current.load(fen)
+          setChessFen(fen)
+        } catch (err) {
+          console.warn('Failed to load FEN into chess instance:', err)
+        }
       }
-      setCurrentTurnUserId(normalizeId(data.currentTurn))
+      if (data.currentTurn) {
+        setCurrentTurnUserId(normalizeId(data.currentTurn))
+      }
       if (data.clocks) setClocks(data.clocks)
       if (data.moveHistory) setMoveHistoryList(data.moveHistory)
       setPreviewFen(null)
 
-      if (normalizeId(data.playerId) === myId) {
+      const lastMovePlayerId = data.playerId || (data.moveHistory && data.moveHistory[data.moveHistory.length - 1]?.playerId)
+      if (lastMovePlayerId && normalizeId(lastMovePlayerId) === myId) {
         playSoundCue('move')
       } else {
         playSoundCue('notify')
@@ -390,26 +397,42 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       playSoundCue('end')
     }
 
-    const handleGameChatReceived = (data: { senderId: string; message: string; messageId?: string }) => {
+    const handleGameChatReceived = (data: { senderId: string; message: string; messageId?: string; msgId?: string }) => {
       if (normalizeId(data.senderId) === myId) return
-      setGameMessages((prev) => [
-        ...prev,
-        {
-          id: String(Date.now() + Math.random()),
-          senderId: data.senderId,
-          text: data.message,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          eventMessageId: data.messageId,
-        },
-      ])
+      const id = data.msgId || data.messageId || `${data.senderId}-${Date.now()}-${Math.random()}`
+      setGameMessages((prev) => {
+        // Prevent duplicate messages with identical ID or identical text within 2 seconds
+        if (
+          prev.some(
+            (m) =>
+              m.id === id ||
+              (m.text === data.message && normalizeId(m.senderId) === normalizeId(data.senderId) && m.id.startsWith(`${data.senderId}-`))
+          )
+        ) {
+          return prev
+        }
+        return [
+          ...prev,
+          {
+            id,
+            senderId: data.senderId,
+            text: data.message,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            eventMessageId: data.messageId,
+          },
+        ]
+      })
     }
 
-    const handleGameReactionReceived = (data: { emoji: string; senderId?: string }) => {
+    const handleGameReactionReceived = (data: { emoji: string; senderId?: string; reactionId?: string }) => {
       if (data.senderId && normalizeId(data.senderId) === myId) return
-      const id = Date.now() + Math.random()
-      setFloatingEmojis((prev) => [...prev, { id, emoji: data.emoji, x: 20 + Math.random() * 60 }])
+      const id = data.reactionId || `${data.senderId || 'peer'}-${Date.now()}-${Math.random()}`
+      setFloatingEmojis((prev) => {
+        if (prev.some((item) => String(item.id) === String(id))) return prev
+        return [...prev, { id: Number(id) || Date.now() + Math.random(), emoji: data.emoji, x: 20 + Math.random() * 60 }]
+      })
       setTimeout(() => {
-        setFloatingEmojis((prev) => prev.filter((item) => item.id !== id))
+        setFloatingEmojis((prev) => prev.filter((item) => String(item.id) !== String(id)))
       }, 2500)
     }
 
@@ -460,27 +483,28 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   const handleSendGameMessage = () => {
     if (!miniChatInput.trim() || !socket) return
     const text = miniChatInput.trim()
+    const msgId = `${myId}-${Date.now()}`
     setGameMessages((prev) => [
       ...prev,
       {
-        id: String(Date.now()),
+        id: msgId,
         senderId: myId || 'self',
         text,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ])
-    socket.emit('game-chat-message', { conversationId, senderId: myId, message: text })
+    socket.emit('game-chat-message', { conversationId, senderId: myId, message: text, msgId })
     setMiniChatInput('')
   }
 
   const triggerReaction = (emoji: string) => {
-    const id = Date.now() + Math.random()
-    setFloatingEmojis((prev) => [...prev, { id, emoji, x: 15 + Math.random() * 70 }])
+    const reactionId = `${myId}-${Date.now()}`
+    setFloatingEmojis((prev) => [...prev, { id: Date.now() + Math.random(), emoji, x: 15 + Math.random() * 70 }])
     setTimeout(() => {
-      setFloatingEmojis((prev) => prev.filter((item) => item.id !== id))
+      setFloatingEmojis((prev) => prev.filter((item) => String(item.id) !== reactionId))
     }, 2500)
     if (socket) {
-      socket.emit('game-reaction', { conversationId, opponentId, emoji, senderId: myId })
+      socket.emit('game-reaction', { conversationId, opponentId, emoji, senderId: myId, reactionId })
     }
   }
 
@@ -573,6 +597,9 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     const timeSpentMs = 0
     socket.emit('chess:proposeMove', {
       conversationId,
+      from,
+      to,
+      promotion: promotionPiece || 'q',
       move: { from, to, promotion: promotionPiece || 'q' },
       timeSpentMs,
     })
@@ -762,6 +789,9 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     setActiveGame(game)
     setGameResult(null)
 
+    // Synchronize both players to the same game screen immediately
+    syncGameState({ gameType: 'select-game', activeGame: game })
+
     if (game === 'chess') {
       chessInstanceRef.current = new Chess()
       setChessFen(chessInstanceRef.current.fen())
@@ -796,8 +826,6 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
           gameType: 'sliding-puzzle',
         })
       }
-    } else {
-      syncGameState({ gameType: 'select-game', activeGame: game })
     }
   }
 
@@ -861,8 +889,8 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   const opponentUserId = opponentId
   const topUserClock = clocks[opponentUserId]
   const bottomUserClock = clocks[myId]
-  const isTopUserTurn = currentTurnUserId === opponentUserId
-  const isBottomUserTurn = currentTurnUserId === myId
+  const isBottomUserTurn = currentTurnUserId ? normalizeId(currentTurnUserId) === myId : chessInstanceRef.current.turn() === myChessColor
+  const isTopUserTurn = !isBottomUserTurn
   const topRemainingMs = topUserClock ? topUserClock.remainingMs : 0
   const bottomRemainingMs = bottomUserClock ? bottomUserClock.remainingMs : 0
 
@@ -1086,7 +1114,6 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
                 getCustomSquareStyles={getCustomSquareStyles}
                 optionSquares={optionSquares}
                 boardOrientation={boardOrientation}
-                setBoardOrientation={setBoardOrientation}
                 isSpectator={isSpectator}
                 gameResult={gameResult}
                 proposeDraw={proposeDraw}
