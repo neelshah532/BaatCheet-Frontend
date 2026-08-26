@@ -1053,9 +1053,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
           >
             <FiGrid className="text-xs" /> Game
             {isBottomUserTurn && mobileTab === 'chat' && activeGame !== 'selection' && (
-              <span className="px-1.5 py-0.2 rounded-full bg-emerald-500 text-white text-[9px] font-bold animate-pulse">
-                ⚡ Turn
-              </span>
+              <span className="px-1.5 py-0.2 rounded-full bg-emerald-500 text-white text-[9px] font-bold animate-pulse">⚡ Turn</span>
             )}
           </button>
           <button
@@ -1065,11 +1063,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
             }`}
           >
             <FiMessageSquare className="text-xs" /> Chat
-            {unreadCount > 0 && (
-              <span className="text-[9px] bg-purple-500 text-white px-1.5 py-0.2 rounded-full font-mono font-bold animate-pulse">
-                {unreadCount}
-              </span>
-            )}
+            {unreadCount > 0 && <span className="text-[9px] bg-purple-500 text-white px-1.5 py-0.2 rounded-full font-mono font-bold animate-pulse">{unreadCount}</span>}
           </button>
         </div>
 
