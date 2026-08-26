@@ -32,9 +32,7 @@ const GameSelectionMenu = ({ selectedTimeControl, onSelectTimeControl, onSelectG
               <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Chess Clock</span>
             </div>
             <h4 className="text-sm font-semibold text-white">Live Chess</h4>
-            <p className="text-xs text-slate-400 leading-relaxed mt-1">
-              Full FIDE-compliant chess with timers, captured pieces, and move notation.
-            </p>
+            <p className="text-xs text-slate-400 leading-relaxed mt-1">Full FIDE-compliant chess with timers, captured pieces, and move notation.</p>
           </div>
           <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/[0.06] gap-2">
             <select
@@ -73,9 +71,7 @@ const GameSelectionMenu = ({ selectedTimeControl, onSelectTimeControl, onSelectG
               <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Turn-based</span>
             </div>
             <h4 className="text-sm font-semibold text-white">Connect Four</h4>
-            <p className="text-xs text-slate-400 leading-relaxed mt-1">
-              Drop discs into the 6x7 vertical grid. Connect 4 discs in a row to win.
-            </p>
+            <p className="text-xs text-slate-400 leading-relaxed mt-1">Drop discs into the 6x7 vertical grid. Connect 4 discs in a row to win.</p>
           </div>
           <div className="mt-4 flex items-center justify-end text-xs font-medium text-slate-300 group-hover:text-white transition-colors gap-1">
             Start Match <FiArrowRight />

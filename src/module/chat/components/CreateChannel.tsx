@@ -79,9 +79,7 @@ const CreateChannel = () => {
           height={100}
           width={100}
         />
-        <p className="text-xs font-normal text-slate-400 mt-2">
-          Add members to start your channel
-        </p>
+        <p className="text-xs font-normal text-slate-400 mt-2">Add members to start your channel</p>
       </div>
     )
   }
