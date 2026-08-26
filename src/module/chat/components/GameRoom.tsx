@@ -163,6 +163,42 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   const chatNotifTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [lastReadMessageCount, setLastReadMessageCount] = useState(0)
 
+  // Intelligent auto-dismiss manager:
+  // Automatically keeps the notification open while user is typing or composing a reply;
+  // Auto-dismisses after 5 seconds of inactivity if the user is not replying.
+  useEffect(() => {
+    if (!latestChatNotification) {
+      if (chatNotifTimeoutRef.current) {
+        clearTimeout(chatNotifTimeoutRef.current)
+        chatNotifTimeoutRef.current = null
+      }
+      return
+    }
+
+    // If user is actively typing or has the reply drawer open, hold the notification open indefinitely
+    if (isReplyingInToast || toastReplyText.trim().length > 0) {
+      if (chatNotifTimeoutRef.current) {
+        clearTimeout(chatNotifTimeoutRef.current)
+        chatNotifTimeoutRef.current = null
+      }
+      return
+    }
+
+    // Otherwise, auto-dismiss after 5 seconds
+    if (chatNotifTimeoutRef.current) clearTimeout(chatNotifTimeoutRef.current)
+    chatNotifTimeoutRef.current = setTimeout(() => {
+      setLatestChatNotification(null)
+      setIsReplyingInToast(false)
+      setToastReplyText('')
+    }, 5000)
+
+    return () => {
+      if (chatNotifTimeoutRef.current) {
+        clearTimeout(chatNotifTimeoutRef.current)
+      }
+    }
+  }, [latestChatNotification, isReplyingInToast, toastReplyText])
+
   // Mini Chat & Floating Emojis states
   const [gameMessages, setGameMessages] = useState<ChatMessage[]>([])
   const [miniChatInput, setMiniChatInput] = useState('')
@@ -430,11 +466,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       })
 
       // Non-intrusive floating toast preview when player is focusing on the game board
-      if (chatNotifTimeoutRef.current) clearTimeout(chatNotifTimeoutRef.current)
       setLatestChatNotification({ senderName: partnerName, text: data.message, id: String(Date.now()) })
-      chatNotifTimeoutRef.current = setTimeout(() => {
-        setLatestChatNotification(null)
-      }, 4000)
     }
 
     const handleGameReactionReceived = (data: { emoji: string; senderId?: string; reactionId?: string }) => {
