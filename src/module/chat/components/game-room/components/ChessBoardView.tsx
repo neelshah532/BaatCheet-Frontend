@@ -317,7 +317,7 @@ const ChessBoardView = ({
               </div>
             )}
 
-            <motion.div key={previewFen || chessFen} animate={isShaking ? { x: [-8, 8, -6, 6, -4, 4, 0] } : {}} transition={{ duration: 0.4 }} className="w-full h-full">
+            <motion.div animate={isShaking ? { x: [-8, 8, -6, 6, -4, 4, 0] } : { x: 0 }} transition={{ duration: 0.4 }} className="w-full h-full">
               <Chessboard
                 position={previewFen || chessFen}
                 onPieceDrop={handleChessPieceDrop}
