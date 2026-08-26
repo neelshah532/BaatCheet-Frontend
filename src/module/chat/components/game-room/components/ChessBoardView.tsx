@@ -205,9 +205,7 @@ const ChessBoardView = ({
       {/* Sleek Minimal Sub-Header */}
       <div className="flex items-center justify-between pb-1.5 mb-1 px-1 border-b border-white/[0.06] flex-shrink-0">
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-bold border border-amber-500/30">
-            {selectedTimeControl.label}
-          </span>
+          <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-bold border border-amber-500/30">{selectedTimeControl.label}</span>
           <button
             onClick={() => {
               const nextMuted = !soundMuted
@@ -224,11 +222,11 @@ const ChessBoardView = ({
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-            className={`px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1 ${
-              isHistoryOpen ? 'bg-indigo-600 text-white border-indigo-500 shadow-md' : 'bg-white/5 text-slate-300 hover:text-white border-white/10'
+            className={`px-2.5 py-1 rounded-xl text-xs font-medium border transition-all cursor-pointer flex items-center gap-1 ${
+              isHistoryOpen ? 'bg-white/15 text-white border-white/20 shadow-sm' : 'bg-white/5 text-slate-300 hover:text-white border-white/10'
             }`}
           >
-            📜 Moves {moveHistoryList.length > 0 && <span className="text-[10px] opacity-75 font-mono">({Math.ceil(moveHistoryList.length / 2)})</span>}
+            Moves {moveHistoryList.length > 0 && <span className="text-[10px] text-slate-400 font-mono">({Math.ceil(moveHistoryList.length / 2)})</span>}
           </button>
           <button
             onClick={onExitGame}
@@ -246,18 +244,18 @@ const ChessBoardView = ({
           {/* Top Player Info Bar */}
           <div
             className={`w-full flex items-center justify-between rounded-xl px-2.5 py-1.5 mb-1 transition-all duration-300 ${
-              isTopUserTurn ? 'bg-slate-800/90 border border-indigo-500/40 shadow-[0_0_12px_rgba(99,102,241,0.25)]' : 'bg-slate-900/60 border border-white/10'
+              isTopUserTurn ? 'bg-white/[0.08] border border-white/20' : 'bg-white/[0.02] border border-white/[0.06]'
             }`}
           >
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0">
+              <div className="w-6 h-6 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-[10px] font-semibold text-white flex-shrink-0">
                 {partnerName[0]?.toUpperCase() || 'P'}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-[11px] font-semibold text-white truncate max-w-[110px]">{partnerName}</span>
+                <span className="text-[11px] font-medium text-white truncate max-w-[110px]">{partnerName}</span>
                 <div className="flex items-center gap-1 text-[9px] text-slate-400">
                   <span>{topCaptured.map((p) => pieceSymbolMap[p] || p).join('')}</span>
-                  {topAdvantage > 0 && <span className="text-amber-400 font-bold">+{topAdvantage}</span>}
+                  {topAdvantage > 0 && <span className="text-amber-400 font-semibold">+{topAdvantage}</span>}
                 </div>
               </div>
             </div>
@@ -265,15 +263,15 @@ const ChessBoardView = ({
             {/* Top Clock */}
             {selectedTimeControl.initialSeconds > 0 && (
               <div
-                className={`px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                className={`px-2.5 py-0.5 rounded-lg text-xs font-mono font-medium transition-all ${
                   isTopUserTurn
                     ? topRemainingMs < 10000
-                      ? 'bg-rose-950/90 text-rose-300 border border-rose-500 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.5)]'
-                      : 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/80 shadow-[0_0_8px_rgba(99,102,241,0.3)]'
-                    : 'bg-black/40 text-slate-400 border border-white/10'
+                      ? 'bg-rose-950/90 text-rose-300 border border-rose-500 animate-pulse'
+                      : 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/50'
+                    : 'bg-black/30 text-slate-400 border border-white/[0.06]'
                 }`}
               >
-                ⏱ {formatClockTime(topRemainingMs)}
+                {formatClockTime(topRemainingMs)}
               </div>
             )}
           </div>
@@ -282,8 +280,8 @@ const ChessBoardView = ({
           <div className="relative w-full max-w-[min(100%,370px,44vh)] aspect-square shadow-[0_16px_48px_rgba(0,0,0,0.85)] rounded-2xl overflow-hidden border border-white/15">
             {/* Check alert badge */}
             {chessInstanceRef.current && chessInstanceRef.current.inCheck() && !chessInstanceRef.current.isCheckmate() && (
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 px-2.5 py-0.5 rounded-full bg-rose-600 border border-rose-400 text-[9px] font-bold text-white shadow-lg animate-bounce">
-                ⚠️ CHECK!
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 px-2.5 py-0.5 rounded-full bg-rose-600/90 border border-rose-400 text-[10px] font-semibold text-white shadow-md">
+                Check
               </div>
             )}
 
@@ -355,16 +353,18 @@ const ChessBoardView = ({
           {/* Bottom Player Info Bar */}
           <div
             className={`w-full flex items-center justify-between rounded-xl px-2.5 py-1.5 mt-1 transition-all duration-300 ${
-              isBottomUserTurn ? 'bg-slate-800/90 border border-indigo-500/40 shadow-[0_0_12px_rgba(99,102,241,0.25)]' : 'bg-slate-900/60 border border-white/10'
+              isBottomUserTurn ? 'bg-white/[0.08] border border-white/20' : 'bg-white/[0.02] border border-white/[0.06]'
             }`}
           >
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-[10px] font-bold text-white border border-white/20">You</div>
+              <div className="w-6 h-6 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-[10px] font-semibold text-white">
+                You
+              </div>
               <div className="flex flex-col">
-                <span className="text-[11px] font-semibold text-white">You</span>
+                <span className="text-[11px] font-medium text-white">You</span>
                 <div className="flex items-center gap-1 text-[9px] text-slate-400">
                   <span>{bottomCaptured.map((p) => pieceSymbolMap[p] || p).join('')}</span>
-                  {bottomAdvantage > 0 && <span className="text-amber-400 font-bold">+{bottomAdvantage}</span>}
+                  {bottomAdvantage > 0 && <span className="text-amber-400 font-semibold">+{bottomAdvantage}</span>}
                 </div>
               </div>
             </div>
@@ -372,15 +372,15 @@ const ChessBoardView = ({
             {/* Bottom Clock */}
             {selectedTimeControl.initialSeconds > 0 && (
               <div
-                className={`px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                className={`px-2.5 py-0.5 rounded-lg text-xs font-mono font-medium transition-all ${
                   isBottomUserTurn
                     ? bottomRemainingMs < 10000
-                      ? 'bg-rose-950/90 text-rose-300 border border-rose-500 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.5)]'
-                      : 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/80 shadow-[0_0_8px_rgba(99,102,241,0.3)]'
-                    : 'bg-black/40 text-slate-400 border border-white/10'
+                      ? 'bg-rose-950/90 text-rose-300 border border-rose-500 animate-pulse'
+                      : 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/50'
+                    : 'bg-black/30 text-slate-400 border border-white/[0.06]'
                 }`}
               >
-                ⏱ {formatClockTime(bottomRemainingMs)}
+                {formatClockTime(bottomRemainingMs)}
               </div>
             )}
           </div>
@@ -390,16 +390,16 @@ const ChessBoardView = ({
             <button
               onClick={proposeDraw}
               disabled={!!gameResult || isSpectator}
-              className="py-1.5 px-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-40 text-white/80 border border-white/10 text-[11px] font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+              className="py-1.5 px-2 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-40 text-slate-300 hover:text-white border border-white/10 text-xs font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
             >
-              <FiLayers className="text-xs text-amber-400" /> Draw
+              <FiLayers className="text-xs text-slate-400" /> Draw
             </button>
             <button
               onClick={resignGame}
               disabled={!!gameResult || isSpectator}
-              className="py-1.5 px-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 disabled:opacity-40 text-rose-400 border border-rose-500/30 text-[11px] font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+              className="py-1.5 px-2 rounded-xl bg-white/5 hover:bg-rose-500/15 disabled:opacity-40 text-slate-400 hover:text-rose-300 border border-white/10 hover:border-rose-500/30 text-xs font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
             >
-              <FiFlag className="text-xs text-rose-400" /> Resign
+              <FiFlag className="text-xs" /> Resign
             </button>
           </div>
         </div>

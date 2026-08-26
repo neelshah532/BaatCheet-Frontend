@@ -1095,42 +1095,42 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       </AnimatePresence>
 
       {/* Top Header Bar */}
-      <div className="flex items-center justify-between px-2 sm:px-3 py-2 border-b border-white/[0.08] mb-3 gap-2">
-        {/* Left: Brand / Title */}
+      <div className="flex items-center justify-between px-2 sm:px-3 py-2 border-b border-white/[0.08] mb-3 gap-2 flex-shrink-0">
+        {/* Left: Room & Opponent Info */}
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white text-sm shadow-md shadow-indigo-600/30 font-bold">
-            🎮
+          <div className="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-slate-300">
+            <FiGrid className="text-sm" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-xs sm:text-sm font-bold text-white tracking-tight">BaatCheet Arena</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs sm:text-sm font-semibold text-white tracking-tight">Arena</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             </div>
-            <span className="text-[10px] text-slate-400 block -mt-0.5">Playing with {partnerName}</span>
+            <span className="text-[11px] text-slate-400 block -mt-0.5">{partnerName}</span>
           </div>
         </div>
 
         {/* Center: Mobile Segmented Switcher (Visible on < lg) */}
-        <div className="flex lg:hidden items-center bg-white/[0.06] p-1 rounded-xl border border-white/10 text-xs">
+        <div className="flex lg:hidden items-center bg-white/[0.04] p-0.5 rounded-xl border border-white/[0.08] text-xs">
           <button
             onClick={() => setMobileTab('game')}
-            className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer relative ${
-              mobileTab === 'game' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            className={`px-3 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 cursor-pointer relative ${
+              mobileTab === 'game' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-400 hover:text-white'
             }`}
           >
-            <FiGrid className="text-xs" /> Game
+            <FiGrid className="text-xs" /> Board
             {isBottomUserTurn && mobileTab === 'chat' && activeGame !== 'selection' && (
-              <span className="px-1.5 py-0.2 rounded-full bg-emerald-500 text-white text-[9px] font-bold animate-pulse">⚡ Turn</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             )}
           </button>
           <button
             onClick={handleSwitchToChat}
-            className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer relative ${
-              mobileTab === 'chat' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            className={`px-3 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 cursor-pointer relative ${
+              mobileTab === 'chat' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-400 hover:text-white'
             }`}
           >
             <FiMessageSquare className="text-xs" /> Chat
-            {unreadCount > 0 && <span className="text-[9px] bg-purple-500 text-white px-1.5 py-0.2 rounded-full font-mono font-bold animate-pulse">{unreadCount}</span>}
+            {unreadCount > 0 && <span className="text-[9px] bg-indigo-500 text-white px-1.5 py-0.2 rounded-full font-mono font-medium">{unreadCount}</span>}
           </button>
         </div>
 
@@ -1139,23 +1139,23 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
           {/* Toggle Video Floating Widget */}
           <button
             onClick={() => setIsVideoFloatingOpen(!isVideoFloatingOpen)}
-            className={`px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-              isVideoFloatingOpen ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-white/5 text-slate-400 hover:text-white border-white/10 hover:bg-white/10'
+            className={`px-2.5 py-1.5 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
+              isVideoFloatingOpen ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' : 'bg-white/5 text-slate-400 hover:text-white border-white/10'
             }`}
             title="Toggle Floating Video Call"
           >
             {isVideoFloatingOpen ? <FiVideo className="text-sm" /> : <FiVideoOff className="text-sm" />}
-            <span className="hidden sm:inline">{isVideoFloatingOpen ? 'Video Live' : 'Video Off'}</span>
+            <span className="hidden sm:inline">{isVideoFloatingOpen ? 'Video' : 'No Video'}</span>
           </button>
 
-          {/* Prominent Close Room Button */}
+          {/* Clean Close Room Button */}
           <button
             onClick={handleCloseGameRoom}
-            className="p-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 hover:text-rose-200 border border-rose-500/30 transition-all flex items-center gap-1 text-xs font-bold cursor-pointer active:scale-95 shadow-md shadow-rose-500/10"
-            title="Close Game Room (Resets match for both players)"
+            className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-all flex items-center gap-1 text-xs font-medium cursor-pointer active:scale-95"
+            title="Close Game Room"
           >
-            <FiX className="text-base" />
-            <span className="hidden sm:inline">Close Room</span>
+            <FiX className="text-sm" />
+            <span className="hidden sm:inline">Exit</span>
           </button>
         </div>
       </div>
@@ -1351,13 +1351,15 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
                 onClick={() => setMobileTab('game')}
-                className="mb-2 py-1.5 px-3 rounded-full bg-emerald-500/15 border border-emerald-500/35 text-emerald-300 text-xs font-semibold flex items-center justify-between gap-2 cursor-pointer hover:bg-emerald-500/25 transition-all shadow-md flex-shrink-0"
+                className="mb-2 py-1.5 px-3 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-medium flex items-center justify-between gap-2 cursor-pointer hover:bg-emerald-500/20 transition-all shadow-sm flex-shrink-0"
               >
                 <div className="flex items-center gap-1.5 truncate">
-                  <span className="text-xs animate-bounce">⚡</span>
-                  <span className="truncate text-[11px]">Partner moved • Your turn!</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="truncate text-[11px] text-slate-200">Your turn</span>
                 </div>
-                <span className="text-[11px] font-bold text-white bg-emerald-600/80 px-2.5 py-0.5 rounded-full flex items-center gap-1 flex-shrink-0">Play Move ➔</span>
+                <span className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 flex-shrink-0">
+                  View Board ➔
+                </span>
               </motion.div>
             )}
           </AnimatePresence>
