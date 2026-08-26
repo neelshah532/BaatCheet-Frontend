@@ -93,7 +93,7 @@ const CallsModule = () => {
       socket.off('user-disconnected')
       socket.off('call-error')
     }
-  }, [socket, handleIncomingCall, resetCallState, setActiveCallId, addCallUser])
+  }, [socket, handleIncomingCall, resetCallState, setActiveCallId, addCallUser, userInfo?.id])
 
   useEffect(() => {
     const handleBeforeUnload = () => {

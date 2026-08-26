@@ -194,10 +194,12 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     let streamInstance: MediaStream | null = null
 
     if (!isCameraOn) {
-      if (localStream) {
-        localStream.getTracks().forEach((t) => t.stop())
-        setLocalStream(null)
-      }
+      setLocalStream((prevStream) => {
+        if (prevStream) {
+          prevStream.getTracks().forEach((t) => t.stop())
+        }
+        return null
+      })
       return
     }
 
@@ -608,6 +610,8 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     if (isSpectator || previewFen || !isMyChessTurn) return false
 
     const piece = chessInstanceRef.current.get(sourceSquare)
+    if (!piece || piece.color !== myChessColor) return false
+
     const isPawn = piece && piece.type === 'p'
     const isPromotion = isPawn && ((piece.color === 'w' && targetSquare[1] === '8') || (piece.color === 'b' && targetSquare[1] === '1'))
 
@@ -616,7 +620,23 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       return true
     }
 
-    return executeChessMove(sourceSquare, targetSquare)
+    try {
+      const move = chessInstanceRef.current.move({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: 'q',
+      })
+      if (!move) return false
+
+      const nextFen = chessInstanceRef.current.fen()
+      setChessFen(nextFen)
+      playSoundCue('move')
+
+      executeChessMove(sourceSquare, targetSquare)
+      return true
+    } catch {
+      return false
+    }
   }
 
   const handlePieceClick = (piece: string, square: Square) => {
@@ -662,7 +682,25 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       return
     }
 
-    executeChessMove(moveFrom, square)
+    try {
+      const move = chessInstanceRef.current.move({
+        from: moveFrom,
+        to: square,
+        promotion: 'q',
+      })
+      if (move) {
+        const nextFen = chessInstanceRef.current.fen()
+        setChessFen(nextFen)
+        playSoundCue('move')
+        executeChessMove(moveFrom, square)
+      }
+    } catch (err) {
+      console.warn('Invalid square click move:', err)
+    }
+
+    setMoveFrom(null)
+    setSelectedChessSlot(null)
+    setOptionSquares({})
   }
 
   const proposeDraw = () => {
