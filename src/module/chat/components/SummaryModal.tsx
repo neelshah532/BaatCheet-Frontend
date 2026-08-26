@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { IoCloseCircleSharp } from 'react-icons/io5'
+import { FiX } from 'react-icons/fi'
 import { HiOutlineSparkles } from 'react-icons/hi'
 import CustomLoader from '../../../common/CustomLoader'
 
@@ -21,31 +21,28 @@ const SummaryModal = ({ isOpen, onClose, summary, isLoading }: SummaryModalProps
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[500] bg-black/70 backdrop-blur-xl flex items-start sm:items-center justify-center p-4 overflow-y-auto"
+          className="fixed inset-0 z-[500] bg-black/70 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 overflow-y-auto"
         >
-          {/* Background Glow */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 via-transparent to-purple-500/10 pointer-events-none" />
-
           <motion.div
-            initial={{ scale: 0.95, y: 20 }}
+            initial={{ scale: 0.96, y: 16 }}
             animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.95, y: 20 }}
-            transition={{ type: 'spring', duration: 0.5 }}
-            className="relative w-full max-w-lg bg-[#0F1015]/90 border border-white/10 rounded-[28px] shadow-2xl p-6 overflow-hidden max-h-[80vh] flex flex-col my-auto"
+            exit={{ scale: 0.96, y: 16 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+            className="relative w-full max-w-lg bg-[#0F1017] border border-white/10 rounded-2xl shadow-2xl p-5 overflow-hidden max-h-[80vh] flex flex-col my-auto"
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-white/[0.08] pb-4 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-                  <HiOutlineSparkles className="text-xl" />
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3 mb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-lg bg-white/[0.06] border border-white/[0.08] text-slate-300">
+                  <HiOutlineSparkles className="text-base" />
                 </div>
                 <div>
-                  <h3 className="text-white text-lg font-semibold tracking-wide">AI "Catch Me Up"</h3>
-                  <p className="text-xs text-white/50">Smart conversation summary</p>
+                  <h3 className="text-white text-sm font-semibold tracking-tight">Conversation Summary</h3>
+                  <p className="text-[11px] text-slate-400">Key highlights and context</p>
                 </div>
               </div>
-              <button onClick={onClose} className="text-white/40 hover:text-white transition-colors" title="Close">
-                <IoCloseCircleSharp className="text-2xl" />
+              <button onClick={onClose} className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer" title="Close">
+                <FiX className="text-lg" />
               </button>
             </div>
 
@@ -56,22 +53,20 @@ const SummaryModal = ({ isOpen, onClose, summary, isLoading }: SummaryModalProps
                   <CustomLoader type="default" message="Reading conversation & summarizing..." />
                 </div>
               ) : summary ? (
-                <div className="space-y-4 text-white/95 leading-relaxed text-sm tracking-wide font-light whitespace-pre-wrap font-sans">{summary}</div>
+                <div className="space-y-3 text-slate-200 leading-relaxed text-xs sm:text-sm font-normal whitespace-pre-wrap">{summary}</div>
               ) : (
-                <div className="text-center py-8 text-white/40 text-sm">No summary available or failed to generate.</div>
+                <div className="text-center py-8 text-slate-500 text-xs">No summary available.</div>
               )}
             </div>
 
             {/* Footer */}
-            <div className="border-t border-white/[0.08] pt-4 mt-4 flex justify-end">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+            <div className="border-t border-white/[0.08] pt-3 mt-3 flex justify-end">
+              <button
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium text-xs tracking-wider uppercase transition-all shadow-lg shadow-indigo-500/20"
+                className="px-4 py-2 rounded-xl bg-white text-black hover:bg-slate-100 text-xs font-semibold shadow-md transition-all active:scale-95 cursor-pointer"
               >
-                Got it
-              </motion.button>
+                Close
+              </button>
             </div>
           </motion.div>
         </motion.div>

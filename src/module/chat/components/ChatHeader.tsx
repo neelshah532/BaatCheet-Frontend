@@ -9,7 +9,6 @@ import CallButton from '../../calls/components/CallButton'
 import aiService from '../../../services/ai'
 import SummaryModal from './SummaryModal'
 import { toast } from 'sonner'
-import { motion } from 'framer-motion'
 
 import { useSocket } from '../../../hook/socketContext'
 
@@ -122,7 +121,7 @@ const ChatHeader = ({ onToggleGame, isGameActive }: ChatHeaderProps) => {
                 </div>
               )
             ) : (
-              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-base sm:text-lg font-bold text-white shadow-md border border-white/20">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/[0.08] flex items-center justify-center text-sm font-semibold text-white shadow-sm border border-white/10">
                 #
               </div>
             )}
@@ -137,46 +136,42 @@ const ChatHeader = ({ onToggleGame, isGameActive }: ChatHeaderProps) => {
 
           {/* User Name & Status */}
           <div className="flex flex-col min-w-0 flex-1 overflow-hidden items-start">
-            <h2 className="text-white text-sm sm:text-base font-semibold tracking-wide truncate">{name}</h2>
+            <h2 className="text-white text-sm sm:text-base font-medium tracking-tight truncate">{name}</h2>
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-white/30'}`} />
-              <span className="text-[11px] sm:text-xs text-white/50 font-light truncate">{isOnline ? 'Online' : 'Offline'}</span>
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isOnline ? 'bg-emerald-400' : 'bg-white/30'}`} />
+              <span className="text-[11px] sm:text-xs text-slate-400 font-normal truncate">{isOnline ? 'Online' : 'Offline'}</span>
             </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
           {/* Catch Me Up AI Button */}
           {selectedChatMessages.length > 0 && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={handleCatchMeUp}
-              className="p-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-400 hover:text-indigo-300 transition-all duration-200 flex items-center gap-1.5 text-xs font-medium"
+              className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all flex items-center gap-1.5 text-xs font-medium cursor-pointer active:scale-95"
               title="Catch me up (AI Summary)"
             >
-              <HiOutlineSparkles className="text-base" />
-              <span className="hidden sm:inline">Catch Me Up</span>
-            </motion.button>
+              <HiOutlineSparkles className="text-sm text-slate-400" />
+              <span className="hidden sm:inline">Summarize</span>
+            </button>
           )}
 
           {/* Game Room Button */}
           {selectedChatType === 'contact' && (
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={handleGameClick}
-              className={`p-2 rounded-xl border transition-all duration-200 flex items-center gap-1.5 text-xs font-medium ${
+              className={`px-2.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 text-xs font-medium cursor-pointer active:scale-95 ${
                 isGameActive
-                  ? 'bg-rose-500/10 border-rose-500/30 text-rose-400 hover:text-rose-300 animate-pulse'
-                  : 'bg-indigo-500/10 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-400 hover:text-indigo-300'
+                  ? 'bg-rose-500/15 border-rose-500/30 text-rose-300 hover:bg-rose-500/25'
+                  : 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-300 hover:text-white'
               }`}
-              title={isGameActive ? 'Close Game Room' : 'Open LDR Game Room'}
+              title={isGameActive ? 'Close Game Room' : 'Start Match'}
             >
-              <FaGamepad className="text-base" />
-              <span className="hidden sm:inline">{isGameActive ? 'Exit Game' : 'Game Room'}</span>
-            </motion.button>
+              <FaGamepad className="text-sm text-slate-400" />
+              <span className="hidden sm:inline">{isGameActive ? 'Exit' : 'Game'}</span>
+            </button>
           )}
 
           {selectedChatType === 'contact' && typeof selectedChatData !== 'string' && selectedChatData && <CallButton contact={selectedChatData} />}

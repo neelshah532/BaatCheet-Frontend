@@ -541,13 +541,13 @@ const MessageBar = () => {
           </div>
 
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
             onClick={() => handleSendMessage()}
             disabled={!message.trim() || isEnhancing}
-            className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-lg hover:shadow-indigo-500/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 flex-shrink-0"
+            className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white text-black hover:bg-slate-100 flex items-center justify-center shadow-md disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0 cursor-pointer"
           >
-            <IoSend className="text-base sm:text-lg ml-0.5" />
+            <IoSend className="text-sm sm:text-base ml-0.5" />
           </motion.button>
         </div>
       </div>

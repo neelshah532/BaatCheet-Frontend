@@ -33,6 +33,9 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
   const myId = normalizeId(userInfo?.id || (userInfo as { _id?: string })?._id)
   const opponentId = normalizeId(typeof selectedChatData === 'object' ? selectedChatData?._id || (selectedChatData as { id?: string })?.id : selectedChatData)
   const conversationId = [myId, opponentId].sort().join('-')
+  const partnerName = typeof selectedChatData === 'object' && selectedChatData?.firstName ? `${selectedChatData.firstName} ${selectedChatData.lastName || ''}`.trim() : 'Partner'
+  const myInitial = userInfo?.firstName ? userInfo.firstName[0].toUpperCase() : 'Y'
+  const partnerInitial = typeof selectedChatData === 'object' && selectedChatData?.firstName ? selectedChatData.firstName[0].toUpperCase() : 'P'
 
   // Responsive mobile tab
   const [mobileTab, setMobileTab] = useState<'game' | 'chat'>('game')
@@ -993,11 +996,6 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
     }
     return styles
   }
-
-  const partnerName = typeof selectedChatData === 'object' && selectedChatData?.firstName ? `${selectedChatData.firstName} ${selectedChatData.lastName || ''}`.trim() : 'Partner'
-
-  const myInitial = userInfo?.firstName ? userInfo.firstName[0].toUpperCase() : 'Y'
-  const partnerInitial = typeof selectedChatData === 'object' && selectedChatData?.firstName ? selectedChatData.firstName[0].toUpperCase() : 'P'
 
   const handleSwitchToChat = () => {
     setMobileTab('chat')

@@ -79,8 +79,8 @@ const CreateChannel = () => {
           height={100}
           width={100}
         />
-        <p className="text-xs font-medium text-white/60 mt-2">
-          Add members to build your channel <span className="text-indigo-400">🚀</span>
+        <p className="text-xs font-normal text-slate-400 mt-2">
+          Add members to start your channel
         </p>
       </div>
     )
@@ -146,15 +146,13 @@ const CreateChannel = () => {
                 </div>
               </div>
 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <button
                 onClick={createChannel}
                 disabled={!channelName.trim() || selectedContacts.length === 0 || loadingStates.selecting}
-                className="w-full py-3 px-6 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-semibold text-sm shadow-xl disabled:opacity-40 transition-all"
+                className="w-full py-2.5 px-4 rounded-xl bg-white text-black hover:bg-slate-100 font-semibold text-xs shadow-md disabled:opacity-40 transition-all cursor-pointer active:scale-95"
               >
                 {loadingStates.selecting ? 'Creating Channel...' : 'Create Channel'}
-              </motion.button>
+              </button>
 
               <div className="pt-2 border-t border-white/10">{renderContactList()}</div>
             </motion.div>

@@ -281,19 +281,17 @@ const Profile = () => {
             </div>
 
             {/* Submit Button */}
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-6 py-3.5 px-6 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 text-white font-semibold text-sm shadow-xl hover:shadow-indigo-500/25 disabled:opacity-50 transition-all duration-200 flex items-center justify-center gap-2"
+              className="w-full mt-6 py-3 px-6 rounded-xl bg-white text-black hover:bg-slate-100 font-semibold text-xs shadow-md disabled:opacity-40 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
               ) : (
                 <span>{userInfo?.profileSetup ? PROFILE_STRINGS.UPDATE_PROFILE : PROFILE_STRINGS.COMPLETED_PROFILE}</span>
               )}
-            </motion.button>
+            </button>
           </form>
         </div>
       </motion.div>
