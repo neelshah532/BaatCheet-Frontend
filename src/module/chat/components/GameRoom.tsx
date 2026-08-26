@@ -1013,82 +1013,99 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
       className="fixed inset-0 sm:inset-3 md:inset-5 z-[100] bg-[#0A0B10]/98 border border-white/10 rounded-none sm:rounded-3xl shadow-[0_32px_128px_rgba(0,0,0,0.95)] backdrop-blur-3xl p-2.5 sm:p-4 md:p-5 flex flex-col overflow-hidden select-none text-white relative"
     >
-      {/* 2026 Dynamic Island / Quick-Reply Floating Capsule */}
+      {/* Dynamic Island Quick-Reply Floating Capsule */}
       <AnimatePresence>
         {latestChatNotification && mobileTab === 'game' && (
-          <motion.div
-            initial={{ opacity: 0, y: -25, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -25, scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            className="absolute top-16 left-1/2 -translate-x-1/2 z-50 bg-[#0D0E15]/95 border border-indigo-500/40 shadow-[0_16px_48px_rgba(0,0,0,0.9)] backdrop-blur-2xl rounded-2xl p-2.5 max-w-[92%] sm:max-w-md w-full text-white"
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                {partnerInitial}
-              </div>
-              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setIsReplyingInToast(!isReplyingInToast)}>
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-[11px] font-bold text-indigo-300 truncate">{latestChatNotification.senderName}</span>
-                  <span className="text-[9px] text-slate-400 font-medium">💬 {isReplyingInToast ? 'Close Reply' : 'Quick Reply'}</span>
+          <div className="fixed inset-x-0 top-3 sm:top-5 z-50 flex justify-center px-3 pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+              className="pointer-events-auto w-full max-w-[94%] sm:max-w-md bg-[#0C0E17]/95 border border-white/[0.12] shadow-[0_20px_50px_rgba(0,0,0,0.9),0_0_24px_rgba(99,102,241,0.15)] backdrop-blur-2xl rounded-2xl sm:rounded-3xl p-3 sm:p-3.5 text-white"
+            >
+              <div className="flex items-center gap-2.5">
+                {/* Opponent Avatar */}
+                <div className="relative flex-shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30 flex items-center justify-center text-xs font-semibold text-indigo-200">
+                    {partnerInitial}
+                  </div>
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-[#0C0E17]" />
                 </div>
-                <p className="text-xs text-white truncate font-normal">{latestChatNotification.text}</p>
-              </div>
-              <button
-                onClick={() => {
-                  setLatestChatNotification(null)
-                  setIsReplyingInToast(false)
-                }}
-                className="text-slate-400 hover:text-white p-1 cursor-pointer"
-              >
-                <FiX className="text-xs" />
-              </button>
-            </div>
 
-            {/* Direct Quick-Reply Input Area */}
-            {isReplyingInToast && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-2 pt-2 border-t border-white/10 flex flex-col gap-1.5">
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="text"
-                    autoFocus
-                    placeholder="Type quick reply..."
-                    value={toastReplyText}
-                    onChange={(e) => setToastReplyText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSendToastReply()
-                    }}
-                    className="flex-1 bg-white/5 border border-white/15 text-white rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 placeholder:text-slate-500"
-                  />
-                  <button
-                    onClick={handleSendToastReply}
-                    className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md cursor-pointer active:scale-95 flex items-center gap-1"
-                  >
-                    Send
-                  </button>
+                {/* Message preview & trigger */}
+                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setIsReplyingInToast(!isReplyingInToast)}>
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="text-xs font-semibold text-white tracking-tight truncate">{latestChatNotification.senderName}</span>
+                    <span className="text-[10px] text-indigo-400 font-medium flex items-center gap-1 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20 flex-shrink-0">
+                      <FiMessageSquare className="text-[9px]" />
+                      {isReplyingInToast ? 'Close' : 'Quick Reply'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 truncate font-normal mt-0.5">{latestChatNotification.text}</p>
                 </div>
-                {/* Quick Emoji Taps */}
-                <div className="flex items-center justify-between px-1">
-                  {['❤️', '😂', '🔥', '👍', '🎉', '😮'].map((em) => (
-                    <button
-                      key={em}
-                      onClick={() => {
-                        triggerReaction(em)
-                        setLatestChatNotification(null)
-                        setIsReplyingInToast(false)
+
+                {/* Dismiss */}
+                <button
+                  onClick={() => {
+                    setLatestChatNotification(null)
+                    setIsReplyingInToast(false)
+                  }}
+                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
+                  title="Dismiss"
+                >
+                  <FiX className="text-sm" />
+                </button>
+              </div>
+
+              {/* Direct Quick-Reply Input Area */}
+              {isReplyingInToast && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-2.5 pt-2.5 border-t border-white/[0.08] flex flex-col gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      autoFocus
+                      placeholder="Type quick reply..."
+                      value={toastReplyText}
+                      onChange={(e) => setToastReplyText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSendToastReply()
                       }}
-                      className="hover:scale-125 transition-transform text-sm cursor-pointer p-0.5"
+                      className="flex-1 bg-white/[0.04] border border-white/15 text-white rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500/70 focus:bg-white/[0.06] placeholder:text-slate-500 transition-all"
+                    />
+                    <button
+                      onClick={handleSendToastReply}
+                      className="py-1.5 px-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 text-white text-xs font-semibold shadow-md cursor-pointer active:scale-95 flex items-center gap-1 flex-shrink-0"
                     >
-                      {em}
+                      Send
                     </button>
-                  ))}
-                  <button onClick={handleSwitchToChat} className="text-[10px] text-indigo-400 hover:underline font-semibold cursor-pointer">
-                    Open Full Chat ➔
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </motion.div>
+                  </div>
+
+                  {/* Quick Reactions & Full Chat Shortcut */}
+                  <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center gap-1.5">
+                      {['❤️', '😂', '🔥', '👍', '🎉', '😮'].map((em) => (
+                        <button
+                          key={em}
+                          onClick={() => {
+                            triggerReaction(em)
+                            setLatestChatNotification(null)
+                            setIsReplyingInToast(false)
+                          }}
+                          className="hover:scale-125 transition-transform text-sm cursor-pointer p-0.5"
+                        >
+                          {em}
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={handleSwitchToChat} className="text-[10px] text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer flex items-center gap-0.5">
+                      Open Chat ➔
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

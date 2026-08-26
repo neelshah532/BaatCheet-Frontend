@@ -243,12 +243,14 @@ const ChessBoardView = ({
         <div className="lg:col-span-8 flex flex-col items-center justify-center max-w-[390px] mx-auto w-full relative">
           {/* Top Player Info Bar */}
           <div
-            className={`w-full flex items-center justify-between rounded-xl px-2.5 py-1.5 mb-1 transition-all duration-300 ${
-              isTopUserTurn ? 'bg-white/[0.08] border border-white/20' : 'bg-white/[0.02] border border-white/[0.06]'
+            className={`w-full flex items-center justify-between rounded-xl px-2.5 py-1.5 mb-1.5 transition-all duration-300 backdrop-blur-md ${
+              isTopUserTurn
+                ? 'bg-indigo-500/10 border border-indigo-500/30 shadow-[0_0_16px_rgba(99,102,241,0.15)]'
+                : 'bg-white/[0.03] border border-white/[0.07]'
             }`}
           >
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-6 h-6 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-[10px] font-semibold text-white flex-shrink-0">
+              <div className="w-6 h-6 rounded-full bg-white/[0.08] border border-white/10 flex items-center justify-center text-[10px] font-semibold text-white flex-shrink-0">
                 {partnerName[0]?.toUpperCase() || 'P'}
               </div>
               <div className="flex flex-col min-w-0">
@@ -266,8 +268,8 @@ const ChessBoardView = ({
                 className={`px-2.5 py-0.5 rounded-lg text-xs font-mono font-medium transition-all ${
                   isTopUserTurn
                     ? topRemainingMs < 10000
-                      ? 'bg-rose-950/90 text-rose-300 border border-rose-500 animate-pulse'
-                      : 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/50'
+                      ? 'bg-rose-950/90 text-rose-300 border border-rose-500 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.3)]'
+                      : 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/50 shadow-[0_0_10px_rgba(99,102,241,0.2)]'
                     : 'bg-black/30 text-slate-400 border border-white/[0.06]'
                 }`}
               >
@@ -277,28 +279,28 @@ const ChessBoardView = ({
           </div>
 
           {/* Chessboard Area */}
-          <div className="relative w-full max-w-[min(100%,370px,44vh)] aspect-square shadow-[0_16px_48px_rgba(0,0,0,0.85)] rounded-2xl overflow-hidden border border-white/15">
+          <div className="relative w-full max-w-[min(100%,370px,44vh)] aspect-square shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(99,102,241,0.12)] rounded-2xl overflow-hidden border border-white/[0.12]">
             {/* Check alert badge */}
             {chessInstanceRef.current && chessInstanceRef.current.inCheck() && !chessInstanceRef.current.isCheckmate() && (
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 px-2.5 py-0.5 rounded-full bg-rose-600/90 border border-rose-400 text-[10px] font-semibold text-white shadow-md">
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 px-2.5 py-0.5 rounded-full bg-rose-600/90 border border-rose-400 text-[10px] font-semibold text-white shadow-lg">
                 Check
               </div>
             )}
 
             {/* Draw offer prompt */}
             {drawOfferReceived && (
-              <div className="absolute top-8 left-1/2 -translate-x-1/2 z-40 p-2.5 bg-indigo-950/95 border border-indigo-500/50 rounded-2xl flex items-center justify-between gap-3 w-[90%] shadow-2xl backdrop-blur-md">
-                <span className="text-xs text-white font-medium">Partner offered a draw.</span>
+              <div className="absolute top-8 left-1/2 -translate-x-1/2 z-40 p-2.5 bg-[#0F1017]/95 border border-indigo-500/40 rounded-2xl flex items-center justify-between gap-3 w-[90%] shadow-2xl backdrop-blur-xl">
+                <span className="text-xs text-white font-normal">Partner offered a draw</span>
                 <div className="flex gap-1.5">
                   <button
                     onClick={acceptDraw}
-                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-md transition-colors cursor-pointer"
+                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-lg shadow-md transition-colors cursor-pointer"
                   >
                     Accept
                   </button>
                   <button
                     onClick={declineDraw}
-                    className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg shadow-md transition-colors cursor-pointer"
+                    className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-medium rounded-lg transition-colors cursor-pointer"
                   >
                     Decline
                   </button>
@@ -308,9 +310,9 @@ const ChessBoardView = ({
 
             {/* Pawn Promotion Popover */}
             {pendingPromotion && (
-              <div className="absolute inset-0 z-50 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center gap-3 animate-fade-in">
-                <span className="text-xs font-bold text-amber-400 uppercase tracking-widest">Select Promotion Piece</span>
-                <div className="flex gap-2 bg-slate-900/90 p-2.5 rounded-2xl border border-white/20 shadow-2xl">
+              <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+                <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider">Select Promotion Piece</span>
+                <div className="flex gap-2 bg-[#0F1017] p-2.5 rounded-2xl border border-white/20 shadow-2xl">
                   {[
                     { char: 'q', label: '♛' },
                     { char: 'r', label: '♜' },
@@ -320,7 +322,7 @@ const ChessBoardView = ({
                     <button
                       key={piece.char}
                       onClick={() => executeChessMove(pendingPromotion.from, pendingPromotion.to, piece.char)}
-                      className="w-11 h-11 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 border border-amber-500/40 text-amber-200 text-xl font-bold transition-all transform hover:scale-110 flex items-center justify-center cursor-pointer"
+                      className="w-11 h-11 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white text-xl font-bold transition-all hover:scale-105 flex items-center justify-center cursor-pointer"
                     >
                       {piece.label}
                     </button>
@@ -344,20 +346,22 @@ const ChessBoardView = ({
                   borderRadius: '12px',
                   boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
                 }}
-                customDarkSquareStyle={{ backgroundColor: '#2F354D' }}
-                customLightSquareStyle={{ backgroundColor: '#E8ECEF' }}
+                customDarkSquareStyle={{ backgroundColor: '#2B3148' }}
+                customLightSquareStyle={{ backgroundColor: '#E4E8EE' }}
               />
             </motion.div>
           </div>
 
           {/* Bottom Player Info Bar */}
           <div
-            className={`w-full flex items-center justify-between rounded-xl px-2.5 py-1.5 mt-1 transition-all duration-300 ${
-              isBottomUserTurn ? 'bg-white/[0.08] border border-white/20' : 'bg-white/[0.02] border border-white/[0.06]'
+            className={`w-full flex items-center justify-between rounded-xl px-2.5 py-1.5 mt-1.5 transition-all duration-300 backdrop-blur-md ${
+              isBottomUserTurn
+                ? 'bg-indigo-500/10 border border-indigo-500/30 shadow-[0_0_16px_rgba(99,102,241,0.15)]'
+                : 'bg-white/[0.03] border border-white/[0.07]'
             }`}
           >
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-white/10 border border-white/10 flex items-center justify-center text-[10px] font-semibold text-white">You</div>
+              <div className="w-6 h-6 rounded-full bg-white/[0.08] border border-white/10 flex items-center justify-center text-[10px] font-semibold text-white">You</div>
               <div className="flex flex-col">
                 <span className="text-[11px] font-medium text-white">You</span>
                 <div className="flex items-center gap-1 text-[9px] text-slate-400">
@@ -373,8 +377,8 @@ const ChessBoardView = ({
                 className={`px-2.5 py-0.5 rounded-lg text-xs font-mono font-medium transition-all ${
                   isBottomUserTurn
                     ? bottomRemainingMs < 10000
-                      ? 'bg-rose-950/90 text-rose-300 border border-rose-500 animate-pulse'
-                      : 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/50'
+                      ? 'bg-rose-950/90 text-rose-300 border border-rose-500 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.3)]'
+                      : 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/50 shadow-[0_0_10px_rgba(99,102,241,0.2)]'
                     : 'bg-black/30 text-slate-400 border border-white/[0.06]'
                 }`}
               >

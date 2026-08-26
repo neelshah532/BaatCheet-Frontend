@@ -55,9 +55,13 @@ const Chat = () => {
   )
 
   return (
-    <div className="h-[100dvh] w-full bg-[#0B0C10] overflow-hidden flex flex-1 font-sans selection:bg-indigo-500/30 selection:text-white">
-      {/* Subtle Depth Background */}
-      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,_#1A1C24_0%,_#0B0C10_60%)] opacity-80" />
+    <div className="h-[100dvh] w-full bg-[#07080D] overflow-hidden flex flex-1 font-sans selection:bg-indigo-500/30 selection:text-white">
+      {/* Refined Ambient Lighting & Depth */}
+      <div className="fixed inset-0 pointer-events-none -z-50 overflow-hidden">
+        <div className="absolute top-[-20%] left-[20%] w-[800px] h-[600px] rounded-full bg-indigo-600/[0.08] blur-[140px]" />
+        <div className="absolute bottom-[-10%] right-[10%] w-[600px] h-[500px] rounded-full bg-violet-600/[0.05] blur-[140px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#0E111B_0%,_#07080D_70%)] opacity-90" />
+      </div>
 
       <div className="relative z-10 h-full w-full flex flex-1 overflow-hidden text-white">
         <GameInviteDialog />
