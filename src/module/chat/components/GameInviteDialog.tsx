@@ -36,12 +36,7 @@ const GameInviteDialog = () => {
       {incomingGameInvite && (
         <>
           {/* Subtle Mobile Backdrop Scrim */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[119]"
-          />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[119]" />
 
           <motion.div
             initial={{ opacity: 0, y: -40, scale: 0.95 }}
@@ -91,12 +86,7 @@ const GameInviteDialog = () => {
       {/* 2. SENDER WAITING DIALOG: Waiting for partner */}
       {isWaitingForGameAcceptance && !incomingGameInvite && (
         <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[119]"
-          />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[119]" />
 
           <motion.div
             initial={{ opacity: 0, y: -40, scale: 0.95 }}
@@ -117,9 +107,7 @@ const GameInviteDialog = () => {
                   </span>
                 </div>
                 <h4 className="text-xs sm:text-sm font-bold text-white mt-1 truncate">Game Invitation Sent</h4>
-                <p className="text-[10px] sm:text-[11px] text-slate-400 font-normal mt-0.5 line-clamp-2">
-                  Waiting for {opponentName} to accept the game request...
-                </p>
+                <p className="text-[10px] sm:text-[11px] text-slate-400 font-normal mt-0.5 line-clamp-2">Waiting for {opponentName} to accept the game request...</p>
               </div>
             </div>
 

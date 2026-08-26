@@ -402,13 +402,7 @@ const GameRoom = ({ onClose }: GameRoomProps) => {
       const id = data.msgId || data.messageId || `${data.senderId}-${Date.now()}-${Math.random()}`
       setGameMessages((prev) => {
         // Prevent duplicate messages with identical ID or identical text within 2 seconds
-        if (
-          prev.some(
-            (m) =>
-              m.id === id ||
-              (m.text === data.message && normalizeId(m.senderId) === normalizeId(data.senderId) && m.id.startsWith(`${data.senderId}-`))
-          )
-        ) {
+        if (prev.some((m) => m.id === id || (m.text === data.message && normalizeId(m.senderId) === normalizeId(data.senderId) && m.id.startsWith(`${data.senderId}-`)))) {
           return prev
         }
         return [
